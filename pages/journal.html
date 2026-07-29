@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Journal — Vayu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&family=Pinyon+Script&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css?v=18">
+</head>
+
+<body>
+
+  <div id="site-header"></div>
+
+  <main class="wrap">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="/index.html">Home</a>
+      <span class="sep">|</span>
+      <span>Journal</span>
+    </nav>
+
+        <section class="journal-list" style="display: grid; grid-template-columns: 1fr; gap: 24px; max-width: 900px; margin: 0 auto 50px;">
+            <article style="display: flex; gap: 30px; align-items: center; background: var(--card); border: 1px solid var(--line); padding: 24px; border-radius: 20px; box-shadow: var(--shadow);">
+                <img src="/assets/images/makers.jpg" style="width: 260px; height: 200px; object-fit: cover; border-radius: 14px;" alt="Journal Article">
+                <div>
+                    <div style="font-size: 13px; color: var(--accent); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; font-weight: 500;">Craft & Heritage</div>
+                    <h2 style="font-family: 'Cormorant Garamond', serif; font-size: 30px; color: var(--ink); margin-bottom: 14px; font-weight: 500; line-height: 1.2;">The Revival of Cane Weaving in Jaipur</h2>
+                    <p style="font-size: 16px; color: var(--body); margin-bottom: 20px; line-height: 1.7;">Discover how third-generation artisans are keeping traditional weaving techniques alive while adapting to modern aesthetics.</p>
+                    <a href="javascript:void(0)" style="font-size: 13px; color: var(--ink); text-transform: uppercase; letter-spacing: 0.12em; font-weight: 500; border-bottom: 1.5px solid var(--ink); padding-bottom: 2px;">Read Story</a>
+                </div>
+            </article>
+            <article style="display: flex; gap: 30px; align-items: center; background: var(--card); border: 1px solid var(--line); padding: 24px; border-radius: 20px; box-shadow: var(--shadow);">
+                <img src="/assets/images/hero.jpg" style="width: 260px; height: 200px; object-fit: cover; border-radius: 14px;" alt="Journal Article">
+                <div>
+                    <div style="font-size: 13px; color: var(--accent); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; font-weight: 500;">Interiors</div>
+                    <h2 style="font-family: 'Cormorant Garamond', serif; font-size: 30px; color: var(--ink); margin-bottom: 14px; font-weight: 500; line-height: 1.2;">Curating a Mindful Space</h2>
+                    <p style="font-size: 16px; color: var(--body); margin-bottom: 20px; line-height: 1.7;">Tips on selecting pieces that carry meaning and creating harmony between contemporary design and antique objects.</p>
+                    <a href="javascript:void(0)" style="font-size: 13px; color: var(--ink); text-transform: uppercase; letter-spacing: 0.12em; font-weight: 500; border-bottom: 1.5px solid var(--ink); padding-bottom: 2px;">Read Story</a>
+                </div>
+            </article>
+        </section>
+        <style>
+            @media (max-width: 650px) { .journal-list article { flex-direction: column; } .journal-list img { width: 100% !important; height: auto !important; } }
+        </style>
+        </main>
+
+  <div id="site-footer"></div>
+
+  <script type="module" src="/js/include.js"></script>
+
+</body>
+
+</html>

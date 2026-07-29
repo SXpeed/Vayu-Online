@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collection Products — Vayu</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&family=Pinyon+Script&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css?v=18">
+</head>
+
+<body>
+
+    <div id="site-header"></div>
+
+    <main class="wrap">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+            <a href="/index.html">Home</a>
+            <span class="sep">|</span>
+            <a href="/pages/collection.html">Collection</a>
+            <span class="sep">|</span>
+            <a id="crumbCategory">Category</a>
+            <span class="sep" id="crumbSep" style="display:none;">|</span>
+            <span id="crumbSub" style="display:none;">Sub</span>
+        </nav>
+        <div class="collection-banner-219"
+            style="width: 100%; aspect-ratio: 21 / 9; max-height: 380px; overflow: hidden; border-radius: 2px; margin-bottom: 16px; position: relative;">
+            <img id="catHeroImg" src="/assets/images/hero.jpg" alt="Collection Banner"
+                style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+        <div class="collection-controls-bar"
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+            <div id="subNav" class="sub-nav" style="display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;">
+            </div>
+            <div
+                style="font-size: 13px; color: var(--body); display: flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; margin-left: auto;">
+                Sort by: Featured
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </div>
+        </div>
+
+        <h1 id="collTitle"
+            style="font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 34px; margin: 8px 0 6px;">
+            Category</h1>
+        <p id="collDesc" style="font-size: 14px; color: var(--body); max-width: 640px; margin: 0 0 22px;">Curated
+            pieces.</p>
+
+        <!-- SUB-CATEGORY GRID -->
+        <section class="curated-section" id="collectionGrid" style="margin-bottom: 60px;">
+            <div class="curated-grid" id="subGrid"></div>
+        </section>
+
+        <style>
+            .sub-nav .sub-pill {
+                display: inline-block;
+                padding: 8px 18px;
+                border: 1px solid var(--line);
+                border-radius: 30px;
+                font-size: 13px;
+                color: var(--body);
+                text-decoration: none;
+                letter-spacing: 0.04em;
+                background: transparent;
+                transition: all 0.2s ease;
+                white-space: nowrap;
+            }
+
+            .sub-nav .sub-pill:hover {
+                border-color: var(--ink);
+                color: var(--ink);
+            }
+
+            .sub-nav .sub-pill.active {
+                background: var(--ink);
+                color: #fff;
+                border-color: var(--ink);
+            }
+        </style>
+    </main>
+
+    <div id="site-footer"></div>
+
+    <script type="module" src="/js/include.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Account — Vayu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500&family=Pinyon+Script&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body>
+
+  <div id="site-header"></div>
+
+  <main class="wrap">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="/index.html">Home</a><span class="sep">/</span>
+      <span>My Account</span>
+    </nav>
+
+    <div class="account-wrap">
+      <!-- Sidebar -->
+      <aside class="account-nav">
+        <h3>My Account</h3>
+        <ul>
+          <li>
+            <a href="javascript:void(0)" class="active">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+              </svg>
+              Order History
+            </a>
+          </li>
+          <li>
+            <a href="javascript:void(0)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              Account Details
+            </a>
+          </li>
+          <li>
+            <a href="javascript:void(0)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+              Saved Addresses
+            </a>
+          </li>
+          <li>
+            <a href="/pages/wishlist.html">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+              Wishlist
+            </a>
+          </li>
+          <li style="margin-top: 30px; border-top: 1px solid var(--line); padding-top: 15px;">
+            <a href="javascript:void(0)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+              Sign Out
+            </a>
+          </li>
+        </ul>
+      </aside>
+
+      <!-- Main Content -->
+      <section class="account-content">
+        <h2>Order History</h2>
+        <p>View your past orders, status, and track delivery.</p>
+
+        <!-- Order 1 -->
+        <div class="order-card">
+          <div class="order-header">
+            <div>
+              <div class="order-id">Order #VY-84920</div>
+              <div class="order-date">Placed on July 18, 2026</div>
+            </div>
+            <div class="order-status">In Transit</div>
+          </div>
+          <div class="order-items">
+            <img src="/assets/images/prod_chair.jpg" alt="Teakwood Lounge Chair">
+            <div class="order-item-details">
+              <h4>Teakwood Lounge Chair</h4>
+              <div class="qty">Qty: 1 · ₹ 24,500</div>
+            </div>
+          </div>
+          <div class="order-action">
+            <a href="javascript:void(0)" class="btn-outline">Track Shipment</a>
+          </div>
+        </div>
+
+        <!-- Order 2 -->
+        <div class="order-card">
+          <div class="order-header">
+            <div>
+              <div class="order-id">Order #VY-71044</div>
+              <div class="order-date">Placed on June 02, 2026</div>
+            </div>
+            <div class="order-status" style="background: #EAF3EC; color: var(--sage);">Delivered</div>
+          </div>
+          <div class="order-items">
+            <img src="/assets/images/prod_lamp.jpg" alt="Lotus Urli Lamp">
+            <div class="order-item-details">
+              <h4>Lotus Urli Lamp</h4>
+              <div class="qty">Qty: 1 · ₹ 6,900</div>
+            </div>
+          </div>
+          <div class="order-action">
+            <a href="javascript:void(0)" class="btn-outline">Invoice</a>
+          </div>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script type="module" src="/js/include.js"></script>
+
+  <nav class="mobile-bottom-nav">
+    <a href="/index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </svg>
+      Home
+    </a>
+    <a href="/pages/collection.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="11" cy="11" r="7" />
+        <path d="M21 21l-4.5-4.5" />
+      </svg>
+      Collection
+    </a>
+    <a href="/pages/about.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+      Menu
+    </a>
+    <a href="/pages/cart.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M6 7h12l-1 13H7L6 7z" />
+        <path d="M9 9V6a3 3 0 016 0v3" />
+      </svg>
+      Cart
+    </a>
+    <a href="/pages/user-profile.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 20c1.5-4 5-5.5 8-5.5s6.5 1.5 8 5.5" />
+      </svg>
+      Account
+    </a>
+  </nav>
+
+</body>
+
+</html>

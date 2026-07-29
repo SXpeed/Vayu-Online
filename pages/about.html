@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About Us — Vayu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&family=Pinyon+Script&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css?v=18">
+</head>
+
+<body>
+
+  <div id="site-header"></div>
+
+  <main class="wrap">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="/index.html">Home</a>
+      <span class="sep">|</span>
+      <span>About Us</span>
+    </nav>
+
+        <section class="about-split" style="display: grid; grid-template-columns: 1fr 1fr; gap: clamp(30px, 4vw, 50px); margin-bottom: 50px; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); padding: clamp(24px, 4vw, 48px);">
+            <div>
+                <img src="/assets/images/hero.jpg" style="width: 100%; border-radius: 14px; object-fit: cover; aspect-ratio: 4/5;" alt="Vayu Space">
+            </div>
+            <div>
+                <h2 style="font-family: 'Cormorant Garamond', serif; font-size: clamp(32px, 3vw, 44px); color: var(--ink); margin-bottom: 24px; font-weight: 500; line-height: 1.2;">Design For Living,<br>Rooted in Culture.</h2>
+                <p style="font-size: 16.5px; color: var(--body); margin-bottom: 20px; line-height: 1.8;">Vayu is a cultural art and design space from New Delhi, celebrating Indian craftsmanship in all its contemporary glory. We collaborate with independent designers and master artisans across the subcontinent.</p>
+                <p style="font-size: 16.5px; color: var(--body); margin-bottom: 30px; line-height: 1.8;">Our philosophy is simple: surround yourself with objects that have a story. From hand-carved teakwood furniture to meticulously woven textiles, every piece in our curation is chosen for its integrity, beauty, and timelessness.</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; border-top: 1px solid var(--line); padding-top: 20px;">
+                    <div>
+                        <div style="font-size: 26px; font-family: 'Cormorant Garamond', serif; color: var(--ink); font-weight: 600;">2011</div>
+                        <div style="font-size: 13px; color: #6a6a64; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500;">Year Established</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 26px; font-family: 'Cormorant Garamond', serif; color: var(--ink); font-weight: 600;">45+</div>
+                        <div style="font-size: 13px; color: #6a6a64; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500;">Artisan Partners</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <style>
+            @media (max-width: 768px) { .about-split { grid-template-columns: 1fr !important; } }
+        </style>
+        </main>
+
+  <div id="site-footer"></div>
+
+  <script type="module" src="/js/include.js"></script>
+
+</body>
+
+</html>
