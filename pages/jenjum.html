@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jenjum Gadi — Vayu</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&family=Pinyon+Script&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css?v=20">
+</head>
+
+<body>
+
+    <div id="site-header"></div>
+
+    <main class="wrap jenjum-page">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+            <a href="/index.html">Home</a>
+            <span class="sep">|</span>
+            <span>Jenjum Gadi</span>
+        </nav>
+
+        <!-- HERO / ARTIST BANNER -->
+        <section class="jenjum-hero">
+            <img src="/assets/images/jenjum_gadi.png" alt="Jenjum Gadi — Artist & Designer">
+            <div class="jenjum-hero-overlay">
+                <span class="jenjum-kicker">FEATURED ARTIST · IN RESIDENCE</span>
+                <h1 class="jenjum-title">Jenjum Gadi</h1>
+                <p class="jenjum-tagline">A dialogue between tribal memory and contemporary form.</p>
+            </div>
+        </section>
+
+        <!-- ARTIST STORY -->
+        <section class="jenjum-story">
+            <div class="jenjum-story-text">
+                <h2 class="jenjum-h2">The Artist</h2>
+                <p>Jenjum Gadi is a Nagaland-born contemporary artist and designer whose practice bridges indigenous
+                    craft traditions with modern material language. Trained at the National Institute of Design, his
+                    sculptural vessels, woven objects and mixed-media panels have been exhibited across India, London
+                    and Milan.</p>
+                <p>For Vayu, Jenjum presents an exclusive capsule — a series of collectible objects that echo the
+                    textile geometry of Naga weaves while embracing book-form brass, hand-turned teak and unfired earth
+                    finishes. Each piece is numbered and made in his Delhi studio.</p>
+            </div>
+            <div class="jenjum-story-stats">
+                <div class="jenjum-stat">
+                    <div class="jenjum-stat-num">12</div>
+                    <div class="jenjum-stat-label">Pieces in Capsule</div>
+                </div>
+                <div class="jenjum-stat">
+                    <div class="jenjum-stat-num">2026</div>
+                    <div class="jenjum-stat-label">Year of Curation</div>
+                </div>
+                <div class="jenjum-stat">
+                    <div class="jenjum-stat-num">1/1</div>
+                    <div class="jenjum-stat-label">Made to Order</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- THE COLLECTION -->
+        <section class="curated-section" aria-label="Jenjum Gadi Collection" style="margin-bottom: 50px;">
+            <div class="sec-head">
+                <h2 class="sec-title">THE CAPSULE</h2>
+                <a class="link-cta" href="/pages/collection-detail.html?cat=materials&sub=textile">VIEW ALL
+                    TEXTILES&nbsp;→</a>
+            </div>
+            <div class="curated-grid">
+                <a class="curated-card" href="/pages/collection-detail.html?cat=materials&sub=textile">
+                    <img src="/assets/images/cat_textiles.jpg" alt="Woven Geometry Panel">
+                    <div class="card-overlay">
+                        <span>WOVEN GEOMETRY</span>
+                    </div>
+                </a>
+                <a class="curated-card" href="/pages/collection-detail.html?cat=materials&sub=brass">
+                    <img src="/assets/images/cat_objects.jpg" alt="Brass Vessel Study">
+                    <div class="card-overlay">
+                        <span>BRASS VESSEL STUDY</span>
+                    </div>
+                </a>
+                <a class="curated-card" href="/pages/collection-detail.html?cat=materials&sub=wood">
+                    <img src="/assets/images/cat_furniture.jpg" alt="Hand-Turned Teak Form">
+                    <div class="card-overlay">
+                        <span>HAND-TURNED TEAK</span>
+                    </div>
+                </a>
+                <a class="curated-card" href="/pages/collection-detail.html?cat=decor&sub=wall-art">
+                    <img src="/assets/images/cat_art.jpg" alt="Mixed-Media Panel">
+                    <div class="card-overlay">
+                        <span>MIXED-MEDIA PANEL</span>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <!-- JOURNAL-LIKE WRITING -->
+        <section class="jenjum-journal">
+            <article class="jenjum-article">
+                <img src="/assets/images/makers.jpg" alt="Jenjum at work" class="jenjum-article-img">
+                <div class="jenjum-article-body">
+                    <div class="jenjum-article-tag">CRAFT & HERITAGE</div>
+                    <h3 class="jenjum-article-title">From Loom to Lathe: Jenjum's Process</h3>
+                    <p class="jenjum-article-text">A rare look at the artist's two-week residency at the Vayu atelier —
+                        where a back-strap loom and a wood lathe sit side by side, and the same hand that weaves curves
+                        brass.</p>
+                </div>
+            </article>
+        </section>
+
+        <style>
+            /* ---------- hero ---------- */
+            .jenjum-hero {
+                position: relative;
+                border-radius: 2px;
+                overflow: hidden;
+                margin-bottom: 32px;
+            }
+
+            .jenjum-hero img {
+                width: 100%;
+                height: auto;
+                display: block;
+            }
+
+            .jenjum-hero-overlay {
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                padding: clamp(20px, 4vw, 48px);
+                background: linear-gradient(to top, rgba(18, 16, 14, 0.72), transparent 75%);
+                color: #fff;
+            }
+
+            .jenjum-kicker {
+                display: block;
+                font-size: 11px;
+                letter-spacing: 0.26em;
+                text-transform: uppercase;
+                font-weight: 500;
+                margin-bottom: 10px;
+                color: rgba(255, 255, 255, 0.82);
+            }
+
+            .jenjum-title {
+                font-family: 'Cormorant Garamond', serif;
+                font-size: clamp(36px, 5vw, 64px);
+                font-weight: 400;
+                line-height: 1;
+                margin: 0 0 10px;
+                letter-spacing: -0.01em;
+            }
+
+            .jenjum-tagline {
+                font-size: clamp(14px, 1.5vw, 18px);
+                margin: 0;
+                font-weight: 300;
+                color: rgba(255, 255, 255, 0.9);
+                max-width: 520px;
+            }
+
+            /* ---------- story ---------- */
+            .jenjum-story {
+                display: grid;
+                grid-template-columns: 2fr 1fr;
+                gap: clamp(28px, 4vw, 56px);
+                align-items: start;
+                margin-bottom: 48px;
+            }
+
+            .jenjum-h2 {
+                font-family: 'Cormorant Garamond', serif;
+                font-size: clamp(28px, 3vw, 40px);
+                font-weight: 500;
+                color: var(--ink);
+                margin: 0 0 18px;
+                line-height: 1.2;
+            }
+
+            .jenjum-story-text p {
+                font-size: 16px;
+                color: var(--body);
+                line-height: 1.8;
+                margin: 0 0 16px;
+            }
+
+            .jenjum-story-stats {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 18px;
+                border-left: 1px solid var(--line);
+                padding-left: 24px;
+            }
+
+            .jenjum-stat-num {
+                font-family: 'Cormorant Garamond', serif;
+                font-size: 32px;
+                font-weight: 600;
+                color: var(--ink);
+                line-height: 1;
+            }
+
+            .jenjum-stat-label {
+                font-size: 12px;
+                color: #6a6a64;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                margin-top: 4px;
+            }
+
+            /* ---------- journal article ---------- */
+            .jenjum-journal {
+                max-width: 900px;
+                margin: 0 auto 50px;
+            }
+
+            .jenjum-article {
+                display: flex;
+                gap: 30px;
+                align-items: center;
+                background: var(--card);
+                border: 1px solid var(--line);
+                padding: 24px;
+                border-radius: 20px;
+                box-shadow: var(--shadow);
+            }
+
+            .jenjum-article-img {
+                width: 260px;
+                height: 200px;
+                object-fit: cover;
+                border-radius: 14px;
+                flex-shrink: 0;
+            }
+
+            .jenjum-article-tag {
+                font-size: 13px;
+                color: var(--accent);
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                margin-bottom: 10px;
+                font-weight: 500;
+            }
+
+            .jenjum-article-title {
+                font-family: 'Cormorant Garamond', serif;
+                font-size: 30px;
+                color: var(--ink);
+                margin-bottom: 14px;
+                font-weight: 500;
+                line-height: 1.2;
+            }
+
+            .jenjum-article-text {
+                font-size: 16px;
+                color: var(--body);
+                line-height: 1.7;
+            }
+
+            @media (max-width: 768px) {
+                .jenjum-story {
+                    grid-template-columns: 1fr;
+                }
+
+                .jenjum-story-stats {
+                    border-left: none;
+                    border-top: 1px solid var(--line);
+                    padding-left: 0;
+                    padding-top: 20px;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 14px;
+                }
+
+                .jenjum-article {
+                    flex-direction: column;
+                }
+
+                .jenjum-article-img {
+                    width: 100%;
+                    height: auto;
+                    aspect-ratio: 4/3;
+                }
+            }
+        </style>
+    </main>
+
+    <div id="site-footer"></div>
+
+    <script type="module" src="/js/include.js"></script>
+
+</body>
+
+</html>

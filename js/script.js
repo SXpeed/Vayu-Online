@@ -82,32 +82,6 @@ const catData = {
     materials: { title: 'Materials', img: '/assets/images/cat_textiles.jpg', subs: ['Brass', 'Wood', 'Marble', 'Murano Glass', 'Ceramic', 'Textile'] }
 };
 
-const subDescMap = {
-    men: 'Contemporary menswear crafted with natural fabrics and artisanal detailing.',
-    women: 'Elegant womenswear exploring heritage textiles with modern silhouettes.',
-    accessories: 'Handcrafted bags, belts and finishing touches for the considered wardrobe.',
-    seating: 'Hand-carved chairs, lounges and benches in solid teak and cane.',
-    'coffee-tables': 'Sculptural coffee tables centred on material and craft.',
-    'side-tables': 'Compact side tables for everyday use and display.',
-    'console-tables': 'Slim console tables for entries and corridors.',
-    tableware: 'Plates, bowls and serving pieces for the considered table.',
-    drinkware: 'Glassware and cups for every pour and occasion.',
-    serveware: 'Boards, platters and servers for graceful hosting.',
-    'home-linen': 'Block-printed and hand-woven linens for bed, bath and table.',
-    lighting: 'Ambient lamps and luminaires casting a warm, living glow.',
-    artifacts: 'Sculptural objects and curiosities with cultural resonance.',
-    'wall-art': 'Framed works and wall pieces from emerging Indian artists.',
-    vases: 'Vessels in ceramic, brass and glass for stems and stems alone.',
-    bowls: 'Decorative and functional bowls in marble, wood and ceramic.',
-    'candle-holders': 'Candle holders and lanterns in brass and clay.',
-    brass: 'Hand-finished brassware from traditional foundries.',
-    wood: 'Solid-wood pieces celebrating grain, joinery and patina.',
-    marble: 'Carved marble and stone from Rajasthan workshops.',
-    'murano-glass': 'Hand-blown Murano glass with luminous colour.',
-    ceramic: 'Wheel-thrown and glazed ceramics for home and table.',
-    textile: 'Hand-loomed and block-printed textiles from across India.'
-};
-
 const slugToSub = (slug) => {
     if (!slug) return '';
     return slug.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
@@ -115,24 +89,20 @@ const slugToSub = (slug) => {
 
 const subToSlug = (s) => s.toLowerCase().replace(/\s+/g, '-');
 
-const collTitle = document.getElementById('collTitle');
-const collDesc = document.getElementById('collDesc');
+const collectionGrid = document.getElementById('collectionGrid');
 const crumbCategory = document.getElementById('crumbCategory');
 const crumbSub = document.getElementById('crumbSub');
 const crumbSep = document.getElementById('crumbSep');
 
-if (collTitle) {
+if (collectionGrid) {
     const params = new URLSearchParams(location.search);
     const cat = (params.get('cat') || '').toLowerCase();
     const sub = (params.get('sub') || '').toLowerCase();
     const catInfo = catData[cat];
 
     if (catInfo) {
-        collTitle.textContent = catInfo.title;
         if (sub) {
             const subLabel = slugToSub(sub);
-            collTitle.textContent = subLabel;
-            collDesc.textContent = subDescMap[sub] || `${catInfo.title} — curated pieces.`;
             if (crumbCategory) {
                 crumbCategory.textContent = catInfo.title;
                 crumbCategory.style.color = '#8a8a86';
@@ -140,41 +110,142 @@ if (collTitle) {
             }
             if (crumbSub) { crumbSub.textContent = subLabel; crumbSub.style.display = 'inline'; }
             if (crumbSep) crumbSep.style.display = 'inline';
+            document.title = `${subLabel} — Vayu`;
         } else {
-            collDesc.textContent = `Curated pieces across ${catInfo.subs.join(', ').toLowerCase()}.`;
             if (crumbCategory) crumbCategory.textContent = catInfo.title;
+            document.title = `${catInfo.title} — Vayu`;
         }
-        document.title = `${collTitle.textContent} — Vayu`;
 
         // Update hero banner image
         const catHeroImg = document.getElementById('catHeroImg');
         if (catHeroImg) catHeroImg.src = catInfo.img;
 
-        // Inject sub-nav pills
+        // Inject sub-nav pills ("All" first → full category, then sub filters)
         const subNav = document.getElementById('subNav');
         if (subNav) {
-            subNav.innerHTML = catInfo.subs.map(s => {
+            const allPill = `<a href="/pages/collection-detail.html?cat=${cat}" class="sub-pill${sub ? '' : ' active'}">All</a>`;
+            subNav.innerHTML = allPill + catInfo.subs.map(s => {
                 const slug = subToSlug(s);
                 const isActive = sub === slug ? ' active' : '';
                 return `<a href="/pages/collection-detail.html?cat=${cat}&sub=${slug}" class="sub-pill${isActive}">${s}</a>`;
             }).join('');
         }
 
-        // Inject sub-category cards into the grid
+        // ===== Product catalogue (shared data) =====
+        const productData = {
+            fashion: [
+                { name: 'Sanganer Silk Stole', price: '₹ 3,200', img: '/assets/images/prod_throw.jpg', sub: 'women', isNew: true },
+                { name: 'Heritage Linen Kurta', price: '₹ 5,400', img: '/assets/images/cat_apparel.jpg', sub: 'men' },
+                { name: 'Handwoven Wool Shawl', price: '₹ 4,100', img: '/assets/images/cat_textiles.jpg', sub: 'women' },
+                { name: 'Brass Cuff Bracelet', price: '₹ 2,800', img: '/assets/images/cat_jewelry.jpg', sub: 'accessories', isNew: true },
+                { name: 'Black Obsidian Lamp', price: '₹ 14,500', img: '/assets/images/black_lamp.png', sub: 'accessories' }
+            ],
+            furniture: [
+                { name: 'Teakwood Lounge Chair', price: '₹ 24,500', img: '/assets/images/prod_chair.jpg', sub: 'seating', isNew: true },
+                { name: 'Carved Console Table', price: '₹ 32,000', img: '/assets/images/cat_furniture.jpg', sub: 'console-tables' },
+                { name: 'Stone-Top Coffee Table', price: '₹ 28,400', img: '/assets/images/curated.jpg', sub: 'coffee-tables' },
+                { name: 'Cane Side Table', price: '₹ 12,900', img: '/assets/images/cat_objects.jpg', sub: 'side-tables' }
+            ],
+            home: [
+                { name: 'Ceramic Dinner Plate Set', price: '₹ 6,200', img: '/assets/images/banner_plate.jpg', sub: 'tableware' },
+                { name: 'Murano Glassware Pair', price: '₹ 7,800', img: '/assets/images/card_glassware.jpg', sub: 'drinkware', isNew: true },
+                { name: 'Lotus Urli Lamp', price: '₹ 6,900', img: '/assets/images/prod_lamp.jpg', sub: 'lighting' },
+                { name: 'Raga Crimson Floor Lamp', price: '₹ 38,500', img: '/assets/images/prod_red_lamp.jpg', sub: 'lighting', isNew: true }
+            ],
+            decor: [
+                { name: 'Terracotta Ritual Vase', price: '₹ 4,600', img: '/assets/images/hero_vase.jpg', sub: 'vases' },
+                { name: 'Bronze Sculpture Study', price: '₹ 15,200', img: '/assets/images/card_sculpture.jpg', sub: 'artifacts', isNew: true },
+                { name: 'Ritual Candle Stand', price: '₹ 3,400', img: '/assets/images/card_ritual.jpg', sub: 'candle-holders' },
+                { name: 'Framed Miniature Art', price: '₹ 9,800', img: '/assets/images/cat_art.jpg', sub: 'wall-art' }
+            ],
+            materials: [
+                { name: 'Hand-Beaten Brass Bowl', price: '₹ 3,900', img: '/assets/images/cat_objects.jpg', sub: 'brass' },
+                { name: 'Marble Serving Board', price: '₹ 5,600', img: '/assets/images/curated.jpg', sub: 'marble', isNew: true },
+                { name: 'Murano Glass Vessel', price: '₹ 8,200', img: '/assets/images/card_glassware.jpg', sub: 'murano-glass' },
+                { name: 'Block-Print Textile Panel', price: '₹ 2,900', img: '/assets/images/cat_textiles.jpg', sub: 'textile' }
+            ]
+        };
+
+        // Extract numeric price from formatted string (e.g. "₹ 3,200" → 3200)
+        const parsePrice = (str) => Number(str.replace(/[^\d]/g, '')) || 0;
+
+        // Sort comparators keyed by the data-sort attribute
+        const sortComparators = {
+            'featured': () => 0,
+            'new-arrivals': (a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0),
+            'price-asc': (a, b) => parsePrice(a.price) - parsePrice(b.price),
+            'price-desc': (a, b) => parsePrice(b.price) - parsePrice(a.price)
+        };
+
+        // Reusable product-card template
+        const productCardHTML = (p) => `<a class="product" href="/pages/product.html">
+                <button class="wish-btn" aria-label="Add to Wishlist" onclick="event.preventDefault()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                </button>
+                <div class="ph"><img src="${p.img}" alt="${p.name}"></div>
+                <div class="product-info">
+                    <div>
+                        <h3>${p.name}</h3>
+                        <div class="price">${p.price}</div>
+                    </div>
+                    <button class="cart-btn" aria-label="Add to Cart" onclick="event.preventDefault()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+                    </button>
+                </div>
+            </a>`;
+
+        const emptyStateHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 80px 16px; color: var(--body); font-family: 'Jost', sans-serif; font-size: 14px; letter-spacing: 0.04em;">No pieces listed yet in this collection.<br>New arrivals coming soon.</div>`;
+
         const subGrid = document.getElementById('subGrid');
-        if (subGrid) {
-            if (sub) {
-                subGrid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 80px 16px; color: var(--body); font-family: 'Jost', sans-serif; font-size: 14px; letter-spacing: 0.04em;">No pieces listed yet in this collection.<br>New arrivals coming soon.</div>`;
-            } else {
-                subGrid.innerHTML = catInfo.subs.map(s => {
-                    const slug = subToSlug(s);
-                    return `<a class="curated-card" href="/pages/collection-detail.html?cat=${cat}&sub=${slug}">
-                        <img src="${catInfo.img}" alt="${s}">
-                        <div class="card-overlay"><span>${s.toUpperCase()}</span></div>
-                    </a>`;
-                }).join('');
-            }
+        const sortTrigger = document.getElementById('sortTrigger');
+        const sortMenu = document.getElementById('sortMenu');
+        const sortLabel = document.getElementById('sortLabel');
+
+        let currentSort = 'featured';
+
+        // Sort dropdown open/close
+        if (sortTrigger && sortMenu) {
+            const toggleMenu = (force) => {
+                const show = force !== undefined ? force : sortMenu.style.display === 'none';
+                sortMenu.style.display = show ? 'block' : 'none';
+            };
+            sortTrigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleMenu();
+            });
+            // Close on outside click
+            document.addEventListener('click', () => toggleMenu(false));
+            sortMenu.addEventListener('click', (e) => e.stopPropagation());
+
+            // Option selection
+            sortMenu.querySelectorAll('.sort-option').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentSort = btn.dataset.sort;
+                    if (sortLabel) sortLabel.textContent = btn.textContent;
+                    sortMenu.querySelectorAll('.sort-option').forEach(o => o.style.fontWeight = '400');
+                    btn.style.fontWeight = '600';
+                    toggleMenu(false);
+                    renderGrid();
+                });
+            });
         }
+
+        // Render (and re-render on sort change)
+        function renderGrid() {
+            if (!subGrid) return;
+            const all = productData[cat] || [];
+            const items = sub ? all.filter(p => p.sub === sub) : all;
+            subGrid.className = 'prod-grid';
+            if (!items.length) {
+                subGrid.innerHTML = emptyStateHTML;
+                return;
+            }
+            const comparator = sortComparators[currentSort] || sortComparators.featured;
+            const sorted = [...items].sort(comparator);
+            subGrid.innerHTML = sorted.map(productCardHTML).join('');
+        }
+
+        renderGrid();
     }
 }
 
