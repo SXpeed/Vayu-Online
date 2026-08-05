@@ -28,33 +28,28 @@
             <span id="crumbSub" style="display:none;">Sub</span>
         </nav>
         <div class="collection-banner-219"
-            style="width: 100%; aspect-ratio: 21 / 9; max-height: 380px; overflow: hidden; border-radius: 2px; margin-bottom: 16px; position: relative;">
+            style="width: 100%; aspect-ratio: 21 / 9; max-height: 380px; overflow: hidden; border-radius: 2px; margin-bottom: 4px; position: relative;">
             <img id="catHeroImg" src="/assets/images/hero.jpg" alt="Collection Banner"
                 style="width: 100%; height: 100%; object-fit: cover;">
         </div>
-        <div class="collection-controls-bar"
-            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
-            <div id="subNav" class="sub-nav" style="display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;">
+
+        <!-- page-header: same styled card as the collection page (title + sort) -->
+        <div class="page-header">
+            <h1 id="catTitle">Collection</h1>
+            <div class="ctrl-group">
+                <label for="collection-sort">Sort</label>
+                <select id="collection-sort">
+                    <option value="featured">Featured</option>
+                    <option value="new-arrivals">New Arrivals</option>
+                    <option value="price-asc">Price: Low to High</option>
+                    <option value="price-desc">Price: High to Low</option>
+                </select>
             </div>
-            <div class="sort-dropdown" id="sortDropdown"
-                style="position: relative; font-size: 13px; color: var(--body); white-space: nowrap; margin-left: auto;">
-                <button class="sort-trigger" id="sortTrigger" type="button"
-                    style="display: flex; align-items: center; gap: 6px; cursor: pointer; background: none; border: none; color: inherit; font-family: inherit; font-size: inherit; letter-spacing: inherit; padding: 0;">
-                    Sort by: <span id="sortLabel">Featured</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="1.5">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                </button>
-                <ul class="sort-menu" id="sortMenu"
-                    style="display: none; position: absolute; right: 0; top: calc(100% + 6px); list-style: none; margin: 0; padding: 6px 0; min-width: 180px; background: #fff; border: 1px solid var(--line); border-radius: 4px; box-shadow: 0 6px 18px rgba(0,0,0,.08); z-index: 40;">
-                    <li><button class="sort-option" data-sort="featured" type="button">Featured</button></li>
-                    <li><button class="sort-option" data-sort="new-arrivals" type="button">New Arrivals</button></li>
-                    <li><button class="sort-option" data-sort="price-asc" type="button">Price: Low to High</button></li>
-                    <li><button class="sort-option" data-sort="price-desc" type="button">Price: High to Low</button>
-                    </li>
-                </ul>
-            </div>
+        </div>
+
+        <!-- sub-nav pills live below the header bar -->
+        <div id="subNav" class="sub-nav"
+            style="display: flex; gap: 8px; margin-bottom: 4px; overflow-x: auto; scrollbar-width: none;">
         </div>
 
         <!-- PRODUCT GRID -->
@@ -86,30 +81,6 @@
                 background: var(--ink);
                 color: #fff;
                 border-color: var(--ink);
-            }
-
-            .sort-menu .sort-option {
-                display: block;
-                width: 100%;
-                padding: 8px 16px;
-                font-family: 'Jost', sans-serif;
-                font-size: 13px;
-                color: var(--body);
-                background: none;
-                border: none;
-                cursor: pointer;
-                text-align: left;
-                letter-spacing: 0.04em;
-                transition: background 0.15s ease, color 0.15s ease;
-            }
-
-            .sort-menu .sort-option:hover {
-                background: rgba(0, 0, 0, 0.04);
-                color: var(--ink);
-            }
-
-            .sort-menu .sort-option[data-sort="featured"] {
-                font-weight: 600;
             }
         </style>
     </main>

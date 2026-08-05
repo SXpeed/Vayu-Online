@@ -75,11 +75,11 @@ if (mobileMenuOverlay) {
 
 // ===== Collection Detail Dynamic Page =====
 const catData = {
-    fashion: { title: 'Fashion', img: '/assets/images/cat_apparel.jpg', subs: ['Men', 'Women', 'Accessories'] },
-    furniture: { title: 'Furniture', img: '/assets/images/cat_furniture.jpg', subs: ['Seating', 'Coffee Tables', 'Side Tables', 'Console Tables'] },
-    home: { title: 'Home', img: '/assets/images/cat_tableware.jpg', subs: ['Tableware', 'Drinkware', 'Serveware', 'Home Linen', 'Lighting'] },
-    decor: { title: 'Decor', img: '/assets/images/cat_art.jpg', subs: ['Artifacts', 'Wall Art', 'Vases', 'Bowls', 'Candle Holders'] },
-    materials: { title: 'Materials', img: '/assets/images/cat_textiles.jpg', subs: ['Brass', 'Wood', 'Marble', 'Murano Glass', 'Ceramic', 'Textile'] }
+    fashion: { title: 'Fashion', img: '/assets/images/banner_fashion_21_9.png?v=2', subs: ['Men', 'Women', 'Accessories'] },
+    furniture: { title: 'Furniture', img: '/assets/images/banner_furniture_21_9.png?v=2', subs: ['Seating', 'Coffee Tables', 'Side Tables', 'Console Tables'] },
+    home: { title: 'Home', img: '/assets/images/banner_home_21_9.png?v=2', subs: ['Tableware', 'Drinkware', 'Serveware', 'Home Linen', 'Lighting'] },
+    decor: { title: 'Decor', img: '/assets/images/banner_decor_21_9.png?v=2', subs: ['Artifacts', 'Wall Art', 'Vases', 'Bowls', 'Candle Holders'] },
+    materials: { title: 'Materials', img: '/assets/images/banner_materials_21_9.png?v=2', subs: ['Brass', 'Wood', 'Marble', 'Murano Glass', 'Ceramic', 'Textile'] }
 };
 
 const slugToSub = (slug) => {
@@ -101,6 +101,8 @@ if (collectionGrid) {
     const catInfo = catData[cat];
 
     if (catInfo) {
+        // Dynamic page header title (matches the collection page's styled card)
+        const catTitle = document.getElementById('catTitle');
         if (sub) {
             const subLabel = slugToSub(sub);
             if (crumbCategory) {
@@ -111,9 +113,11 @@ if (collectionGrid) {
             if (crumbSub) { crumbSub.textContent = subLabel; crumbSub.style.display = 'inline'; }
             if (crumbSep) crumbSep.style.display = 'inline';
             document.title = `${subLabel} — Vayu`;
+            if (catTitle) catTitle.textContent = subLabel;
         } else {
             if (crumbCategory) crumbCategory.textContent = catInfo.title;
             document.title = `${catInfo.title} — Vayu`;
+            if (catTitle) catTitle.textContent = catInfo.title;
         }
 
         // Update hero banner image
@@ -134,35 +138,35 @@ if (collectionGrid) {
         // ===== Product catalogue (shared data) =====
         const productData = {
             fashion: [
-                { name: 'Sanganer Silk Stole', price: '₹ 3,200', img: '/assets/images/prod_throw.jpg', sub: 'women', isNew: true },
-                { name: 'Heritage Linen Kurta', price: '₹ 5,400', img: '/assets/images/cat_apparel.jpg', sub: 'men' },
-                { name: 'Handwoven Wool Shawl', price: '₹ 4,100', img: '/assets/images/cat_textiles.jpg', sub: 'women' },
-                { name: 'Brass Cuff Bracelet', price: '₹ 2,800', img: '/assets/images/cat_jewelry.jpg', sub: 'accessories', isNew: true },
+                { name: 'Sanganer Silk Stole', price: '₹ 3,200', img: '/assets/images/prod_silk_stole.png', sub: 'women', isNew: true },
+                { name: 'Heritage Linen Kurta', price: '₹ 5,400', img: '/assets/images/prod_linen_kurta.png', sub: 'men' },
+                { name: 'Handwoven Wool Shawl', price: '₹ 4,100', img: '/assets/images/prod_wool_shawl.png', sub: 'women' },
+                { name: 'Brass Cuff Bracelet', price: '₹ 2,800', img: '/assets/images/prod_brass_cuff.png', sub: 'accessories', isNew: true },
                 { name: 'Black Obsidian Lamp', price: '₹ 14,500', img: '/assets/images/black_lamp.png', sub: 'accessories' }
             ],
             furniture: [
-                { name: 'Teakwood Lounge Chair', price: '₹ 24,500', img: '/assets/images/prod_chair.jpg', sub: 'seating', isNew: true },
-                { name: 'Carved Console Table', price: '₹ 32,000', img: '/assets/images/cat_furniture.jpg', sub: 'console-tables' },
-                { name: 'Stone-Top Coffee Table', price: '₹ 28,400', img: '/assets/images/curated.jpg', sub: 'coffee-tables' },
-                { name: 'Cane Side Table', price: '₹ 12,900', img: '/assets/images/cat_objects.jpg', sub: 'side-tables' }
+                { name: 'Teakwood Lounge Chair', price: '₹ 24,500', img: '/assets/images/prod_teak_chair.png', sub: 'seating', isNew: true },
+                { name: 'Carved Console Table', price: '₹ 32,000', img: '/assets/images/prod_console_table.png', sub: 'console-tables' },
+                { name: 'Stone-Top Coffee Table', price: '₹ 28,400', img: '/assets/images/prod_stone_coffee_table.png', sub: 'coffee-tables' },
+                { name: 'Cane Side Table', price: '₹ 12,900', img: '/assets/images/prod_cane_side_table.png', sub: 'side-tables' }
             ],
             home: [
-                { name: 'Ceramic Dinner Plate Set', price: '₹ 6,200', img: '/assets/images/banner_plate.jpg', sub: 'tableware' },
-                { name: 'Murano Glassware Pair', price: '₹ 7,800', img: '/assets/images/card_glassware.jpg', sub: 'drinkware', isNew: true },
-                { name: 'Lotus Urli Lamp', price: '₹ 6,900', img: '/assets/images/prod_lamp.jpg', sub: 'lighting' },
-                { name: 'Raga Crimson Floor Lamp', price: '₹ 38,500', img: '/assets/images/prod_red_lamp.jpg', sub: 'lighting', isNew: true }
+                { name: 'Ceramic Dinner Plate Set', price: '₹ 6,200', img: '/assets/images/prod_ceramic_plate_set.png', sub: 'tableware' },
+                { name: 'Murano Glassware Pair', price: '₹ 7,800', img: '/assets/images/prod_murano_glassware.png', sub: 'drinkware', isNew: true },
+                { name: 'Lotus Urli Lamp', price: '₹ 6,900', img: '/assets/images/prod_lotus_urli_lamp.png', sub: 'lighting' },
+                { name: 'Raga Crimson Floor Lamp', price: '₹ 38,500', img: '/assets/images/prod_crimson_floor_lamp.png', sub: 'lighting', isNew: true }
             ],
             decor: [
-                { name: 'Terracotta Ritual Vase', price: '₹ 4,600', img: '/assets/images/hero_vase.jpg', sub: 'vases' },
-                { name: 'Bronze Sculpture Study', price: '₹ 15,200', img: '/assets/images/card_sculpture.jpg', sub: 'artifacts', isNew: true },
-                { name: 'Ritual Candle Stand', price: '₹ 3,400', img: '/assets/images/card_ritual.jpg', sub: 'candle-holders' },
-                { name: 'Framed Miniature Art', price: '₹ 9,800', img: '/assets/images/cat_art.jpg', sub: 'wall-art' }
+                { name: 'Terracotta Ritual Vase', price: '₹ 4,600', img: '/assets/images/prod_terracotta_vase.png', sub: 'vases' },
+                { name: 'Bronze Sculpture Study', price: '₹ 15,200', img: '/assets/images/cat_objects.png', sub: 'artifacts', isNew: true },
+                { name: 'Ritual Candle Stand', price: '₹ 3,400', img: '/assets/images/cat_objects.png', sub: 'candle-holders' },
+                { name: 'Framed Miniature Art', price: '₹ 9,800', img: '/assets/images/cat_art.png', sub: 'wall-art' }
             ],
             materials: [
-                { name: 'Hand-Beaten Brass Bowl', price: '₹ 3,900', img: '/assets/images/cat_objects.jpg', sub: 'brass' },
-                { name: 'Marble Serving Board', price: '₹ 5,600', img: '/assets/images/curated.jpg', sub: 'marble', isNew: true },
-                { name: 'Murano Glass Vessel', price: '₹ 8,200', img: '/assets/images/card_glassware.jpg', sub: 'murano-glass' },
-                { name: 'Block-Print Textile Panel', price: '₹ 2,900', img: '/assets/images/cat_textiles.jpg', sub: 'textile' }
+                { name: 'Hand-Beaten Brass Bowl', price: '₹ 3,900', img: '/assets/images/cat_objects.png', sub: 'brass' },
+                { name: 'Marble Serving Board', price: '₹ 5,600', img: '/assets/images/prod_stone_coffee_table.png', sub: 'marble', isNew: true },
+                { name: 'Murano Glass Vessel', price: '₹ 8,200', img: '/assets/images/prod_murano_glassware.png', sub: 'murano-glass' },
+                { name: 'Block-Print Textile Panel', price: '₹ 2,900', img: '/assets/images/prod_silk_stole.png', sub: 'textile' }
             ]
         };
 
@@ -178,7 +182,7 @@ if (collectionGrid) {
         };
 
         // Reusable product-card template
-        const productCardHTML = (p) => `<a class="product" href="/pages/product.html">
+        const productCardHTML = (p) => `<a class="product" href="/pages/product.html?cat=${cat}&idx=${p._idx}">
                 <button class="wish-btn" aria-label="Add to Wishlist" onclick="event.preventDefault()">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
                 </button>
@@ -197,36 +201,15 @@ if (collectionGrid) {
         const emptyStateHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 80px 16px; color: var(--body); font-family: 'Jost', sans-serif; font-size: 14px; letter-spacing: 0.04em;">No pieces listed yet in this collection.<br>New arrivals coming soon.</div>`;
 
         const subGrid = document.getElementById('subGrid');
-        const sortTrigger = document.getElementById('sortTrigger');
-        const sortMenu = document.getElementById('sortMenu');
-        const sortLabel = document.getElementById('sortLabel');
+        const sortSelect = document.getElementById('collection-sort');
 
         let currentSort = 'featured';
 
-        // Sort dropdown open/close
-        if (sortTrigger && sortMenu) {
-            const toggleMenu = (force) => {
-                const show = force !== undefined ? force : sortMenu.style.display === 'none';
-                sortMenu.style.display = show ? 'block' : 'none';
-            };
-            sortTrigger.addEventListener('click', (e) => {
-                e.stopPropagation();
-                toggleMenu();
-            });
-            // Close on outside click
-            document.addEventListener('click', () => toggleMenu(false));
-            sortMenu.addEventListener('click', (e) => e.stopPropagation());
-
-            // Option selection
-            sortMenu.querySelectorAll('.sort-option').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    currentSort = btn.dataset.sort;
-                    if (sortLabel) sortLabel.textContent = btn.textContent;
-                    sortMenu.querySelectorAll('.sort-option').forEach(o => o.style.fontWeight = '400');
-                    btn.style.fontWeight = '600';
-                    toggleMenu(false);
-                    renderGrid();
-                });
+        // Sort select (native dropdown, same UI as the collection page)
+        if (sortSelect) {
+            sortSelect.addEventListener('change', () => {
+                currentSort = sortSelect.value || 'featured';
+                renderGrid();
             });
         }
 
@@ -241,7 +224,7 @@ if (collectionGrid) {
                 return;
             }
             const comparator = sortComparators[currentSort] || sortComparators.featured;
-            const sorted = [...items].sort(comparator);
+            const sorted = [...items].map((p, i) => ({ ...p, _idx: all.indexOf(p) })).sort(comparator);
             subGrid.innerHTML = sorted.map(productCardHTML).join('');
         }
 
@@ -272,4 +255,45 @@ if (collectionGrid) {
         el.classList.add('reveal');
         io.observe(el);
     });
+})();
+
+// ===== Cart & Wishlist header badges =====
+// Reads localStorage directly (same keys as js/shop.js) since this script is not a module.
+(() => {
+    const CART_KEY = 'vayu_cart';
+    const WISH_KEY = 'vayu_wishlist';
+
+    function getCartCount() {
+        try {
+            const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
+            return cart.reduce((n, p) => n + (p.qty || 1), 0);
+        } catch { return 0; }
+    }
+
+    function getWishlistCount() {
+        try {
+            return (JSON.parse(localStorage.getItem(WISH_KEY)) || []).length;
+        } catch { return 0; }
+    }
+
+    function updateBadges() {
+        const cartBadge = document.getElementById('cartCount');
+        const wishBadge = document.getElementById('wishCount');
+        const cartCount = getCartCount();
+        const wishCount = getWishlistCount();
+        if (cartBadge) {
+            cartBadge.textContent = cartCount > 0 ? cartCount : '';
+            cartBadge.style.display = cartCount > 0 ? 'flex' : 'none';
+        }
+        if (wishBadge) {
+            wishBadge.textContent = wishCount > 0 ? wishCount : '';
+            wishBadge.style.display = wishCount > 0 ? 'flex' : 'none';
+        }
+    }
+
+    // Run now and when cart/wishlist changes
+    updateBadges();
+    window.addEventListener('vayu:cart-changed', updateBadges);
+    window.addEventListener('vayu:wishlist-changed', updateBadges);
+    window.addEventListener('storage', updateBadges);
 })();

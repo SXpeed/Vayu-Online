@@ -11,12 +11,24 @@ const inject = async (id, file) => {
     slot.outerHTML = await res.text();
 };
 
+// Load header and footer in parallel for faster page load
 try {
-    await inject('site-header', '/partials/header.html');
-    await inject('site-footer', '/partials/footer.html');
+    await Promise.all([
+        inject('site-header', '/partials/header.html'),
+        inject('site-footer', '/partials/footer.html')
+    ]);
 } catch (err) {
     console.error('Could not load shared header/footer. Serve the site over HTTP (Live Server), not file://.', err);
 }
+
+// Remove any leftover page-transitioning class (fixes back/forward cache issue
+// where body stays at opacity:0 after navigating back to a page)
+document.body.classList.remove('page-transitioning');
+window.addEventListener('pageshow', (e) => {
+    if (e.persisted) {
+        document.body.classList.remove('page-transitioning');
+    }
+});
 
 // highlight the current page in the desktop menu and mobile bottom nav
 const page = location.pathname.split('/').pop() || 'index.html';

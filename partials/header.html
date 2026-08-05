@@ -64,7 +64,7 @@
         </div>
       </li>
       <li><a href="/pages/collection.html">COLLECTION</a></li>
-      <li><a href="/pages/about.html">ARTISANS</a></li>
+      <li><a href="/pages/makers.html">ARTISANS</a></li>
       <li><a href="/pages/gallery.html">GALLERY</a></li>
       <li><a href="/pages/journal.html">JOURNAL</a></li>
       <li><a href="/pages/about.html">ABOUT</a></li>
@@ -76,11 +76,19 @@
           <path d="M21 21l-4.5-4.5" />
         </svg>
       </button>
-      <button aria-label="Cart" onclick="window.location.href='/pages/cart.html'">
+      <button aria-label="Wishlist" onclick="window.location.href='/pages/wishlist.html'" style="position:relative;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path
+            d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+        </svg>
+        <span class="icon-badge" id="wishCount" style="display:none;"></span>
+      </button>
+      <button aria-label="Cart" onclick="window.location.href='/pages/cart.html'" style="position:relative;">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M6 7h12l-1 13H7L6 7z" />
           <path d="M9 9V6a3 3 0 016 0v3" />
         </svg>
+        <span class="icon-badge" id="cartCount" style="display:none;"></span>
       </button>
     </div>
   </nav>

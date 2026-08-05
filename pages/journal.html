@@ -5,51 +5,811 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Journal — Vayu</title>
+  <meta name="description"
+    content="Stories of craft, heritage and mindful living. Insights into natural materials, artisan traditions and the philosophy behind Vayu's curated collection.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&family=Pinyon+Script&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&family=Pinyon+Script&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="/css/styles.css?v=20">
+  <style>
+    /* ---- Journal page-specific styles ---- */
+
+    .journal-page {
+      padding-bottom: 80px;
+    }
+
+    /* --- Hero banner --- */
+    .journal-hero {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 21 / 8;
+      overflow: hidden;
+      margin-bottom: 48px;
+    }
+
+    .journal-hero img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .journal-hero:hover img {
+      transform: scale(1.03);
+    }
+
+    .journal-hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top,
+          rgba(20, 18, 16, 0.82) 0%,
+          rgba(20, 18, 16, 0.25) 45%,
+          rgba(20, 18, 16, 0.08) 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: clamp(24px, 5vw, 56px);
+    }
+
+    .journal-hero-kicker {
+      font-family: 'Jost', sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-weight: 500;
+      margin-bottom: 10px;
+    }
+
+    .journal-hero-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(32px, 5vw, 64px);
+      color: #FFFFFF;
+      font-weight: 300;
+      line-height: 1.05;
+      letter-spacing: 0.02em;
+      max-width: 14em;
+      margin-bottom: 10px;
+    }
+
+    .journal-hero-sub {
+      font-family: 'Jost', sans-serif;
+      font-size: clamp(13px, 1.1vw, 16px);
+      color: rgba(255, 255, 255, 0.72);
+      font-weight: 300;
+      max-width: 38em;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 768px) {
+      .journal-hero {
+        aspect-ratio: 4 / 3;
+        margin-bottom: 24px;
+      }
+    }
+
+    /* --- Filter pills --- */
+    .journal-filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 36px;
+      padding: 0 16px;
+    }
+
+    .journal-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 20px;
+      background: #FAF8F5;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .journal-pill:hover,
+    .journal-pill.active {
+      background: var(--ink);
+      color: #FFFFFF;
+    }
+
+    @media (max-width: 768px) {
+      .journal-filters {
+        padding: 0 4px;
+        gap: 6px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .journal-filters::-webkit-scrollbar {
+        display: none;
+      }
+
+      .journal-pill {
+        flex-shrink: 0;
+        padding: 7px 16px;
+        font-size: 11px;
+      }
+    }
+
+    /* --- Featured article (large) --- */
+    .journal-featured {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: clamp(24px, 4vw, 48px);
+      align-items: center;
+      margin-bottom: 56px;
+      padding: 0 16px;
+    }
+
+    .journal-featured-img {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+    }
+
+    .journal-featured-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .journal-featured:hover .journal-featured-img img {
+      transform: scale(1.04);
+    }
+
+    .journal-featured-badge {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      background: rgba(20, 18, 16, 0.7);
+      backdrop-filter: blur(6px);
+      padding: 5px 12px;
+      font-family: 'Jost', sans-serif;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: #FBF9F5;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    .journal-featured-content {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .journal-featured-cat {
+      font-family: 'Jost', sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 500;
+      margin-bottom: 14px;
+    }
+
+    .journal-featured-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(28px, 2.8vw, 42px);
+      color: var(--ink);
+      font-weight: 400;
+      line-height: 1.15;
+      margin-bottom: 18px;
+      transition: color 0.25s ease;
+    }
+
+    .journal-featured:hover .journal-featured-title {
+      color: var(--gold);
+    }
+
+    .journal-featured-excerpt {
+      font-size: clamp(14px, 1.05vw, 16px);
+      color: var(--body);
+      line-height: 1.75;
+      margin-bottom: 24px;
+      max-width: 32em;
+    }
+
+    .journal-featured-date {
+      font-size: 12px;
+      color: #8A8A84;
+      letter-spacing: 0.06em;
+      margin-bottom: 20px;
+    }
+
+    .journal-read-link {
+      font-family: 'Jost', sans-serif;
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ink);
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: color 0.25s ease, transform 0.25s ease;
+    }
+
+    .journal-read-link:hover {
+      color: var(--accent);
+      transform: translateX(4px);
+    }
+
+    .journal-read-link svg {
+      width: 16px;
+      height: 16px;
+      transition: transform 0.25s ease;
+    }
+
+    .journal-read-link:hover svg {
+      transform: translateX(3px);
+    }
+
+    @media (max-width: 768px) {
+      .journal-featured {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        padding: 0 4px;
+        margin-bottom: 36px;
+      }
+
+      .journal-featured-img {
+        aspect-ratio: 16 / 10;
+      }
+
+      .journal-featured-title {
+        font-size: 26px;
+      }
+
+      .journal-featured-excerpt {
+        font-size: 14px;
+        margin-bottom: 16px;
+      }
+    }
+
+    /* --- Article grid --- */
+    .journal-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 28px;
+      margin-bottom: 56px;
+      padding: 0 16px;
+    }
+
+    .journal-card {
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+    }
+
+    .journal-card-img {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .journal-card-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), filter 0.7s ease;
+    }
+
+    .journal-card:hover .journal-card-img img {
+      transform: scale(1.05);
+      filter: brightness(1.04);
+    }
+
+    .journal-card-cat {
+      font-family: 'Jost', sans-serif;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .journal-card-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(20px, 1.6vw, 24px);
+      color: var(--ink);
+      font-weight: 400;
+      line-height: 1.2;
+      margin-bottom: 10px;
+      transition: color 0.25s ease;
+    }
+
+    .journal-card:hover .journal-card-title {
+      color: var(--gold);
+    }
+
+    .journal-card-excerpt {
+      font-size: 13.5px;
+      color: var(--body);
+      line-height: 1.6;
+      margin-bottom: 14px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .journal-card-meta {
+      margin-top: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .journal-card-date {
+      font-size: 11.5px;
+      color: #8A8A84;
+      letter-spacing: 0.04em;
+    }
+
+    .journal-card-arrow {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      color: var(--ink);
+      transition: transform 0.25s ease, color 0.25s ease;
+    }
+
+    .journal-card:hover .journal-card-arrow {
+      color: var(--gold);
+      transform: translateX(3px);
+    }
+
+    @media (max-width: 900px) {
+      .journal-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .journal-grid {
+        grid-template-columns: 1fr;
+        gap: 0;
+        padding: 0 4px;
+      }
+
+      .journal-card {
+        flex-direction: row;
+        gap: 14px;
+        align-items: center;
+        padding: 16px 0;
+      }
+
+      .journal-card-img {
+        flex: 0 0 110px;
+        width: 110px;
+        aspect-ratio: 1 / 1;
+        margin-bottom: 0;
+      }
+
+      .journal-card-content {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .journal-card-title {
+        font-size: 18px;
+        margin-bottom: 6px;
+      }
+
+      .journal-card-excerpt {
+        font-size: 12.5px;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        margin-bottom: 8px;
+      }
+
+      .journal-card-meta {
+        margin-top: 0;
+      }
+    }
+
+    /* --- Press / News in the press --- */
+    .press-section {
+      margin-bottom: 56px;
+      padding: 0 16px;
+    }
+
+    .press-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .press-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      aspect-ratio: 4 / 3;
+      cursor: pointer;
+    }
+
+    .press-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .press-card:hover img {
+      transform: scale(1.05);
+    }
+
+    .press-card-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top,
+          rgba(20, 18, 16, 0.80) 0%,
+          rgba(20, 18, 16, 0.15) 50%,
+          transparent 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: clamp(16px, 2.5vw, 28px);
+      transition: background 0.3s ease;
+    }
+
+    .press-card:hover .press-card-overlay {
+      background: linear-gradient(to top,
+          rgba(20, 18, 16, 0.68) 0%,
+          rgba(20, 18, 16, 0.10) 50%,
+          transparent 100%);
+    }
+
+    .press-source {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(22px, 2vw, 30px);
+      color: #FFFFFF;
+      font-weight: 400;
+      letter-spacing: 0.02em;
+      margin-bottom: 6px;
+      line-height: 1.15;
+    }
+
+    .press-snippet {
+      font-size: 12.5px;
+      color: rgba(255, 255, 255, 0.7);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .press-external {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(6px);
+      color: #FFFFFF;
+      transition: background 0.25s ease;
+    }
+
+    .press-card:hover .press-external {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    @media (max-width: 768px) {
+      .press-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .press-card {
+        aspect-ratio: 16 / 9;
+      }
+
+      .press-section {
+        padding: 0 4px;
+      }
+    }
+
+    /* --- Divider line --- */
+    .journal-divider {
+      width: 100%;
+      max-width: 120px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      margin: 0 auto 48px;
+      border: none !important;
+    }
+
+    @media (min-width: 1024px) {
+      .journal-page .sec-head {
+        padding: 0;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
   <div id="site-header"></div>
 
-  <main class="wrap">
+  <main class="wrap journal-page">
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href="/index.html">Home</a>
       <span class="sep">|</span>
       <span>Journal</span>
     </nav>
 
-        <section class="journal-list" style="display: grid; grid-template-columns: 1fr; gap: 24px; max-width: 900px; margin: 0 auto 50px;">
-            <article style="display: flex; gap: 30px; align-items: center; background: var(--card); border: 1px solid var(--line); padding: 24px; border-radius: 20px; box-shadow: var(--shadow);">
-                <img src="/assets/images/makers.jpg" style="width: 260px; height: 200px; object-fit: cover; border-radius: 14px;" alt="Journal Article">
-                <div>
-                    <div style="font-size: 13px; color: var(--accent); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; font-weight: 500;">Craft & Heritage</div>
-                    <h2 style="font-family: 'Cormorant Garamond', serif; font-size: 30px; color: var(--ink); margin-bottom: 14px; font-weight: 500; line-height: 1.2;">The Revival of Cane Weaving in Jaipur</h2>
-                    <p style="font-size: 16px; color: var(--body); margin-bottom: 20px; line-height: 1.7;">Discover how third-generation artisans are keeping traditional weaving techniques alive while adapting to modern aesthetics.</p>
-                    <a href="javascript:void(0)" style="font-size: 13px; color: var(--ink); text-transform: uppercase; letter-spacing: 0.12em; font-weight: 500; border-bottom: 1.5px solid var(--ink); padding-bottom: 2px;">Read Story</a>
-                </div>
-            </article>
-            <article style="display: flex; gap: 30px; align-items: center; background: var(--card); border: 1px solid var(--line); padding: 24px; border-radius: 20px; box-shadow: var(--shadow);">
-                <img src="/assets/images/hero.jpg" style="width: 260px; height: 200px; object-fit: cover; border-radius: 14px;" alt="Journal Article">
-                <div>
-                    <div style="font-size: 13px; color: var(--accent); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; font-weight: 500;">Interiors</div>
-                    <h2 style="font-family: 'Cormorant Garamond', serif; font-size: 30px; color: var(--ink); margin-bottom: 14px; font-weight: 500; line-height: 1.2;">Curating a Mindful Space</h2>
-                    <p style="font-size: 16px; color: var(--body); margin-bottom: 20px; line-height: 1.7;">Tips on selecting pieces that carry meaning and creating harmony between contemporary design and antique objects.</p>
-                    <a href="javascript:void(0)" style="font-size: 13px; color: var(--ink); text-transform: uppercase; letter-spacing: 0.12em; font-weight: 500; border-bottom: 1.5px solid var(--ink); padding-bottom: 2px;">Read Story</a>
-                </div>
-            </article>
-        </section>
-        <style>
-            @media (max-width: 650px) { .journal-list article { flex-direction: column; } .journal-list img { width: 100% !important; height: auto !important; } }
-        </style>
-        </main>
+    <!-- JOURNAL HERO -->
+    <section class="journal-hero">
+      <img src="/assets/images/journal_hero.png" alt="Vayu Journal — Stories of Craft & Heritage">
+      <div class="journal-hero-overlay">
+        <span class="journal-hero-kicker">THE VAYU JOURNAL</span>
+        <h1 class="journal-hero-title">Stories of Craft, Heritage & Mindful Living</h1>
+        <p class="journal-hero-sub">Insights into natural materials, artisan traditions and the philosophy that shapes
+          every piece in the Vayu collection.</p>
+      </div>
+    </section>
+
+    <!-- FILTER PILLS -->
+    <div class="journal-filters" id="journalFilters">
+      <button class="journal-pill active" data-filter="all">All Stories</button>
+      <button class="journal-pill" data-filter="craft">Craft & Heritage</button>
+      <button class="journal-pill" data-filter="interiors">Interiors</button>
+      <button class="journal-pill" data-filter="materials">Materials</button>
+      <button class="journal-pill" data-filter="press">In The Press</button>
+    </div>
+
+    <!-- FEATURED ARTICLE -->
+    <a class="journal-featured" href="javascript:void(0)" data-category="craft">
+      <div class="journal-featured-img">
+        <img src="/assets/images/journal_craft_heritage.png" alt="The Revival of Indian Brass — A Living Tradition">
+        <span class="journal-featured-badge">FEATURED</span>
+      </div>
+      <div class="journal-featured-content">
+        <span class="journal-featured-cat">Craft & Heritage</span>
+        <h2 class="journal-featured-title">The Revival of Indian Brass — A Living Tradition</h2>
+        <span class="journal-featured-date">July 28, 2026</span>
+        <p class="journal-featured-excerpt">In the narrow lanes of Moradabad, fourth-generation artisans keep alive a
+          craft that stretches back centuries. We trace the journey of hand-beaten brass — from raw metal to objects of
+          quiet beauty — and explore how contemporary designers are giving this ancient practice new meaning in modern
+          homes.</p>
+        <span class="journal-read-link">
+          READ FULL STORY
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        </span>
+      </div>
+    </a>
+
+    <div class="journal-divider"></div>
+
+    <!-- ARTICLE GRID -->
+    <section>
+      <div class="sec-head" style="padding: 0 16px; margin-bottom: 24px;">
+        <h2 class="sec-title">LATEST STORIES</h2>
+      </div>
+
+      <div class="journal-grid" id="journalGrid"></div>
+    </section>
+
+    <div class="journal-divider"></div>
+
+    <!-- IN THE PRESS -->
+    <section class="press-section">
+      <div class="sec-head" style="padding: 0; margin-bottom: 24px;">
+        <h2 class="sec-title">IN THE PRESS</h2>
+      </div>
+
+      <div class="press-grid" id="pressGrid"></div>
+    </section>
+
+  </main>
 
   <div id="site-footer"></div>
 
   <script type="module" src="/js/include.js"></script>
+  <script>
+    /* ============================================================
+       Journal page data
+       ------------------------------------------------------------
+       Add stories by appending to the STORIES array below.
+       category must match one of the data-filter values on the
+       filter pills (craft, interiors, materials, press).
+       ============================================================ */
+    const STORIES = [
+      {
+        category: 'interiors',
+        categoryLabel: 'Interiors',
+        title: 'Curating a Mindful Space',
+        excerpt: 'Tips on selecting pieces that carry meaning and creating harmony between contemporary design and antique objects. The wabi-sabi philosophy applied to everyday living.',
+        date: 'July 14, 2026',
+        image: '/assets/images/journal_mindful_spaces.png',
+        alt: 'Curating a Mindful Space'
+      },
+      {
+        category: 'craft',
+        categoryLabel: 'Craft & Heritage',
+        title: 'The Revival of Cane Weaving in Jaipur',
+        excerpt: 'Discover how third-generation artisans are keeping traditional weaving techniques alive while adapting their craft to modern aesthetics and contemporary furniture design.',
+        date: 'June 22, 2026',
+        image: '/assets/images/journal_weaving.png',
+        alt: 'The Revival of Cane Weaving in Jaipur'
+      },
+      {
+        category: 'materials',
+        categoryLabel: 'Materials',
+        title: 'Earth, Water, Fire — The Art of Indian Ceramics',
+        excerpt: "From the potter's wheel in Khurja to the kilns of Andretta, ceramic traditions across India produce vessels of extraordinary character. An exploration of clay, glaze and the quiet patience of making.",
+        date: 'June 5, 2026',
+        image: '/assets/images/journal_ceramics.png',
+        alt: 'Earth, Water, Fire — The Art of Indian Ceramics'
+      },
+      {
+        category: 'materials',
+        categoryLabel: 'Materials',
+        title: 'The Language of Natural Dyes',
+        excerpt: 'Indigo, pomegranate, turmeric — the ancient palette of plant-based dyes tells a story older than civilisation. We visit the dyers of Rajasthan to witness colour being coaxed from the earth.',
+        date: 'May 18, 2026',
+        image: '/assets/images/cat_textiles.jpg',
+        alt: 'The Language of Natural Dyes'
+      },
+      {
+        category: 'interiors',
+        categoryLabel: 'Interiors',
+        title: 'Designing with Imperfection',
+        excerpt: 'How the Japanese principle of wabi-sabi has found a home in Indian interiors — embracing asymmetry, raw texture and the beauty of objects shaped by time and use.',
+        date: 'April 30, 2026',
+        image: '/assets/images/gallery_tile2.png',
+        alt: 'Designing with Imperfection'
+      },
+      {
+        category: 'craft',
+        categoryLabel: 'Craft & Heritage',
+        title: 'Conversations with the Makers',
+        excerpt: 'A photographic series documenting the master artisans behind the Vayu collection — their workshops, their rituals, and the quiet devotion that goes into every hand-finished object.',
+        date: 'April 12, 2026',
+        image: '/assets/images/makers.jpg',
+        alt: 'Conversations with the Makers'
+      }
+    ];
+
+    const PRESS = [
+      {
+        source: 'New York Times',
+        snippet: 'A concept store in New Delhi that bridges Indian craft traditions with contemporary living — "a space where heritage and modernity meet with ease."',
+        image: '/assets/images/journal_nyt_press.png',
+        alt: 'New York Times coverage of Vayu',
+        url: 'https://www.nytimes.com/2016/10/30/fashion/mens-style/vayu-new-delhi-retail-vivek-sahni-dave-chang.html'
+      },
+      {
+        source: 'Khaleej Times',
+        snippet: "Back to the Future — exploring how Vayu's curation philosophy brings centuries-old Indian craftsmanship into contemporary design conversations.",
+        image: '/assets/images/gallery_hero.png',
+        alt: 'Khaleej Times coverage of Vayu',
+        url: 'https://www.khaleejtimes.com/back-to-the-future'
+      },
+      {
+        source: 'Livemint',
+        snippet: 'Vayu showcases the best of Indian crafts — sourced from the ateliers of skilled craftsmen and finished by contemporary designers.',
+        image: '/assets/images/gallery_tile1.png',
+        alt: 'Livemint coverage of Vayu',
+        url: 'https://www.livemint.com/Industry/JsmNeMceh1HiUxmxJuqhhJ/Cloud-storeage.html'
+      }
+    ];
+
+    const ARROW_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14M12 5l7 7-7 7" /></svg>';
+    const EXTERNAL_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" /></svg>';
+
+    /* ---- render article cards ---- */
+    function renderStories(filter) {
+      const grid = document.getElementById('journalGrid');
+      if (!grid) return;
+
+      const filtered = filter === 'all'
+        ? STORIES
+        : STORIES.filter(s => s.category === filter);
+
+      grid.innerHTML = filtered.map(s => `
+        <a class="journal-card" href="javascript:void(0)" data-category="${s.category}">
+          <div class="journal-card-img">
+            <img src="${s.image}" alt="${s.alt}">
+          </div>
+          <div class="journal-card-content">
+            <span class="journal-card-cat">${s.categoryLabel}</span>
+            <h3 class="journal-card-title">${s.title}</h3>
+            <p class="journal-card-excerpt">${s.excerpt}</p>
+            <div class="journal-card-meta">
+              <span class="journal-card-date">${s.date}</span>
+              <span class="journal-card-arrow">${ARROW_SVG}</span>
+            </div>
+          </div>
+        </a>`).join('');
+    }
+
+    /* ---- render press cards ---- */
+    function renderPress() {
+      const grid = document.getElementById('pressGrid');
+      if (!grid) return;
+
+      grid.innerHTML = PRESS.map(p => `
+        <a class="press-card" href="${p.url}" target="_blank" rel="noopener noreferrer" data-category="press">
+          <img src="${p.image}" alt="${p.alt}">
+          <div class="press-card-overlay">
+            <span class="press-source">${p.source}</span>
+            <span class="press-snippet">${p.snippet}</span>
+          </div>
+          <span class="press-external">${EXTERNAL_SVG}</span>
+        </a>`).join('');
+    }
+
+    /* ---- filter logic ---- */
+    function initFilters() {
+      const pills = document.querySelectorAll('.journal-pill');
+      const featured = document.querySelector('.journal-featured');
+      const gridSection = document.querySelector('.journal-grid')?.closest('section');
+      const pressSection = document.querySelector('.press-section');
+      const dividers = document.querySelectorAll('.journal-divider');
+
+      pills.forEach(pill => {
+        pill.addEventListener('click', () => {
+          pills.forEach(p => p.classList.remove('active'));
+          pill.classList.add('active');
+          const filter = pill.dataset.filter;
+
+          if (filter === 'all') {
+            if (featured) featured.style.display = '';
+            renderStories('all');
+            if (pressSection) pressSection.style.display = '';
+            if (gridSection) gridSection.style.display = '';
+            dividers.forEach(d => d.style.display = '');
+          } else if (filter === 'press') {
+            if (featured) featured.style.display = 'none';
+            if (gridSection) gridSection.style.display = 'none';
+            if (pressSection) pressSection.style.display = '';
+            dividers.forEach((d, i) => d.style.display = i === 1 ? '' : 'none');
+          } else {
+            if (pressSection) pressSection.style.display = 'none';
+            dividers.forEach((d, i) => d.style.display = i === 0 ? '' : 'none');
+
+            const featCat = featured?.dataset.category;
+            if (featured) featured.style.display = (featCat === filter) ? '' : 'none';
+
+            if (gridSection) gridSection.style.display = '';
+            renderStories(filter);
+          }
+        });
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderStories('all');
+      renderPress();
+      initFilters();
+    });
+  </script>
 
 </body>
 

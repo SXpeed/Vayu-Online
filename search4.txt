@@ -1,0 +1,20 @@
+=== d:\Project\EXp\vayu-site\js\dedupe-css.js (lines:135)
+L5: // Tokenize into top-level blocks with brace matching
+L6 len: 84
+L7: const blocks = [];
+=== d:\Project\EXp\vayu-site\js\include.js (lines:66)
+L5: 
+L6 len: 36
+L7:     const slot = document.getElementById(id);
+=== d:\Project\EXp\vayu-site\js\script.js (lines:300)
+L5: }
+L6 len: 67
+L7: if (overlays.length > 1) {
+=== d:\Project\EXp\vayu-site\js\shop.js (lines:103)
+L5: 
+L6 len: 30
+L7: const WISH_KEY = 'vayu_wishlist';
+=== d:\Project\EXp\vayu-site\server.js (lines:77)
+L5: 
+L6 len: 18
+L7: 

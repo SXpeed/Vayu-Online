@@ -11,41 +11,586 @@
         href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&family=Pinyon+Script&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css?v=20">
+    <style>
+        .cart-page {
+            padding-bottom: 100px;
+        }
+
+        /* ---------- header ---------- */
+        .cart-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 20px;
+            padding-bottom: 28px;
+            margin-bottom: 0;
+            border-bottom: 1px solid #E8E2D8;
+        }
+
+        .cart-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(32px, 4vw, 48px);
+            font-weight: 400;
+            color: var(--ink);
+            letter-spacing: -0.01em;
+            line-height: 1.1;
+            margin: 0;
+        }
+
+        .cart-count {
+            font-family: 'Jost', sans-serif;
+            font-size: 12px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--body);
+            font-weight: 400;
+            white-space: nowrap;
+        }
+
+        /* ---------- layout ---------- */
+        .cart-layout {
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 48px;
+            align-items: start;
+            margin-top: 0;
+        }
+
+        /* ---------- items ---------- */
+        .cart-items {
+            border-bottom: 1px solid #E8E2D8;
+        }
+
+        .cart-item {
+            display: grid;
+            grid-template-columns: 110px 1fr auto;
+            gap: 24px;
+            align-items: center;
+            padding: 28px 0;
+            border-bottom: 1px solid #E8E2D8;
+            transition: opacity 0.3s ease;
+        }
+
+        .cart-item.removing {
+            opacity: 0;
+        }
+
+        .cart-item-img {
+            width: 110px;
+            height: 110px;
+            border-radius: 2px;
+            overflow: hidden;
+            background: #FFFFFF;
+        }
+
+        .cart-item-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .cart-item:hover .cart-item-img img {
+            transform: scale(1.05);
+        }
+
+        .cart-item-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .cart-item-info h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 20px;
+            font-weight: 500;
+            color: var(--ink);
+            margin: 0 0 6px;
+            line-height: 1.3;
+        }
+
+        .cart-item-cat {
+            font-family: 'Jost', sans-serif;
+            font-size: 11px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--gold);
+            font-weight: 500;
+            margin-bottom: 14px;
+        }
+
+        .cart-item-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* ---------- quantity selector (minimal) ---------- */
+        .cart-qty {
+            display: inline-flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .cart-qty-btn {
+            width: 28px;
+            height: 28px;
+            border: 1px solid #D4CFC4;
+            border-radius: 50%;
+            background: transparent;
+            color: var(--ink);
+            font-size: 14px;
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            transition: all 0.25s ease;
+            line-height: 1;
+        }
+
+        .cart-qty-btn:hover {
+            background: var(--ink);
+            color: #fff;
+            border-color: var(--ink);
+        }
+
+        .cart-qty-val {
+            font-family: 'Jost', sans-serif;
+            font-size: 14px;
+            color: var(--ink);
+            min-width: 18px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .cart-remove {
+            background: none;
+            border: none;
+            color: var(--body);
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            cursor: pointer;
+            font-family: 'Jost', sans-serif;
+            padding: 0;
+            transition: color 0.2s ease;
+            font-weight: 500;
+        }
+
+        .cart-remove:hover {
+            color: var(--accent);
+        }
+
+        .cart-item-price {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 22px;
+            color: var(--ink);
+            font-weight: 500;
+            white-space: nowrap;
+            letter-spacing: 0.01em;
+        }
+
+        /* ---------- summary ---------- */
+        .cart-summary {
+            background: var(--card);
+            box-shadow: var(--shadow);
+            border-radius: 2px;
+            padding: 36px 32px;
+            position: sticky;
+            top: calc(var(--hdr-h, 58px) + 24px);
+        }
+
+        .cart-summary-label {
+            font-family: 'Jost', sans-serif;
+            font-size: 11px;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--gold);
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .cart-summary h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 26px;
+            font-weight: 500;
+            color: var(--ink);
+            margin: 0 0 28px;
+            line-height: 1.2;
+        }
+
+        .cart-summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 10px 0;
+            font-family: 'Jost', sans-serif;
+            font-size: 14px;
+            color: var(--body);
+        }
+
+        .cart-summary-row span:last-child {
+            color: var(--ink);
+            font-weight: 500;
+        }
+
+        .cart-summary-total {
+            border-top: 1px solid #E8E2D8;
+            margin-top: 16px;
+            padding-top: 20px;
+        }
+
+        .cart-summary-total .cart-summary-row {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 22px;
+            color: var(--ink);
+            font-weight: 500;
+            padding: 0;
+        }
+
+        .cart-summary-total .cart-summary-row span:last-child {
+            color: var(--ink);
+            font-weight: 500;
+        }
+
+        .cart-checkout-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 16px;
+            background: var(--ink);
+            color: #fff;
+            border: none;
+            border-radius: 2px;
+            font-family: 'Jost', sans-serif;
+            font-size: 12px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .cart-checkout-btn:hover {
+            background: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        .cart-checkout-btn svg {
+            transition: transform 0.3s ease;
+        }
+
+        .cart-checkout-btn:hover svg {
+            transform: translateX(4px);
+        }
+
+        .cart-summary-note {
+            font-family: 'Jost', sans-serif;
+            font-size: 11px;
+            color: var(--body);
+            text-align: center;
+            margin-top: 16px;
+            letter-spacing: 0.04em;
+            line-height: 1.6;
+        }
+
+        .cart-continue {
+            display: block;
+            text-align: center;
+            margin-top: 28px;
+            font-family: 'Jost', sans-serif;
+            font-size: 12px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--ink);
+            text-decoration: none;
+            font-weight: 500;
+            border-bottom: 1px solid var(--ink);
+            padding-bottom: 3px;
+            transition: color 0.2s ease, border-color 0.2s ease;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cart-continue:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* ---------- empty state ---------- */
+        .cart-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 52vh;
+            text-align: center;
+            padding: 60px 16px;
+            margin-bottom: 60px;
+        }
+
+        .cart-empty-icon {
+            color: var(--body);
+            margin-bottom: 32px;
+            opacity: 0.5;
+        }
+
+        .cart-empty-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 300;
+            font-size: 38px;
+            color: var(--ink);
+            margin: 0 0 12px;
+            letter-spacing: -0.01em;
+        }
+
+        .cart-empty-text {
+            font-size: 14px;
+            color: var(--body);
+            max-width: 440px;
+            margin: 0 0 36px;
+            letter-spacing: 0.02em;
+            line-height: 1.7;
+        }
+
+        .cart-empty-btn {
+            display: inline-block;
+            padding: 16px 40px;
+            background: var(--ink);
+            color: #fff;
+            text-decoration: none;
+            font-size: 12px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            font-family: 'Jost', sans-serif;
+            font-weight: 500;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .cart-empty-btn:hover {
+            background: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        /* ---------- responsive ---------- */
+        @media (max-width: 900px) {
+            .cart-layout {
+                grid-template-columns: 1fr;
+                gap: 36px;
+            }
+
+            .cart-summary {
+                position: static;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .cart-head {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .cart-item {
+                grid-template-columns: 80px 1fr;
+                gap: 16px;
+                padding: 22px 0;
+            }
+
+            .cart-item-img {
+                width: 80px;
+                height: 80px;
+            }
+
+            .cart-item-price {
+                grid-column: 2;
+                font-size: 20px;
+                margin-top: 4px;
+            }
+
+            .cart-qty-btn {
+                width: 26px;
+                height: 26px;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
     <div id="site-header"></div>
 
-    <main class="wrap">
+    <main class="wrap cart-page">
         <nav class="breadcrumb" aria-label="Breadcrumb">
             <a href="/index.html">Home</a>
             <span class="sep">|</span>
             <span>Your Cart</span>
         </nav>
 
-        <section class="empty-state"
-            style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 50vh; text-align: center; padding: 60px 16px; margin-bottom: 50px;">
-            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"
-                style="color: var(--body); margin-bottom: 24px; opacity: 0.7;">
-                <path d="M6 7h12l-1 13H7L6 7z"></path>
-                <path d="M9 9V6a3 3 0 016 0v3"></path>
-            </svg>
-            <h1
-                style="font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 32px; color: var(--ink); margin-bottom: 8px;">
-                Your cart is empty</h1>
-            <p style="font-size: 14px; color: var(--body); max-width: 420px; margin: 0 0 28px; letter-spacing: 0.02em;">
-                Explore our curated collections of fashion, furniture, home and decor — handcrafted for considered
-                living.</p>
-            <a href="/pages/collection.html" class="hero-full-btn"
-                style="display: inline-block; padding: 14px 32px; background: var(--ink); color: #fff; text-decoration: none; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; font-family: 'Jost', sans-serif;">Explore
-                Collections</a>
-        </section>
+        <header class="cart-head">
+            <h1 class="cart-title">Your Cart</h1>
+            <span class="cart-count" id="cartCount"></span>
+        </header>
+
+        <div id="cartContent"></div>
     </main>
 
     <div id="site-footer"></div>
 
     <script type="module" src="/js/include.js"></script>
+    <script type="module">
+        import { getCart, removeFromCart, updateCartQty } from '../js/shop.js';
+
+        const cartContent = document.getElementById('cartContent');
+        const cartCount = document.getElementById('cartCount');
+
+        function parsePrice(priceStr) {
+            return Number.parseInt(String(priceStr).replace(/\D/g, ''), 10) || 0;
+        }
+
+        const catLabels = {
+            fashion: 'Fashion',
+            furniture: 'Furniture',
+            home: 'Home',
+            decor: 'Decor',
+            materials: 'Materials'
+        };
+
+        function renderCart() {
+            const cart = getCart();
+
+            // Update item count
+            const totalItems = cart.reduce((sum, item) => sum + (item.qty || 1), 0);
+            cartCount.textContent = totalItems > 0 ? `${totalItems} ${totalItems === 1 ? 'item' : 'items'}` : '';
+
+            if (cart.length === 0) {
+                cartContent.innerHTML = `
+                    <section class="cart-empty">
+                        <svg class="cart-empty-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"></path>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <path d="M16 10a4 4 0 01-8 0"></path>
+                        </svg>
+                        <h1 class="cart-empty-title">Your cart is empty</h1>
+                        <p class="cart-empty-text">
+                            Explore our curated collections of fashion, furniture, home and decor — handcrafted for considered living.
+                        </p>
+                        <a href="/pages/collection.html" class="cart-empty-btn">Explore Collections</a>
+                    </section>`;
+                return;
+            }
+
+            let subtotal = 0;
+            cart.forEach(item => {
+                subtotal += parsePrice(item.price) * (item.qty || 1);
+            });
+            const shipping = subtotal >= 5000 ? 0 : 150;
+            const total = subtotal + shipping;
+
+            let itemsHtml = '';
+            cart.forEach(item => {
+                const lineTotal = parsePrice(item.price) * (item.qty || 1);
+                const catLabel = catLabels[item.cat] || item.cat || '';
+                itemsHtml += `
+                    <div class="cart-item" data-cat="${item.cat}" data-idx="${item.idx}">
+                        <a href="/pages/product.html?cat=${item.cat}&idx=${item.idx}" class="cart-item-link" style="display:block;">
+                            <div class="cart-item-img"><img src="${item.img}" alt="${item.name}" loading="lazy"></div>
+                        </a>
+                        <div class="cart-item-info">
+                            ${catLabel ? `<div class="cart-item-cat">${catLabel}</div>` : ''}
+                            <a href="/pages/product.html?cat=${item.cat}&idx=${item.idx}" class="cart-item-link">
+                                <h3>${item.name}</h3>
+                            </a>
+                            <div class="cart-item-controls">
+                                <div class="cart-qty">
+                                    <button class="cart-qty-btn cart-qty-minus" aria-label="Decrease quantity">−</button>
+                                    <span class="cart-qty-val">${item.qty || 1}</span>
+                                    <button class="cart-qty-btn cart-qty-plus" aria-label="Increase quantity">+</button>
+                                </div>
+                                <button class="cart-remove">Remove</button>
+                            </div>
+                        </div>
+                        <div class="cart-item-price">₹ ${lineTotal.toLocaleString('en-IN')}</div>
+                    </div>`;
+            });
+
+            cartContent.innerHTML = `
+                <div class="cart-layout">
+                    <div class="cart-items">${itemsHtml}</div>
+                    <aside class="cart-summary">
+                        <div class="cart-summary-label">Order Summary</div>
+                        <h2>Summary</h2>
+                        <div class="cart-summary-row">
+                            <span>Subtotal</span>
+                            <span>₹ ${subtotal.toLocaleString('en-IN')}</span>
+                        </div>
+                        <div class="cart-summary-row">
+                            <span>Shipping</span>
+                            <span>${shipping === 0 ? 'Complimentary' : '₹ ' + shipping}</span>
+                        </div>
+                        <div class="cart-summary-total">
+                            <div class="cart-summary-row">
+                                <span>Total</span>
+                                <span>₹ ${total.toLocaleString('en-IN')}</span>
+                            </div>
+                        </div>
+                        <button class="cart-checkout-btn">
+                            <span>Proceed to Checkout</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </button>
+                        <p class="cart-summary-note">Free shipping on orders above ₹ 5,000.<br>Returns accepted within 7 days of delivery.</p>
+                        <a href="/pages/collection.html" class="cart-continue">Continue Shopping</a>
+                    </aside>
+                </div>`;
+
+            // Wire up qty + remove buttons
+            cartContent.querySelectorAll('.cart-item').forEach(el => {
+                const cat = el.dataset.cat;
+                const idx = Number.parseInt(el.dataset.idx, 10);
+                const qtyVal = el.querySelector('.cart-qty-val');
+
+                el.querySelector('.cart-qty-minus').addEventListener('click', () => {
+                    const cart = getCart();
+                    const item = cart.find(p => p.cat === cat && p.idx === idx);
+                    if (item && item.qty > 1) {
+                        updateCartQty(cat, idx, item.qty - 1);
+                        qtyVal.textContent = item.qty - 1;
+                        renderCart();
+                    }
+                });
+
+                el.querySelector('.cart-qty-plus').addEventListener('click', () => {
+                    const cart = getCart();
+                    const item = cart.find(p => p.cat === cat && p.idx === idx);
+                    if (item) {
+                        updateCartQty(cat, idx, item.qty + 1);
+                        qtyVal.textContent = item.qty + 1;
+                        renderCart();
+                    }
+                });
+
+                el.querySelector('.cart-remove').addEventListener('click', () => {
+                    el.classList.add('removing');
+                    setTimeout(() => {
+                        removeFromCart(cat, idx);
+                        renderCart();
+                    }, 280);
+                });
+            });
+        }
+
+        renderCart();
+
+        // Listen for cart changes from other tabs
+        window.addEventListener('vayu:cart-changed', renderCart);
+    </script>
 
 </body>
 

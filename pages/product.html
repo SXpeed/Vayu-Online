@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product — Vayu</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&family=Pinyon+Script&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css?v=20">
+</head>
+
+<body>
+
+    <div id="site-header"></div>
+
+    <main class="wrap product-page">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+            <a href="/index.html">Home</a>
+            <span class="sep">|</span>
+            <a href="/pages/collection.html">Collection</a>
+            <span class="sep">|</span>
+            <a id="crumbCategory" href="/pages/collection-detail.html">Category</a>
+            <span class="sep">|</span>
+            <span id="crumbProduct">Product</span>
+        </nav>
+
+        <section class="product-detail">
+            <div class="product-gallery">
+                <div class="prod-gallery-wrapper">
+                    <div class="prod-gallery-track" id="prodGalleryTrack">
+                        <!-- Images inserted dynamically -->
+                    </div>
+                </div>
+                <div class="prod-gallery-dots" id="prodGalleryDots">
+                    <!-- Dots inserted dynamically -->
+                </div>
+            </div>
+
+            <div class="product-info-panel">
+                <div id="prodBadge" class="prod-badge" style="display:none;">New Arrival</div>
+                <h1 id="prodName" class="prod-title"></h1>
+                <div id="prodPrice" class="prod-price"></div>
+                <div class="prod-action-bar">
+                    <div class="prod-qty">
+                        <button class="prod-qty-btn" id="qtyMinus" aria-label="Decrease quantity">−</button>
+                        <span class="prod-qty-val" id="qtyVal">1</span>
+                        <button class="prod-qty-btn" id="qtyPlus" aria-label="Increase quantity">+</button>
+                    </div>
+                    <button class="prod-wish-btn" id="prodWishBtn" aria-label="Add to Wishlist">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5">
+                            <path
+                                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z">
+                            </path>
+                        </svg>
+                    </button>
+                    <button class="prod-cart-btn" id="prodCartBtn">Add to Cart</button>
+                    <button class="prod-buy-btn" id="prodBuyBtn">Buy Now</button>
+                </div>
+
+                <div class="prod-accordion" id="prodAccordion">
+                    <div class="prod-acc-item">
+                        <button class="prod-acc-header" data-target="acc-desc">
+                            <span>Description</span>
+                            <svg class="prod-acc-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="1.5">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <div class="prod-acc-body" id="acc-desc">
+                            <p id="prodDesc">
+                                A singular piece from the Vayu atelier — crafted by hand using time-honoured techniques
+                                and natural materials. Each object carries the quiet imperfection of the artisan's
+                                touch, making it uniquely yours.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="prod-acc-item">
+                        <button class="prod-acc-header" data-target="acc-dimensions">
+                            <span>Dimensions</span>
+                            <svg class="prod-acc-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="1.5">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <div class="prod-acc-body" id="acc-dimensions">
+                            <div class="prod-meta-row">
+                                <span class="prod-meta-label">Length</span>
+                                <span class="prod-meta-val">32 cm</span>
+                            </div>
+                            <div class="prod-meta-row">
+                                <span class="prod-meta-label">Width</span>
+                                <span class="prod-meta-val">32 cm</span>
+                            </div>
+                            <div class="prod-meta-row">
+                                <span class="prod-meta-label">Height</span>
+                                <span class="prod-meta-val">45 cm</span>
+                            </div>
+                            <div class="prod-meta-row">
+                                <span class="prod-meta-label">Weight</span>
+                                <span class="prod-meta-val">2.4 kg</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="prod-acc-item">
+                        <button class="prod-acc-header" data-target="acc-materials">
+                            <span>Materials & Origin</span>
+                            <svg class="prod-acc-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="1.5">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <div class="prod-acc-body" id="acc-materials">
+                            <div class="prod-meta-row">
+                                <span class="prod-meta-label">Material</span>
+                                <span class="prod-meta-val">Handcrafted</span>
+                            </div>
+                            <div class="prod-meta-row">
+                                <span class="prod-meta-label">Origin</span>
+                                <span class="prod-meta-val">Made in India</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="prod-acc-item">
+                        <button class="prod-acc-header" data-target="acc-care">
+                            <span>Care Instructions</span>
+                            <svg class="prod-acc-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="1.5">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <div class="prod-acc-body" id="acc-care">
+                            <p>Wipe with a soft dry cloth. Avoid abrasive cleaners and prolonged exposure to direct
+                                sunlight to preserve the natural finish.</p>
+                        </div>
+                    </div>
+
+                    <div class="prod-acc-item">
+                        <button class="prod-acc-header" data-target="acc-shipping">
+                            <span>Shipping & Returns</span>
+                            <svg class="prod-acc-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="1.5">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <div class="prod-acc-body" id="acc-shipping">
+                            <p>Ships within 3–5 business days. Free shipping on orders above ₹ 5,000. Returns accepted
+                                within 7 days of delivery — items must be unused and in original packaging.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Suggested Products -->
+        <section class="prod-suggest-section">
+            <h2 class="prod-suggest-title">You May Also Like</h2>
+            <div class="prod-suggest-grid" id="prodSuggestGrid"></div>
+        </section>
+
+        <style>
+            .prod-suggest-section {
+                margin: 0 0 60px;
+            }
+
+            .prod-suggest-title {
+                font-family: 'Cormorant Garamond', serif;
+                font-size: clamp(24px, 2.5vw, 32px);
+                font-weight: 500;
+                color: var(--ink);
+                margin-bottom: 24px;
+                padding-bottom: 12px;
+                border-bottom: 1px solid #E8E2D8;
+            }
+
+            .prod-suggest-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 20px;
+            }
+
+            .suggest-card {
+                cursor: pointer;
+                text-decoration: none;
+                color: inherit;
+                display: block;
+            }
+
+            .suggest-card-img {
+                width: 100%;
+                aspect-ratio: 1 / 1;
+                overflow: hidden;
+                border-radius: 2px;
+                background: #FFFFFF;
+            }
+
+            .suggest-card-img img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transition: transform 0.4s ease;
+            }
+
+            .suggest-card:hover .suggest-card-img img {
+                transform: scale(1.04);
+            }
+
+            .suggest-card-name {
+                font-family: 'Cormorant Garamond', serif;
+                font-size: 16px;
+                font-weight: 500;
+                color: var(--ink);
+                margin: 10px 0 4px;
+            }
+
+            .suggest-card-price {
+                font-family: 'Jost', sans-serif;
+                font-size: 13px;
+                color: var(--body);
+                font-weight: 500;
+            }
+
+            @media (max-width: 900px) {
+                .prod-suggest-grid {
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 16px;
+                }
+            }
+        </style>
+
+        <style>
+            .product-detail {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 32px;
+                margin: 8px 0 60px;
+                align-items: start;
+            }
+
+            .product-gallery {
+                position: sticky;
+                top: calc(var(--hdr-h, 58px) + 16px);
+            }
+
+            .prod-gallery-wrapper {
+                position: relative;
+                width: 100%;
+                overflow: hidden;
+                border-radius: 2px;
+                background: #FFFFFF;
+            }
+
+            .prod-gallery-track {
+                display: flex;
+                scroll-snap-type: x mandatory;
+                overflow-x: scroll;
+                scroll-behavior: smooth;
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+            }
+
+            .prod-gallery-track::-webkit-scrollbar {
+                display: none;
+            }
+
+            .prod-gallery-slide {
+                flex: 0 0 100%;
+                scroll-snap-align: center;
+                aspect-ratio: 1 / 1;
+                overflow: hidden;
+            }
+
+            .prod-gallery-slide img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                pointer-events: none;
+            }
+
+            .prod-gallery-dots {
+                display: flex;
+                justify-content: center;
+                gap: 8px;
+                margin: 8px 0;
+            }
+
+            .prod-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: #D4CFC4;
+                border: none;
+                padding: 0;
+                cursor: pointer;
+                transition: all 0.25s ease;
+            }
+
+            .prod-dot.active {
+                background: var(--ink);
+                transform: scale(1.25);
+            }
+
+            .product-info-panel {
+                padding: 0;
+            }
+
+            .prod-badge {
+                display: inline-block;
+                font-size: 10px;
+                letter-spacing: 0.16em;
+                text-transform: uppercase;
+                color: var(--accent);
+                font-weight: 600;
+                margin-bottom: 10px;
+            }
+
+            .prod-title {
+                font-family: 'Cormorant Garamond', serif;
+                font-size: clamp(28px, 3vw, 40px);
+                font-weight: 500;
+                color: var(--ink);
+                line-height: 1.15;
+                margin: 0;
+            }
+
+            .prod-price {
+                font-size: 20px;
+                color: var(--ink);
+                font-weight: 500;
+                margin: 16px 0;
+            }
+
+            /* ---- Single-line action bar ---- */
+            .prod-action-bar {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 32px;
+                flex-wrap: wrap;
+            }
+
+            .prod-qty {
+                display: flex;
+                align-items: center;
+                border: 1px solid #D4CFC4;
+                border-radius: 2px;
+                overflow: hidden;
+                height: 48px;
+                flex-shrink: 0;
+            }
+
+            .prod-qty-btn {
+                width: 38px;
+                height: 100%;
+                border: none;
+                background: #FAF8F5;
+                color: var(--ink);
+                font-size: 18px;
+                cursor: pointer;
+                display: grid;
+                place-items: center;
+                transition: background 0.2s ease;
+            }
+
+            .prod-qty-btn:hover {
+                background: #EDE9E3;
+            }
+
+            .prod-qty-val {
+                min-width: 34px;
+                text-align: center;
+                font-family: 'Jost', sans-serif;
+                font-size: 14px;
+                font-weight: 500;
+                color: var(--ink);
+            }
+
+            .prod-wish-btn {
+                width: 48px;
+                height: 48px;
+                background: #FAF8F5;
+                border: 1px solid #D4CFC4;
+                border-radius: 2px;
+                display: grid;
+                place-items: center;
+                cursor: pointer;
+                color: var(--ink);
+                transition: all 0.25s ease;
+                flex-shrink: 0;
+            }
+
+            .prod-wish-btn:hover {
+                background: var(--ink);
+                color: #fff;
+                border-color: var(--ink);
+            }
+
+            .prod-cart-btn {
+                flex: 1;
+                min-width: 120px;
+                padding: 0 24px;
+                height: 48px;
+                background: var(--ink);
+                color: #fff;
+                border: none;
+                border-radius: 2px;
+                font-family: 'Jost', sans-serif;
+                font-size: 12px;
+                letter-spacing: 0.16em;
+                text-transform: uppercase;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.25s ease;
+            }
+
+            .prod-cart-btn:hover {
+                background: var(--accent);
+            }
+
+            .prod-buy-btn {
+                flex: 1;
+                min-width: 120px;
+                padding: 0 24px;
+                height: 48px;
+                background: var(--accent);
+                color: #fff;
+                border: 1px solid var(--accent);
+                border-radius: 2px;
+                font-family: 'Jost', sans-serif;
+                font-size: 12px;
+                letter-spacing: 0.16em;
+                text-transform: uppercase;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.25s ease;
+            }
+
+            .prod-buy-btn:hover {
+                background: var(--ink);
+                color: #fff;
+                border-color: var(--ink);
+            }
+
+            /* ---- Accordion dropdowns ---- */
+            .prod-accordion {
+                border-top: 1px solid #E8E2D8;
+            }
+
+            .prod-acc-item {
+                border-bottom: 1px solid #E8E2D8;
+            }
+
+            .prod-acc-header {
+                width: 100%;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 16px 0;
+                background: none;
+                border: none;
+                cursor: pointer;
+                font-family: 'Jost', sans-serif;
+                font-size: 13px;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                font-weight: 500;
+                color: var(--ink);
+                transition: color 0.2s ease;
+            }
+
+            .prod-acc-header:hover {
+                color: var(--accent);
+            }
+
+            .prod-acc-icon {
+                transition: transform 0.3s ease;
+                flex-shrink: 0;
+            }
+
+            .prod-acc-item.open .prod-acc-icon {
+                transform: rotate(180deg);
+            }
+
+            .prod-acc-body {
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.35s ease, padding 0.35s ease;
+            }
+
+            .prod-acc-item.open .prod-acc-body {
+                max-height: 400px;
+                padding-bottom: 16px;
+            }
+
+            .prod-acc-body p {
+                font-size: 14px;
+                color: var(--body);
+                line-height: 1.7;
+                margin: 0;
+            }
+
+            .prod-meta-row {
+                display: flex;
+                gap: 24px;
+                padding: 6px 0;
+            }
+
+            .prod-meta-label {
+                font-size: 12px;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                color: var(--gold);
+                font-weight: 600;
+                min-width: 90px;
+            }
+
+            .prod-meta-val {
+                font-size: 14px;
+                color: var(--body);
+            }
+
+            @media (max-width: 768px) {
+                .product-detail {
+                    grid-template-columns: 1fr;
+                    gap: 16px;
+                }
+
+                .product-gallery {
+                    position: static;
+                }
+
+                .prod-action-bar {
+                    flex-wrap: wrap;
+                }
+
+                .prod-cart-btn,
+                .prod-buy-btn {
+                    flex: 1 1 calc(50% - 5px);
+                    min-width: 0;
+                }
+            }
+        </style>
+    </main>
+
+    <div id="site-footer"></div>
+
+    <script type="module" src="/js/include.js"></script>
+    <script type="module" src="/js/script.js"></script>
+    <script type="module">
+        import { addToCart, toggleWishlist, isInWishlist } from '../js/shop.js';
+
+        // Product detail page logic
+        const catData = {
+            fashion: { title: 'Fashion' },
+            furniture: { title: 'Furniture' },
+            home: { title: 'Home' },
+            decor: { title: 'Decor' },
+            materials: { title: 'Materials' }
+        };
+
+        const productData = {
+            fashion: [
+                {
+                    name: 'Sanganer Silk Stole', price: '₹ 3,200', img: '/assets/images/prod_silk_stole.png', sub: 'women', isNew: true,
+                    gallery: ['/assets/images/prod_silk_stole.png', '/assets/images/cat_textiles.png', '/assets/images/prod_wool_shawl.png']
+                },
+                {
+                    name: 'Heritage Linen Kurta', price: '₹ 5,400', img: '/assets/images/prod_linen_kurta.png', sub: 'men',
+                    gallery: ['/assets/images/prod_linen_kurta.png', '/assets/images/cat_apparel.png', '/assets/images/prod_silk_stole.png']
+                },
+                {
+                    name: 'Handwoven Wool Shawl', price: '₹ 4,100', img: '/assets/images/prod_wool_shawl.png', sub: 'women',
+                    gallery: ['/assets/images/prod_wool_shawl.png', '/assets/images/cat_textiles.png', '/assets/images/prod_silk_stole.png']
+                },
+                {
+                    name: 'Brass Cuff Bracelet', price: '₹ 2,800', img: '/assets/images/prod_brass_cuff.png', sub: 'accessories', isNew: true,
+                    gallery: ['/assets/images/prod_brass_cuff.png', '/assets/images/cat_jewelry.png', '/assets/images/cat_objects.png']
+                },
+                {
+                    name: 'Black Obsidian Lamp', price: '₹ 14,500', img: '/assets/images/black_lamp.png', sub: 'accessories',
+                    gallery: ['/assets/images/black_lamp.png', '/assets/images/prod_crimson_floor_lamp.png', '/assets/images/prod_lotus_urli_lamp.png']
+                }
+            ],
+            furniture: [
+                {
+                    name: 'Teakwood Lounge Chair', price: '₹ 24,500', img: '/assets/images/prod_teak_chair.png', sub: 'seating', isNew: true,
+                    gallery: ['/assets/images/prod_teak_chair.png', '/assets/images/cat_furniture.png', '/assets/images/prod_cane_side_table.png']
+                },
+                {
+                    name: 'Carved Console Table', price: '₹ 32,000', img: '/assets/images/prod_console_table.png', sub: 'console-tables',
+                    gallery: ['/assets/images/prod_console_table.png', '/assets/images/cat_furniture.png', '/assets/images/prod_stone_coffee_table.png']
+                },
+                {
+                    name: 'Stone-Top Coffee Table', price: '₹ 28,400', img: '/assets/images/prod_stone_coffee_table.png', sub: 'coffee-tables',
+                    gallery: ['/assets/images/prod_stone_coffee_table.png', '/assets/images/prod_console_table.png', '/assets/images/prod_cane_side_table.png']
+                },
+                {
+                    name: 'Cane Side Table', price: '₹ 12,900', img: '/assets/images/prod_cane_side_table.png', sub: 'side-tables',
+                    gallery: ['/assets/images/prod_cane_side_table.png', '/assets/images/prod_teak_chair.png', '/assets/images/cat_furniture.png']
+                }
+            ],
+            home: [
+                {
+                    name: 'Ceramic Dinner Plate Set', price: '₹ 6,200', img: '/assets/images/prod_ceramic_plate_set.png', sub: 'tableware',
+                    gallery: ['/assets/images/prod_ceramic_plate_set.png', '/assets/images/cat_tableware.png', '/assets/images/prod_murano_glassware.png']
+                },
+                {
+                    name: 'Murano Glassware Pair', price: '₹ 7,800', img: '/assets/images/prod_murano_glassware.png', sub: 'drinkware', isNew: true,
+                    gallery: ['/assets/images/prod_murano_glassware.png', '/assets/images/prod_ceramic_plate_set.png', '/assets/images/cat_tableware.png']
+                },
+                {
+                    name: 'Lotus Urli Lamp', price: '₹ 6,900', img: '/assets/images/prod_lotus_urli_lamp.png', sub: 'lighting',
+                    gallery: ['/assets/images/prod_lotus_urli_lamp.png', '/assets/images/prod_crimson_floor_lamp.png', '/assets/images/black_lamp.png']
+                },
+                {
+                    name: 'Raga Crimson Floor Lamp', price: '₹ 38,500', img: '/assets/images/prod_crimson_floor_lamp.png', sub: 'lighting', isNew: true,
+                    gallery: ['/assets/images/prod_crimson_floor_lamp.png', '/assets/images/prod_lotus_urli_lamp.png', '/assets/images/black_lamp.png']
+                }
+            ],
+            decor: [
+                {
+                    name: 'Terracotta Ritual Vase', price: '₹ 4,600', img: '/assets/images/prod_terracotta_vase.png', sub: 'vases',
+                    gallery: ['/assets/images/prod_terracotta_vase.png', '/assets/images/cat_objects.png', '/assets/images/cat_art.png']
+                },
+                {
+                    name: 'Bronze Sculpture Study', price: '₹ 15,200', img: '/assets/images/cat_objects.png', sub: 'artifacts', isNew: true,
+                    gallery: ['/assets/images/cat_objects.png', '/assets/images/prod_terracotta_vase.png', '/assets/images/cat_art.png']
+                },
+                {
+                    name: 'Ritual Candle Stand', price: '₹ 3,400', img: '/assets/images/cat_objects.png', sub: 'candle-holders',
+                    gallery: ['/assets/images/cat_objects.png', '/assets/images/prod_lotus_urli_lamp.png', '/assets/images/prod_terracotta_vase.png']
+                },
+                {
+                    name: 'Framed Miniature Art', price: '₹ 9,800', img: '/assets/images/cat_art.png', sub: 'wall-art',
+                    gallery: ['/assets/images/cat_art.png', '/assets/images/prod_silk_stole.png', '/assets/images/cat_textiles.png']
+                }
+            ],
+            materials: [
+                {
+                    name: 'Hand-Beaten Brass Bowl', price: '₹ 3,900', img: '/assets/images/cat_objects.png', sub: 'brass',
+                    gallery: ['/assets/images/cat_objects.png', '/assets/images/prod_brass_cuff.png', '/assets/images/prod_lotus_urli_lamp.png']
+                },
+                {
+                    name: 'Marble Serving Board', price: '₹ 5,600', img: '/assets/images/prod_stone_coffee_table.png', sub: 'marble', isNew: true,
+                    gallery: ['/assets/images/prod_stone_coffee_table.png', '/assets/images/prod_ceramic_plate_set.png', '/assets/images/cat_furniture.png']
+                },
+                {
+                    name: 'Murano Glass Vessel', price: '₹ 8,200', img: '/assets/images/prod_murano_glassware.png', sub: 'murano-glass',
+                    gallery: ['/assets/images/prod_murano_glassware.png', '/assets/images/prod_ceramic_plate_set.png', '/assets/images/prod_terracotta_vase.png']
+                },
+                {
+                    name: 'Block-Print Textile Panel', price: '₹ 2,900', img: '/assets/images/prod_silk_stole.png', sub: 'textile',
+                    gallery: ['/assets/images/prod_silk_stole.png', '/assets/images/cat_textiles.png', '/assets/images/prod_wool_shawl.png']
+                }
+            ]
+        };
+
+        const params = new URLSearchParams(location.search);
+        const cat = (params.get('cat') || '').toLowerCase();
+        const idx = Number.parseInt(params.get('idx'), 10);
+        const allProducts = productData[cat] || [];
+
+        // Find product by index or fallback to name match
+        let product = allProducts[idx];
+        if (!product) {
+            const name = params.get('name') || '';
+            product = allProducts.find(p => p.name === name);
+        }
+
+        const catInfo = catData[cat];
+        const crumbCategory = document.getElementById('crumbCategory');
+        const crumbProduct = document.getElementById('crumbProduct');
+
+        if (catInfo && crumbCategory) {
+            crumbCategory.textContent = catInfo.title;
+            crumbCategory.href = `/pages/collection-detail.html?cat=${cat}`;
+        }
+
+        if (product) {
+            document.getElementById('prodName').textContent = product.name;
+            document.getElementById('prodPrice').textContent = product.price;
+            if (crumbProduct) crumbProduct.textContent = product.name;
+            if (product.isNew) document.getElementById('prodBadge').style.display = 'inline-block';
+            document.title = `${product.name} — Vayu`;
+
+            // Build gallery images — use product gallery array or fallback to main img
+            const galleryImages = product.gallery && product.gallery.length > 0
+                ? product.gallery
+                : [product.img];
+
+            const track = document.getElementById('prodGalleryTrack');
+            const dotsContainer = document.getElementById('prodGalleryDots');
+
+            galleryImages.forEach((imgSrc, i) => {
+                // Create slide
+                const slide = document.createElement('div');
+                slide.className = 'prod-gallery-slide';
+                const img = document.createElement('img');
+                img.src = imgSrc;
+                img.alt = `${product.name} — View ${i + 1}`;
+                slide.appendChild(img);
+                track.appendChild(slide);
+
+                // Create dot
+                const dot = document.createElement('button');
+                dot.className = 'prod-dot' + (i === 0 ? ' active' : '');
+                dot.setAttribute('aria-label', `Go to image ${i + 1}`);
+                dot.dataset.index = i;
+                dot.addEventListener('click', () => {
+                    track.scrollTo({ left: track.clientWidth * i, behavior: 'smooth' });
+                });
+                dotsContainer.appendChild(dot);
+            });
+
+            const getCurrentIndex = () => Math.round(track.scrollLeft / track.clientWidth);
+
+            const updateDots = () => {
+                const currentIdx = getCurrentIndex();
+                dotsContainer.querySelectorAll('.prod-dot').forEach((d, i) => {
+                    d.classList.toggle('active', i === currentIdx);
+                });
+            };
+
+            track.addEventListener('scroll', () => {
+                window.requestAnimationFrame(updateDots);
+            });
+
+            // Quantity selector
+            let qty = 1;
+            const qtyVal = document.getElementById('qtyVal');
+            document.getElementById('qtyMinus').addEventListener('click', () => {
+                if (qty > 1) { qty--; qtyVal.textContent = qty; }
+            });
+            document.getElementById('qtyPlus').addEventListener('click', () => {
+                qty++; qtyVal.textContent = qty;
+            });
+
+            // Accordion dropdowns
+            document.querySelectorAll('.prod-acc-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const item = header.parentElement;
+                    item.classList.toggle('open');
+                });
+            });
+
+            // Open first accordion by default
+            const firstAcc = document.querySelector('.prod-acc-item');
+            if (firstAcc) firstAcc.classList.add('open');
+
+            // ---- Toast helper ----
+            function showToast(msg) {
+                let toast = document.getElementById('vayuToast');
+                if (!toast) {
+                    toast = document.createElement('div');
+                    toast.id = 'vayuToast';
+                    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 28px;border-radius:2px;font-family:Jost,sans-serif;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;z-index:10000;opacity:0;transition:opacity 0.3s ease;pointer-events:none;';
+                    document.body.appendChild(toast);
+                }
+                toast.textContent = msg;
+                toast.style.opacity = '1';
+                clearTimeout(toast._t);
+                toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 2200);
+            }
+
+            // ---- Wishlist button ----
+            const wishBtn = document.getElementById('prodWishBtn');
+            const wishSvg = wishBtn ? wishBtn.querySelector('svg') : null;
+
+            function syncWishState() {
+                if (!wishSvg) return;
+                const wished = isInWishlist(cat, idx);
+                wishSvg.setAttribute('fill', wished ? 'currentColor' : 'none');
+                wishBtn.style.background = wished ? 'var(--ink)' : '';
+                wishBtn.style.color = wished ? '#fff' : '';
+                wishBtn.style.borderColor = wished ? 'var(--ink)' : '';
+            }
+            syncWishState();
+
+            if (wishBtn) {
+                wishBtn.addEventListener('click', () => {
+                    const added = toggleWishlist({ cat, idx, name: product.name, price: product.price, img: product.img });
+                    syncWishState();
+                    showToast(added ? 'Added to Wishlist' : 'Removed from Wishlist');
+                });
+            }
+
+            // ---- Add to Cart button ----
+            const cartBtn = document.getElementById('prodCartBtn');
+            if (cartBtn) {
+                cartBtn.addEventListener('click', () => {
+                    addToCart({ cat, idx, name: product.name, price: product.price, img: product.img, qty });
+                    showToast('Added to Cart');
+                });
+            }
+
+            // ---- Buy Now button ----
+            const buyBtn = document.getElementById('prodBuyBtn');
+            if (buyBtn) {
+                buyBtn.addEventListener('click', () => {
+                    addToCart({ cat, idx, name: product.name, price: product.price, img: product.img, qty });
+                    window.location.href = '/pages/cart.html';
+                });
+            }
+
+            // Suggested products — same category, excluding the current product
+            const suggestGrid = document.getElementById('prodSuggestGrid');
+            if (suggestGrid) {
+                const currentIdx = allProducts.findIndex((p, i) => p === product || allProducts[i] === product);
+                const suggestions = allProducts.filter((p, i) => i !== currentIdx).slice(0, 4);
+
+                // If fewer than 4 in same category, fill from other categories
+                if (suggestions.length < 4) {
+                    const otherCats = Object.keys(productData).filter(k => k !== cat);
+                    for (const otherCat of otherCats) {
+                        if (suggestions.length >= 4) break;
+                        for (const p of productData[otherCat]) {
+                            if (suggestions.length >= 4) break;
+                            suggestions.push({ ...p, _cat: otherCat, _idx: productData[otherCat].indexOf(p) });
+                        }
+                    }
+                }
+
+                suggestions.forEach((s, i) => {
+                    const sCat = s._cat || cat;
+                    const sIdx = s._idx !== undefined ? s._idx : allProducts.indexOf(s);
+                    const card = document.createElement('a');
+                    card.className = 'suggest-card';
+                    card.href = `/pages/product.html?cat=${sCat}&idx=${sIdx}`;
+                    card.innerHTML = `
+                        <div class="suggest-card-img">
+                            <img src="${s.img}" alt="${s.name}" loading="lazy">
+                        </div>
+                        <div class="suggest-card-name">${s.name}</div>
+                        <div class="suggest-card-price">${s.price}</div>
+                    `;
+                    suggestGrid.appendChild(card);
+                });
+            }
+        } else {
+            const prodName = document.getElementById('prodName');
+            if (prodName) {
+                prodName.textContent = 'Product Not Found';
+                document.getElementById('prodDesc').textContent = 'This piece may have sold out or moved. Please browse our collections.';
+            }
+        }
+    </script>
+
+</body>
+
+</html>

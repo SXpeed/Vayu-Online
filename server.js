@@ -29,7 +29,7 @@ const server = http.createServer((req, res) => {
   }
 
   const filePath = path.join(__dirname, reqPath);
-  
+
   // Security check to prevent directory traversal
   if (!filePath.startsWith(__dirname)) {
     res.writeHead(403);
@@ -47,7 +47,14 @@ const server = http.createServer((req, res) => {
     const ext = path.extname(filePath).toLowerCase();
     const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
-    res.writeHead(200, { 'Content-Type': contentType });
+    // Cache static assets (images, fonts) for faster page loads
+    const cacheExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg', '.woff', '.woff2', '.ttf', '.ico'];
+    const headers = { 'Content-Type': contentType };
+    if (cacheExtensions.includes(ext)) {
+      headers['Cache-Control'] = 'public, max-age=86400';
+    }
+
+    res.writeHead(200, headers);
     fs.createReadStream(filePath).pipe(res);
   });
 });
@@ -56,7 +63,7 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🚀 Server is running!`);
   console.log(`---------------------------------`);
   console.log(`Local Access:   http://localhost:${PORT}`);
-  
+
   const interfaces = os.networkInterfaces();
   for (const name of Object.keys(interfaces)) {
     for (const net of interfaces[name]) {
