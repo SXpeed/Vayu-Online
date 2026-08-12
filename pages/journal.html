@@ -6,13 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Journal — Vayu</title>
   <meta name="description"
-    content="Stories of craft, heritage and mindful living. Insights into natural materials, artisan traditions and the philosophy behind Vayu's curated collection.">
+    content="Stories of craft, heritage and mindful living. Insights into natural materials, artist traditions and the philosophy behind Vayu's curated collection.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&family=Pinyon+Script&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="/css/styles.css?v=20">
+  <link rel="stylesheet" href="/css/styles.css?v=113">
   <style>
     /* ---- Journal page-specific styles ---- */
 
@@ -567,48 +567,31 @@
       <div class="journal-hero-overlay">
         <span class="journal-hero-kicker">THE VAYU JOURNAL</span>
         <h1 class="journal-hero-title">Stories of Craft, Heritage & Mindful Living</h1>
-        <p class="journal-hero-sub">Insights into natural materials, artisan traditions and the philosophy that shapes
+        <p class="journal-hero-sub">Insights into natural materials, artist traditions and the philosophy that shapes
           every piece in the Vayu collection.</p>
       </div>
     </section>
 
     <!-- FILTER PILLS -->
-    <div class="journal-filters" id="journalFilters">
-      <button class="journal-pill active" data-filter="all">All Stories</button>
-      <button class="journal-pill" data-filter="craft">Craft & Heritage</button>
-      <button class="journal-pill" data-filter="interiors">Interiors</button>
-      <button class="journal-pill" data-filter="materials">Materials</button>
-      <button class="journal-pill" data-filter="press">In The Press</button>
+    <div class="journal-filters" id="journalFilters" role="group" aria-label="Filter stories by category">
+      <button class="journal-pill active" data-filter="all" aria-pressed="true">All Stories</button>
+      <button class="journal-pill" data-filter="craft" aria-pressed="false">Craft &amp; Heritage</button>
+      <button class="journal-pill" data-filter="interiors" aria-pressed="false">Interiors</button>
+      <button class="journal-pill" data-filter="materials" aria-pressed="false">Materials</button>
+      <button class="journal-pill" data-filter="press" aria-pressed="false">In The Press</button>
     </div>
 
-    <!-- FEATURED ARTICLE -->
-    <a class="journal-featured" href="javascript:void(0)" data-category="craft">
-      <div class="journal-featured-img">
-        <img src="/assets/images/journal_craft_heritage.png" alt="The Revival of Indian Brass — A Living Tradition">
-        <span class="journal-featured-badge">FEATURED</span>
-      </div>
-      <div class="journal-featured-content">
-        <span class="journal-featured-cat">Craft & Heritage</span>
-        <h2 class="journal-featured-title">The Revival of Indian Brass — A Living Tradition</h2>
-        <span class="journal-featured-date">July 28, 2026</span>
-        <p class="journal-featured-excerpt">In the narrow lanes of Moradabad, fourth-generation artisans keep alive a
-          craft that stretches back centuries. We trace the journey of hand-beaten brass — from raw metal to objects of
-          quiet beauty — and explore how contemporary designers are giving this ancient practice new meaning in modern
-          homes.</p>
-        <span class="journal-read-link">
-          READ FULL STORY
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M5 12h14M12 5l7 7-7 7" />
-          </svg>
-        </span>
-      </div>
-    </a>
+    <!-- FEATURED ARTICLE — rendered from js/journal-data.js so its href is a
+         real article URL. It was hardcoded here with href="javascript:void(0)". -->
+    <div id="journalFeatured"></div>
 
     <div class="journal-divider"></div>
 
     <!-- ARTICLE GRID -->
     <section>
-      <div class="sec-head" style="padding: 0 16px; margin-bottom: 24px;">
+      <!-- padding removed: it indented the heading 16px past the content it
+           labels, since .wrap already supplies the page gutter -->
+      <div class="sec-head" style="margin-bottom: 24px;">
         <h2 class="sec-title">LATEST STORIES</h2>
       </div>
 
@@ -631,153 +614,120 @@
   <div id="site-footer"></div>
 
   <script type="module" src="/js/include.js"></script>
-  <script>
-    /* ============================================================
-       Journal page data
-       ------------------------------------------------------------
-       Add stories by appending to the STORIES array below.
-       category must match one of the data-filter values on the
-       filter pills (craft, interiors, materials, press).
-       ============================================================ */
-    const STORIES = [
-      {
-        category: 'interiors',
-        categoryLabel: 'Interiors',
-        title: 'Curating a Mindful Space',
-        excerpt: 'Tips on selecting pieces that carry meaning and creating harmony between contemporary design and antique objects. The wabi-sabi philosophy applied to everyday living.',
-        date: 'July 14, 2026',
-        image: '/assets/images/journal_mindful_spaces.png',
-        alt: 'Curating a Mindful Space'
-      },
-      {
-        category: 'craft',
-        categoryLabel: 'Craft & Heritage',
-        title: 'The Revival of Cane Weaving in Jaipur',
-        excerpt: 'Discover how third-generation artisans are keeping traditional weaving techniques alive while adapting their craft to modern aesthetics and contemporary furniture design.',
-        date: 'June 22, 2026',
-        image: '/assets/images/journal_weaving.png',
-        alt: 'The Revival of Cane Weaving in Jaipur'
-      },
-      {
-        category: 'materials',
-        categoryLabel: 'Materials',
-        title: 'Earth, Water, Fire — The Art of Indian Ceramics',
-        excerpt: "From the potter's wheel in Khurja to the kilns of Andretta, ceramic traditions across India produce vessels of extraordinary character. An exploration of clay, glaze and the quiet patience of making.",
-        date: 'June 5, 2026',
-        image: '/assets/images/journal_ceramics.png',
-        alt: 'Earth, Water, Fire — The Art of Indian Ceramics'
-      },
-      {
-        category: 'materials',
-        categoryLabel: 'Materials',
-        title: 'The Language of Natural Dyes',
-        excerpt: 'Indigo, pomegranate, turmeric — the ancient palette of plant-based dyes tells a story older than civilisation. We visit the dyers of Rajasthan to witness colour being coaxed from the earth.',
-        date: 'May 18, 2026',
-        image: '/assets/images/cat_textiles.jpg',
-        alt: 'The Language of Natural Dyes'
-      },
-      {
-        category: 'interiors',
-        categoryLabel: 'Interiors',
-        title: 'Designing with Imperfection',
-        excerpt: 'How the Japanese principle of wabi-sabi has found a home in Indian interiors — embracing asymmetry, raw texture and the beauty of objects shaped by time and use.',
-        date: 'April 30, 2026',
-        image: '/assets/images/gallery_tile2.png',
-        alt: 'Designing with Imperfection'
-      },
-      {
-        category: 'craft',
-        categoryLabel: 'Craft & Heritage',
-        title: 'Conversations with the Makers',
-        excerpt: 'A photographic series documenting the master artisans behind the Vayu collection — their workshops, their rituals, and the quiet devotion that goes into every hand-finished object.',
-        date: 'April 12, 2026',
-        image: '/assets/images/makers.jpg',
-        alt: 'Conversations with the Makers'
-      }
-    ];
 
-    const PRESS = [
-      {
-        source: 'New York Times',
-        snippet: 'A concept store in New Delhi that bridges Indian craft traditions with contemporary living — "a space where heritage and modernity meet with ease."',
-        image: '/assets/images/journal_nyt_press.png',
-        alt: 'New York Times coverage of Vayu',
-        url: 'https://www.nytimes.com/2016/10/30/fashion/mens-style/vayu-new-delhi-retail-vivek-sahni-dave-chang.html'
-      },
-      {
-        source: 'Khaleej Times',
-        snippet: "Back to the Future — exploring how Vayu's curation philosophy brings centuries-old Indian craftsmanship into contemporary design conversations.",
-        image: '/assets/images/gallery_hero.png',
-        alt: 'Khaleej Times coverage of Vayu',
-        url: 'https://www.khaleejtimes.com/back-to-the-future'
-      },
-      {
-        source: 'Livemint',
-        snippet: 'Vayu showcases the best of Indian crafts — sourced from the ateliers of skilled craftsmen and finished by contemporary designers.',
-        image: '/assets/images/gallery_tile1.png',
-        alt: 'Livemint coverage of Vayu',
-        url: 'https://www.livemint.com/Industry/JsmNeMceh1HiUxmxJuqhhJ/Cloud-storeage.html'
-      }
-    ];
+  <script type="module">
+    /* ============================================================
+       Journal listing
+       ------------------------------------------------------------
+       Story and press content lives in /js/journal-data.js, shared
+       with the article page so a story is described once.
+
+       Every card here now points at a real article URL. They used
+       to be rendered as href="javascript:void(0)" with no click
+       handler anywhere, while carrying three hover affordances
+       (image zoom, title colour, arrow slide) — so the whole
+       listing invited a click and did nothing.
+       ============================================================ */
+    import { STORIES, PRESS, getFeatured, postUrl } from '/js/journal-data.js';
 
     const ARROW_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14M12 5l7 7-7 7" /></svg>';
     const EXTERNAL_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" /></svg>';
 
-    /* ---- render article cards ---- */
+    const esc = (s) => String(s).replace(/[&<>"]/g, c => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]
+    ));
+
+    /* ---- featured story ---- */
+    function renderFeatured() {
+      const slot = document.getElementById('journalFeatured');
+      const s = getFeatured();
+      if (!slot || !s) return;
+      slot.innerHTML = `
+        <a class="journal-featured" href="${postUrl(s)}" data-category="${esc(s.category)}">
+          <div class="journal-featured-img">
+            <img src="${esc(s.image)}" alt="${esc(s.alt)}">
+            <span class="journal-featured-badge">FEATURED</span>
+          </div>
+          <div class="journal-featured-content">
+            <span class="journal-featured-cat">${esc(s.categoryLabel)}</span>
+            <h2 class="journal-featured-title">${esc(s.title)}</h2>
+            <span class="journal-featured-date">${esc(s.date)}</span>
+            <p class="journal-featured-excerpt">${esc(s.excerpt)}</p>
+            <span class="journal-read-link">
+              READ FULL STORY
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </span>
+          </div>
+        </a>`;
+    }
+
+    /* ---- article cards (the featured one is not repeated here) ---- */
     function renderStories(filter) {
       const grid = document.getElementById('journalGrid');
       if (!grid) return;
 
-      const filtered = filter === 'all'
-        ? STORIES
-        : STORIES.filter(s => s.category === filter);
+      const pool = STORIES.filter(s => !s.featured);
+      const filtered = filter === 'all' ? pool : pool.filter(s => s.category === filter);
+
+      if (!filtered.length) {
+        grid.innerHTML = '<p class="journal-empty">No stories in this category yet.</p>';
+        return;
+      }
 
       grid.innerHTML = filtered.map(s => `
-        <a class="journal-card" href="javascript:void(0)" data-category="${s.category}">
+        <a class="journal-card" href="${postUrl(s)}" data-category="${esc(s.category)}">
           <div class="journal-card-img">
-            <img src="${s.image}" alt="${s.alt}">
+            <img src="${esc(s.image)}" alt="${esc(s.alt)}" loading="lazy">
           </div>
           <div class="journal-card-content">
-            <span class="journal-card-cat">${s.categoryLabel}</span>
-            <h3 class="journal-card-title">${s.title}</h3>
-            <p class="journal-card-excerpt">${s.excerpt}</p>
+            <span class="journal-card-cat">${esc(s.categoryLabel)}</span>
+            <h3 class="journal-card-title">${esc(s.title)}</h3>
+            <p class="journal-card-excerpt">${esc(s.excerpt)}</p>
             <div class="journal-card-meta">
-              <span class="journal-card-date">${s.date}</span>
+              <span class="journal-card-date">${esc(s.date)}</span>
               <span class="journal-card-arrow">${ARROW_SVG}</span>
             </div>
           </div>
         </a>`).join('');
     }
 
-    /* ---- render press cards ---- */
+    /* ---- press cards ---- */
     function renderPress() {
       const grid = document.getElementById('pressGrid');
       if (!grid) return;
-
       grid.innerHTML = PRESS.map(p => `
-        <a class="press-card" href="${p.url}" target="_blank" rel="noopener noreferrer" data-category="press">
-          <img src="${p.image}" alt="${p.alt}">
+        <a class="press-card" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer" data-category="press">
+          <img src="${esc(p.image)}" alt="${esc(p.alt)}" loading="lazy">
           <div class="press-card-overlay">
-            <span class="press-source">${p.source}</span>
-            <span class="press-snippet">${p.snippet}</span>
+            <span class="press-source">${esc(p.source)}</span>
+            <span class="press-snippet">${esc(p.snippet)}</span>
           </div>
           <span class="press-external">${EXTERNAL_SVG}</span>
         </a>`).join('');
     }
 
-    /* ---- filter logic ---- */
+    /* ---- filter pills ---- */
     function initFilters() {
       const pills = document.querySelectorAll('.journal-pill');
-      const featured = document.querySelector('.journal-featured');
       const gridSection = document.querySelector('.journal-grid')?.closest('section');
       const pressSection = document.querySelector('.press-section');
       const dividers = document.querySelectorAll('.journal-divider');
 
       pills.forEach(pill => {
         pill.addEventListener('click', () => {
-          pills.forEach(p => p.classList.remove('active'));
+          pills.forEach(p => {
+            p.classList.remove('active');
+            p.setAttribute('aria-pressed', 'false');
+          });
           pill.classList.add('active');
+          pill.setAttribute('aria-pressed', 'true');
+
           const filter = pill.dataset.filter;
+          // re-read the featured card each time: it is re-rendered, so a
+          // reference captured once would go stale
+          const featured = document.querySelector('.journal-featured');
 
           if (filter === 'all') {
             if (featured) featured.style.display = '';
@@ -793,10 +743,9 @@
           } else {
             if (pressSection) pressSection.style.display = 'none';
             dividers.forEach((d, i) => d.style.display = i === 0 ? '' : 'none');
-
-            const featCat = featured?.dataset.category;
-            if (featured) featured.style.display = (featCat === filter) ? '' : 'none';
-
+            if (featured) {
+              featured.style.display = featured.dataset.category === filter ? '' : 'none';
+            }
             if (gridSection) gridSection.style.display = '';
             renderStories(filter);
           }
@@ -804,11 +753,10 @@
       });
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      renderStories('all');
-      renderPress();
-      initFilters();
-    });
+    renderFeatured();
+    renderStories('all');
+    renderPress();
+    initFilters();
   </script>
 
 </body>

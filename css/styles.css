@@ -33,6 +33,33 @@
   --line: transparent;
   --shadow: 0 8px 30px rgba(20, 18, 16, 0.03);
   --shadow-hover: 0 16px 40px rgba(20, 18, 16, 0.08);
+
+  /* ---- the one content column ----------------------------------------
+     Every page's content sits in the same column, so the left edge never
+     moves as you navigate. Previously each page wrapper added its own
+     gutter on top of .wrap's, giving five different content widths at
+     1440px: 1312 (home), 1344 (artist/gallery), ~1360 (journal),
+     1384 (collection) and 1392 (everything else).
+
+     Page wrappers must NOT add horizontal padding of their own. If a
+     section needs to break out, use .full-bleed below.
+     -------------------------------------------------------------------- */
+  /* No cap: the content column is the viewport minus the gutter, so the
+     only horizontal space on any page is --page-pad. A fixed max-width
+     added auto margins on top of that padding at every width above it —
+     1440px content inside a 1920px window meant 240px of empty page per
+     side, and the amount changed with the resolution. */
+  --page-max: 100%;
+  /* Proportional rather than fixed, so the framing holds its share of the
+     screen at every resolution instead of shrinking away on wide displays.
+     5% a side leaves the content 90% of the viewport: ~1728px at 1920. */
+  --page-pad: 5%;
+
+  /* Measured header height, republished by script.js. The fallback is the
+     real desktop bar height (64px = 48px logo line box + 2x8px .nav
+     padding); it used to read 58px, so on every page load content sat
+     6px under the fixed bar until JS ran and then jumped. */
+  --hdr-h: 64px;
 }
 
 * {
@@ -42,10 +69,39 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* ---- cross-document view transitions ----
+   The browser keeps the outgoing page's painted frame on screen and
+   crossfades it into the incoming one, so a navigation never exposes the
+   blank frame between two documents. Where it is unsupported this rule is
+   ignored and the manual fade in include.js takes over instead — that
+   script checks for support and steps aside when the browser has this. */
+@view-transition {
+  navigation: auto;
+}
+
+/* The outgoing frame leaves a touch faster than the incoming one arrives,
+   so the two overlap in the middle and the eye never catches a boundary. */
+::view-transition-old(root) {
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 1, 1);
+}
+
+::view-transition-new(root) {
+  animation-duration: 480ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-group(site-header) {
+  animation-duration: 320ms;
+}
+
 html {
   scroll-behavior: smooth;
   overflow-x: hidden;
   max-width: 100vw;
+  /* the ground behind everything: paints during the frame before <body>
+     has styled, so any residual gap is the page's own colour, not white */
+  background: #FAF8F5;
 }
 
 body {
@@ -55,8 +111,26 @@ body {
   font-weight: 400;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  /* `overflow-x: hidden` forces computed overflow-y to auto, which makes the
+     body its own scroll container and renders a second scrollbar next to the
+     document one. `clip` suppresses sideways overflow without doing that.
+     The `hidden` line stays as a fallback for browsers without `clip`. */
   overflow-x: hidden;
-  max-width: 100vw;
+  overflow-x: clip;
+  /* 100vw includes the scrollbar gutter, so it overflows by the scrollbar width */
+  max-width: 100%;
+  /* The footer always ends the page and always touches the bottom edge: the
+     body is a full-height column and the footer takes the leftover space
+     above it, so on a short page it is pushed down to the viewport's bottom
+     and on a long one it sits at the end of the content. Not `fixed` — that
+     would overlay the page and permanently occupy ~300px of screen. */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#site-footer {
+  margin-top: auto;
 }
 
 img {
@@ -67,6 +141,14 @@ img {
 a {
   text-decoration: none;
   color: inherit;
+}
+
+/* The only Tailwind utility the markup ever used (on the header/footer nav
+   SVGs). Defined here so the pages no longer have to load
+   @tailwindcss/browser — the full JIT compiler, undeferred, on every page —
+   to resolve one flex property. */
+.shrink-0 {
+  flex-shrink: 0;
 }
 
 @media (min-width: 1600px) {
@@ -88,10 +170,33 @@ a {
 
 @media (min-width: 1024px) {
   .wrap {
-    max-width: 1440px;
+    max-width: var(--page-max);
     margin: 0 auto;
-    padding: 0 24px;
+    /* 40px, not 24px: absorbs the extra gutter that .home-main used to add
+       on top, so home and the inner pages now share one content width */
+    padding: 0 var(--page-pad);
   }
+}
+
+/* 769-1023px had no gutter at all: the base rule is `padding: 0`, the
+   24px rule started at 1024px and the 4px rule stopped at 768px, so
+   content ran edge to edge in between. Matters on desktop for half-screen
+   and split-view windows. */
+@media (min-width: 769px) and (max-width: 1023px) {
+  .wrap {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+/* Escape hatch for sections that must span the viewport (the home
+   campaign hero). Uses 100% of the body — NOT 100vw, which includes the
+   scrollbar gutter and therefore overflows by the scrollbar width and
+   sits off-centre by half of it. */
+.full-bleed {
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 @media (max-width: 768px) {
@@ -111,6 +216,10 @@ header {
   top: 0;
   z-index: 50;
   width: 100%;
+  /* Carried across a page navigation as one continuous element rather than
+     dissolving and re-forming with the rest of the page — it is in the same
+     place on both documents. See ::view-transition-group(site-header). */
+  view-transition-name: site-header;
 }
 
 .nav {
@@ -124,7 +233,10 @@ header {
 
 @media (min-width: 1024px) {
   .nav {
-    padding: 16px 24px;
+    /* 8px trims the 72px bar to 64px — another 10% shorter. --hdr-h is
+       measured at runtime (script.js), so the content offset, the COLLECTION
+       dropdown and the search panel all follow automatically. */
+    padding: 8px 24px;
   }
 }
 
@@ -163,6 +275,238 @@ header {
   color: var(--accent);
 }
 
+/* ---- header search ------------------------------------------------
+   Closed: the field is absent and the bar looks untouched. Open: the
+   field takes the middle of the bar in place of the menu, and on phones
+   the logo hides too so the input has room to breathe.
+   -------------------------------------------------------------------- */
+/* The field stays in the flow at zero width so it can animate open — the
+   logo collapses and the field expands into the space it vacates, which
+   reads as the logo being pushed aside. */
+.nav-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 0;
+  margin: 0;
+  padding: 0;
+  height: 38px;
+  background: #FAF8F5;
+  border-radius: 2px;
+  opacity: 0;
+  visibility: hidden;
+  overflow: hidden;
+  transition:
+    max-width 0.34s cubic-bezier(0.25, 1, 0.5, 1),
+    margin 0.34s cubic-bezier(0.25, 1, 0.5, 1),
+    padding 0.34s cubic-bezier(0.25, 1, 0.5, 1),
+    opacity 0.2s ease 0.06s,
+    /* hide only once the collapse has finished */
+    visibility 0s linear 0.34s;
+}
+
+body.search-open .nav-search {
+  max-width: 100%;
+  margin: 0 14px;
+  padding: 0 10px;
+  opacity: 1;
+  visibility: visible;
+  /* ...but reveal instantly, so the input can take focus straight away */
+  transition:
+    max-width 0.34s cubic-bezier(0.25, 1, 0.5, 1),
+    margin 0.34s cubic-bezier(0.25, 1, 0.5, 1),
+    padding 0.34s cubic-bezier(0.25, 1, 0.5, 1),
+    opacity 0.2s ease 0.06s,
+    visibility 0s;
+}
+
+body.search-open .menu {
+  display: none;
+}
+
+/* the logo's half of the same motion */
+.logo {
+  transition:
+    max-width 0.34s cubic-bezier(0.25, 1, 0.5, 1),
+    opacity 0.22s ease;
+}
+
+/* The requested behaviour: the logo steps aside for the field on phones.
+   It is collapsed to zero width rather than display:none so its line box
+   still sets the bar height — otherwise the bar would resize by the
+   difference between the logo and the field when search opens. */
+@media (max-width: 1023px) {
+  /* 140px clears the logo's natural 133px at every phone width, so the
+     collapse starts moving almost immediately. nowrap is essential: without
+     it the shrinking box wraps "V A Y U" one letter per line and the line
+     box grows to ~141px, dragging the bar's height with it. */
+  .logo {
+    display: block;
+    max-width: 140px;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  body.search-open .logo {
+    max-width: 0;
+    opacity: 0;
+  }
+
+  /* must stay within the logo's line box or the bar would change height */
+  .nav-search {
+    height: 34px;
+  }
+
+  body.search-open .nav-search {
+    margin: 0 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .logo,
+  .nav-search {
+    transition: none;
+  }
+}
+
+.nav-search-icon {
+  flex: 0 0 auto;
+  color: #8A8681;
+}
+
+.nav-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none;
+  background: none;
+  outline: none;
+  font-family: 'Jost', sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.nav-search-input::placeholder {
+  color: #A9A49D;
+}
+
+/* the UA clear button duplicates our own close control */
+.nav-search-input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.nav-search-clear {
+  flex: 0 0 auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 18px;
+  line-height: 1;
+  color: #8A8681;
+  transition: color 0.2s ease;
+}
+
+.nav-search-clear:hover {
+  color: var(--accent);
+}
+
+.icon-search.is-active {
+  color: var(--accent);
+}
+
+/* results drop below the bar, matching the COLLECTION dropdown's geometry */
+.nav-search-panel {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #FFFFFF;
+  box-shadow: 0 18px 40px rgba(22, 25, 23, 0.08);
+  max-height: min(60vh, 460px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  z-index: 2;
+}
+
+body.search-open .nav-search-panel:not(:empty) {
+  display: block;
+}
+
+.nav-search-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: #EFEAE1;
+}
+
+.nav-search-note {
+  padding: 16px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8A8681;
+  text-align: center;
+}
+
+.nav-search-hit {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  transition: background 0.18s ease;
+}
+
+.nav-search-hit:hover,
+.nav-search-hit.is-active {
+  background: #FAF8F5;
+}
+
+.nav-search-thumb {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  background: #FAF8F5;
+}
+
+.nav-search-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.nav-search-name {
+  display: block;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.nav-search-cat {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.nav-search-price {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
 .icons {
   display: flex;
   gap: 16px;
@@ -180,6 +524,19 @@ header {
 
 .icons button:hover {
   transform: scale(1.08);
+}
+
+/* account is desktop-only — on phones the bottom nav already has an
+   ACCOUNT tab, and a fourth icon crowds the mobile bar */
+.icon-account {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .icon-account {
+    display: inline-flex;
+    align-items: center;
+  }
 }
 
 .icon-badge {
@@ -234,7 +591,15 @@ header {
 
   /* pages without the full-bleed hero: push content below the bar */
   body:not(:has(.hero-full)) {
-    padding-top: var(--hdr-h, 58px);
+    padding-top: var(--hdr-h, 64px);
+  }
+
+  /* Anchor targets must clear the fixed bar. Without this, following an
+     in-page link (e.g. gallery.html's #exhibition) puts the section
+     heading behind the header. Scoped to :target so it only costs
+     something when an anchor is actually used. */
+  :target {
+    scroll-margin-top: calc(var(--hdr-h, 64px) + 24px);
   }
 
   body:has(.hero-full) header .logo .word,
@@ -270,107 +635,631 @@ header {
 
 
 /* ============================================================
-   04 — MEGA MENU (desktop)
+   04 — MENU dropdown (desktop)
+   The old floating .megamenu card and its .mm-* rules are gone: MENU now
+   uses the same full-bleed .cdrop shell as COLLECTION, so the two panels
+   are one component with different bodies. Only .mdrop-* below is new.
    ============================================================ */
-.nav-megamenu {
+
+/* ---- COLLECTION dropdown: full-bleed panel under the fixed bar ---- */
+.nav-dropdown {
   position: relative;
 }
 
-.megamenu {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
+/* hidden entirely below the desktop breakpoint — phones use the menu sheet */
+.cdrop {
   display: none;
-  background: #FFFFFF;
-  border-radius: 2px;
-  box-shadow: var(--shadow-hover);
-  padding: 14px;
-  z-index: 60;
-  min-width: 360px;
-  animation: mmFade 0.2s ease;
 }
 
-@keyframes mmFade {
-  from {
+@media (min-width: 1024px) {
+  .cdrop {
+    display: block;
+    position: fixed;
+    top: var(--hdr-h, 64px);
+    left: 0;
+    right: 0;
+    background: #FFFFFF;
+    /* Negative spread so the shadow has no upward spill. The panel sits
+       inside <header>, whose white background paints beneath it, so any
+       spill would land on the bar and read as a seam between the two. */
+    box-shadow: 0 30px 34px -10px rgba(22, 25, 23, 0.10);
+    /* Unrolls downward out of the bar rather than fading in as a whole:
+       the panel is clipped to nothing at its own top edge — which sits
+       flush against the bar — and the clip opens to full height. Since the
+       bar and the panel are the same white, the effect is one surface
+       extending, with no seam and nothing sliding over the page.
+
+       Opacity stays at 1 while open; only visibility is delayed, so the
+       panel is not focusable while closed. */
+    clip-path: inset(0 0 100% 0);
+    visibility: hidden;
+    /* slower than a menu usually opens, on purpose: the panel is a large
+       surface and a quick unroll reads as a flicker at this size */
+    transition: clip-path 0.55s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.55s ease;
+    z-index: 1;
+  }
+
+  .nav-dropdown:hover>.cdrop,
+  .nav-dropdown:focus-within>.cdrop {
+    clip-path: inset(0 0 0 0);
+    visibility: visible;
+  }
+
+  /* The nav item is vertically centred in a 77px bar, so ~25px of dead space
+     sits between its bottom edge and the panel. This invisible bridge spans
+     it so the menu does not close as the cursor travels down. It only exists
+     while hovering, so it never intercepts clicks on the page beneath. */
+  .nav-dropdown:hover::after,
+  .nav-dropdown:focus-within::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: -40px;
+    right: -40px;
+    height: 34px;
+  }
+
+  /* The bar and the open panel are one white surface: no hairline between
+     them, and the bar drops its own shadow while a panel is open so nothing
+     is drawn across the join. */
+  body:has(.nav-dropdown:hover) header,
+  body:has(.nav-dropdown:focus-within) header {
+    background: #FFFFFF !important;
+    box-shadow: none !important;
+  }
+
+  /* keyboard equivalent of the :hover rule in section 03 — over the home
+     hero the bar's labels are white, which would vanish once the panel
+     forces the bar white */
+  body:has(.hero-full):has(.nav-dropdown:focus-within) header:not(.scrolled) .logo .word,
+  body:has(.hero-full):has(.nav-dropdown:focus-within) header:not(.scrolled) .menu>li>a,
+  body:has(.hero-full):has(.nav-dropdown:focus-within) header:not(.scrolled) .icons button {
+    color: var(--ink);
+  }
+
+  /* same column as the page, so the panel's first heading lines up with
+     the content beneath it at every width */
+  .cdrop-inner {
+    max-width: var(--page-max);
+    margin: 0 auto;
+    padding: 30px var(--page-pad) 34px;
+    display: grid;
+    grid-template-columns: 1fr 232px;
+    gap: 40px;
+    align-items: start;
+  }
+
+  /* auto-fit rather than a fixed count, so adding a category to the panel
+     does not also require editing this rule */
+  .cdrop-cols {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    grid-auto-flow: column;
+    gap: 26px;
+  }
+
+  .cdrop-head {
+    display: block;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink);
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+    position: relative;
+    transition: color 0.2s ease;
+  }
+
+  .cdrop-head::after {
+    content: '';
+    position: absolute;
+    inset: auto auto 0 0;
+    width: 22px;
+    height: 1px;
+    background: var(--gold);
+    transition: width 0.28s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+
+  .cdrop-head:hover {
+    color: var(--accent);
+  }
+
+  .cdrop-col:hover .cdrop-head::after {
+    width: 100%;
+  }
+
+  .cdrop-col ul {
+    list-style: none;
+  }
+
+  .cdrop-col ul li a {
+    display: block;
+    padding: 5px 0;
+    font-size: 15px;
+    letter-spacing: 0.02em;
+    color: var(--body);
+    transition: color 0.18s ease, transform 0.18s ease;
+  }
+
+  .cdrop-col ul li a:hover {
+    color: var(--accent);
+    transform: translateX(3px);
+  }
+
+  /* featured tile — caption sits under the image rather than over it, so a
+     light product shot can never wash out the label */
+  .cdrop-feature {
+    display: block;
+  }
+
+  .cdrop-feature-media {
+    display: block;
+    overflow: hidden;
+    background: #FAF8F5;
+    aspect-ratio: 4 / 3;
+  }
+
+  .cdrop-feature img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+
+  .cdrop-feature:hover img {
+    transform: scale(1.05);
+  }
+
+  .cdrop-feature-body {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    padding-top: 9px;
+  }
+
+  .cdrop-feature-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1.2;
+    color: var(--ink);
+    transition: color 0.2s ease;
+  }
+
+  .cdrop-feature-arrow {
+    font-size: 13px;
+    line-height: 1;
+    color: var(--accent);
+    transition: transform 0.25s ease;
+  }
+
+  .cdrop-feature:hover .cdrop-feature-title {
+    color: var(--accent);
+  }
+
+  .cdrop-feature:hover .cdrop-feature-arrow {
+    transform: translateX(4px);
+  }
+
+  /* ---- MENU panel ----
+     A New Arrivals plate on the left, the main collections listed beside
+     it. No sub-categories here on purpose — those belong to COLLECTION,
+     and repeating them made the two panels near-identical. */
+  .mdrop-inner {
+    grid-template-columns: 320px 1fr;
+    gap: 56px;
+  }
+
+  .mdrop-feature {
+    display: block;
+  }
+
+  .mdrop-feature-media {
+    display: block;
+    overflow: hidden;
+    background: #FAF8F5;
+    aspect-ratio: 4 / 3;
+    margin-bottom: 12px;
+  }
+
+  .mdrop-feature img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+
+  .mdrop-feature:hover img {
+    transform: scale(1.05);
+  }
+
+  .mdrop-feature-eyebrow {
+    display: block;
+    font-size: 9.5px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 500;
+    margin-bottom: 5px;
+  }
+
+  .mdrop-feature-title {
+    display: block;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    font-weight: 400;
+    line-height: 1.1;
+    color: var(--ink);
+    transition: color 0.2s ease;
+  }
+
+  .mdrop-feature-cta {
+    display: block;
+    margin-top: 8px;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--accent);
+  }
+
+  .mdrop-feature:hover .mdrop-feature-title {
+    color: var(--accent);
+  }
+
+  .mdrop-cats-label {
+    display: block;
+    font-size: 9.5px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 500;
+    margin-bottom: 14px;
+  }
+
+  /* the seven collections read as one list, wrapping into columns */
+  .mdrop-cats ul {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2px 26px;
+  }
+
+  .mdrop-cats ul li a {
+    display: block;
+    padding: 7px 0;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink);
+    transition: color 0.18s ease, transform 0.18s ease;
+  }
+
+  .mdrop-cats ul li a:hover {
+    color: var(--accent);
+    transform: translateX(3px);
+  }
+
+  .mdrop-all {
+    display: inline-block;
+    margin-top: 18px;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--accent);
+    transition: opacity 0.2s ease;
+  }
+
+  .mdrop-all:hover {
+    opacity: 0.65;
+  }
+
+  /* ---- panel choreography ----
+     The shell unrolls (see the clip-path on .cdrop), and its contents rise
+     into it a beat behind, column by column. Two separate movements, so
+     the panel reads as opening rather than appearing. Contents are only
+     transformed — never faded from `display` — so nothing reflows. */
+  .cdrop-col,
+  .cdrop-feature,
+  .mdrop-feature,
+  .mdrop-cats,
+  .gdrop-intro,
+  .gdrop-tile {
     opacity: 0;
-    transform: translateY(-4px);
+    transform: translateY(18px);
+    transition: opacity 0.45s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  to {
+  .nav-dropdown:hover>.cdrop .cdrop-col,
+  .nav-dropdown:hover>.cdrop .cdrop-feature,
+  .nav-dropdown:hover>.cdrop .mdrop-feature,
+  .nav-dropdown:hover>.cdrop .mdrop-cats,
+  .nav-dropdown:hover>.cdrop .gdrop-intro,
+  .nav-dropdown:hover>.cdrop .gdrop-tile,
+  .nav-dropdown:focus-within>.cdrop .cdrop-col,
+  .nav-dropdown:focus-within>.cdrop .cdrop-feature,
+  .nav-dropdown:focus-within>.cdrop .mdrop-feature,
+  .nav-dropdown:focus-within>.cdrop .mdrop-cats,
+  .nav-dropdown:focus-within>.cdrop .gdrop-intro,
+  .nav-dropdown:focus-within>.cdrop .gdrop-tile {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
+  }
+
+  /* left to right, 60ms apart, starting after the shell has begun to open */
+  .nav-dropdown:hover>.cdrop :is(.cdrop-col, .gdrop-tile):nth-child(1),
+  .nav-dropdown:focus-within>.cdrop :is(.cdrop-col, .gdrop-tile):nth-child(1) {
+    transition-delay: 0.1s;
+  }
+
+  .nav-dropdown:hover>.cdrop :is(.cdrop-col, .gdrop-tile):nth-child(2),
+  .nav-dropdown:focus-within>.cdrop :is(.cdrop-col, .gdrop-tile):nth-child(2) {
+    transition-delay: 0.16s;
+  }
+
+  .nav-dropdown:hover>.cdrop :is(.cdrop-col, .gdrop-tile):nth-child(3),
+  .nav-dropdown:focus-within>.cdrop :is(.cdrop-col, .gdrop-tile):nth-child(3) {
+    transition-delay: 0.22s;
+  }
+
+  .nav-dropdown:hover>.cdrop :is(.cdrop-col, .gdrop-tile):nth-child(4),
+  .nav-dropdown:focus-within>.cdrop :is(.cdrop-col, .gdrop-tile):nth-child(4) {
+    transition-delay: 0.28s;
+  }
+
+  .nav-dropdown:hover>.cdrop :is(.cdrop-col, .gdrop-tile):nth-child(n+5),
+  .nav-dropdown:focus-within>.cdrop :is(.cdrop-col, .gdrop-tile):nth-child(n+5) {
+    transition-delay: 0.34s;
+  }
+
+  /* the feature plate and the MENU list follow the columns */
+  .nav-dropdown:hover>.cdrop .cdrop-feature,
+  .nav-dropdown:hover>.cdrop .mdrop-cats,
+  .nav-dropdown:focus-within>.cdrop .cdrop-feature,
+  .nav-dropdown:focus-within>.cdrop .mdrop-cats {
+    transition-delay: 0.18s;
+  }
+
+  .nav-dropdown:hover>.cdrop .mdrop-feature,
+  .nav-dropdown:hover>.cdrop .gdrop-intro,
+  .nav-dropdown:focus-within>.cdrop .mdrop-feature,
+  .nav-dropdown:focus-within>.cdrop .gdrop-intro {
+    transition-delay: 0.1s;
+  }
+
+  /* individual links inside a column drift in with their column */
+  .cdrop-col ul li,
+  .mdrop-cats ul li {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: 0.22s;
+  }
+
+  .nav-dropdown:hover>.cdrop :is(.cdrop-col, .mdrop-cats) ul li,
+  .nav-dropdown:focus-within>.cdrop :is(.cdrop-col, .mdrop-cats) ul li {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* ---- the bar itself ----
+     The label lifts as its underline draws, and the icons answer a hover
+     with a small scale rather than a colour change alone. */
+  .menu>li>a {
+    display: inline-block;
+    transition: color 0.3s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .menu>li:hover>a {
+    transform: translateY(-2px);
+  }
+
+  /* the open item stays marked while its panel is up */
+  .nav-dropdown:hover>a,
+  .nav-dropdown:focus-within>a {
+    color: var(--accent);
+  }
+
+  .icons button {
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), color 0.3s ease;
+  }
+
+  .icons button:hover {
+    transform: translateY(-2px) scale(1.08);
+  }
+
+  .icons button:active {
+    transform: scale(0.92);
+    transition-duration: 0.1s;
+  }
+
+  /* ---- scrim ----
+     The page dims behind an open panel, so the menu reads as a layer over
+     the site rather than a box drawn on it. Sits under the bar (z 100) and
+     over the content, and never takes pointer events — hovering the scrim
+     must not count as leaving the menu. */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: rgba(20, 18, 16, 0.32);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.55s ease, visibility 0.55s ease;
+  }
+
+  body:has(.nav-dropdown:hover)::after,
+  body:has(.nav-dropdown:focus-within)::after {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* ---- image settle ----
+     Panel photographs open very slightly enlarged and ease back to their
+     natural size over a second — the slow move that makes the panel feel
+     weighty. On the wrapper, not the <img>, so each tile's own hover zoom
+     is untouched. */
+  .cdrop-feature-media,
+  .mdrop-feature-media,
+  .gdrop-tile-media {
+    transform: scale(1.05);
+    transition: transform 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .nav-dropdown:hover>.cdrop :is(.cdrop-feature-media, .mdrop-feature-media, .gdrop-tile-media),
+  .nav-dropdown:focus-within>.cdrop :is(.cdrop-feature-media, .mdrop-feature-media, .gdrop-tile-media) {
+    transform: scale(1);
+  }
+
+  /* The wordmark answers a hover on the bar itself. Scaled rather than
+     letter-spaced: spacing changes the element's width, which would nudge
+     the whole nav row every time the cursor crossed the bar. */
+  header .logo .word {
+    display: inline-block;
+    transform-origin: left center;
+    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), color 0.35s ease;
+  }
+
+  header:hover .logo .word {
+    transform: scale(1.03);
+  }
+
+  /* ---- image-tile dropdown (GALLERY, ARTIST) ----
+     Same fixed full-bleed shell as .cdrop (the panel carries both classes),
+     but the content is a strip of image tiles rather than link columns: a
+     standing text block on the left, four plates on the right. */
+  .gdrop-inner {
+    grid-template-columns: 232px 1fr;
+    gap: 44px;
+  }
+
+  .gdrop-intro {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .gdrop-eyebrow {
+    font-size: 9.5px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 500;
+    margin-bottom: 7px;
+  }
+
+  .gdrop-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    font-weight: 400;
+    line-height: 1.1;
+    color: var(--ink);
+    transition: color 0.2s ease;
+  }
+
+  .gdrop-title:hover {
+    color: var(--accent);
+  }
+
+  .gdrop-note {
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: var(--body);
+    margin-top: 10px;
+  }
+
+  .gdrop-cta {
+    margin-top: 14px;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--accent);
+    transition: opacity 0.2s ease;
+  }
+
+  .gdrop-cta:hover {
+    opacity: 0.65;
+  }
+
+  .gdrop-tiles {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .gdrop-tile {
+    display: block;
+  }
+
+  .gdrop-tile-media {
+    display: block;
+    overflow: hidden;
+    background: #FAF8F5;
+    aspect-ratio: 4 / 3;
+  }
+
+  .gdrop-tile img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+
+  .gdrop-tile:hover img {
+    transform: scale(1.05);
+  }
+
+  /* caption under the plate, never over it — light photographs stay readable */
+  .gdrop-tile-body {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    padding-top: 9px;
+  }
+
+  .gdrop-tile-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1.2;
+    color: var(--ink);
+    transition: color 0.2s ease;
+  }
+
+  .gdrop-tile:hover .gdrop-tile-name {
+    color: var(--accent);
+  }
+
+  .gdrop-tile-tag {
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 500;
+    white-space: nowrap;
   }
 }
 
-.nav-megamenu:hover>.megamenu,
-.nav-megamenu:focus-within>.megamenu {
-  display: block;
-}
-
-@media (max-width: 920px) {
-  .megamenu {
-    display: none !important;
+@media (prefers-reduced-motion: reduce) {
+  .cdrop,
+  .cdrop-head::after,
+  .cdrop-feature img,
+  .cdrop-col ul li a,
+  .gdrop-tile img {
+    transition: none;
   }
-}
-
-.mm-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 18px;
-}
-
-.mm-col {
-  min-width: 0;
-}
-
-.mm-head {
-  display: block;
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ink);
-  margin: 8px 0 4px;
-  padding-bottom: 3px;
-  /* one of the few intentional visible hairlines */
-  border-bottom: 1px solid #E8E2D8 !important;
-  transition: color 0.2s ease;
-}
-
-.mm-head:first-child {
-  margin-top: 0;
-}
-
-.mm-head:hover {
-  color: var(--accent);
-}
-
-.mm-col ul {
-  list-style: none;
-}
-
-.mm-col ul li a {
-  display: block;
-  padding: 4px 0;
-  font-size: 12px;
-  letter-spacing: 0.02em;
-  color: var(--body);
-  transition: color 0.18s ease;
-}
-
-.mm-col ul li a:hover {
-  color: var(--accent);
-}
-
-.mm-view-all {
-  display: block;
-  margin-top: 10px;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--accent);
-  font-weight: 500;
 }
 
 
@@ -465,9 +1354,10 @@ header {
   gap: 8px;
   background: var(--card);
   border-radius: 2px;
-  box-shadow: var(--shadow);
+  /* no shadow: the bar sits directly under the category banner, where a
+     drop shadow read as a seam between the two */
   padding: 8px 16px;
-  margin: 6px 0 10px;
+  margin: 2px 0;
 }
 
 .page-header h1 {
@@ -476,6 +1366,15 @@ header {
   color: var(--ink);
   font-weight: 500;
   line-height: 1.1;
+}
+
+/* Filter and Sort sit side by side, and wrap as a pair onto their own line
+   on narrow screens rather than splitting across the title. */
+.ctrl-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 18px;
 }
 
 .ctrl-group {
@@ -504,6 +1403,35 @@ header {
   cursor: pointer;
   outline: none;
   font-weight: 500;
+}
+
+/* Phones: Filter and Sort share one line under the title. They split the
+   width evenly and the selects are allowed to shrink (min-width: 0 — a
+   form control's default min-width is its content, which is what would
+   otherwise push the second group onto its own row). */
+@media (max-width: 768px) {
+  .ctrl-row {
+    flex-wrap: nowrap;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .ctrl-group {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .ctrl-group label {
+    font-size: 10px;
+    letter-spacing: 0.06em;
+  }
+
+  .ctrl-group select {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 4px 6px;
+    font-size: 11.5px;
+  }
 }
 
 /* minimal text-outline button (order history actions) */
@@ -535,6 +1463,18 @@ header {
   row-gap: 32px;
 }
 
+/* Fixed 4-up on desktop. `auto-fill minmax(230px)` produced 5 columns in
+   the 1360px content column, and with 4-5 products per category that left
+   a category page showing one short row against a large void. Four wider
+   columns fill the row and give each photograph more presence. */
+@media (min-width: 1024px) {
+  .prod-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    row-gap: 4px;
+  }
+}
+
 @media (max-width: 600px) {
   .prod-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -551,21 +1491,36 @@ header {
   flex-direction: column;
   cursor: pointer;
   transition: all 0.25s ease;
+  /* Light hairline around the tile. `!important` is required, not stylistic:
+     the flat-design layer in section 15 declares
+     `border-color: transparent !important` on every element, so a plain
+     border here would compute to transparent and never render. `.product`
+     out-specifies that universal selector, so this survives.
+
+     Costs no layout: `box-sizing: border-box` is set globally, so the 1px
+     comes out of the tile rather than adding to it. */
+  border: 1px solid #EFEAE1 !important;
   min-width: 170px;
   overflow: hidden;
 }
 
 .product:hover {
   transform: translateY(-1px);
+  /* the hairline follows the lift, so the tile does not look half-animated */
+  border-color: #DFD7CA !important;
 }
 
+/* The button is a transparent 30px hit area, not a white plate. The plate
+   was 30px square around an 18px heart, so a margin of empty white sat
+   around the outline; the heart now reads directly on the photograph and a
+   soft shadow keeps it legible over a light one. */
 .product .wish-btn {
   position: absolute;
   top: 10px;
   right: 10px;
   width: 30px;
   height: 30px;
-  background: rgba(255, 255, 255, 0.95);
+  background: transparent;
   border: none;
   border-radius: 2px;
   display: grid;
@@ -573,24 +1528,70 @@ header {
   cursor: pointer;
   z-index: 2;
   color: var(--ink);
-  transition: all 0.2s;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.product .wish-btn svg {
+  filter: drop-shadow(0 1px 2px rgba(255, 255, 255, 0.9));
 }
 
 .product .wish-btn:hover {
   color: var(--accent);
-  background: #FFFFFF;
 }
 
+/* saved state — the heart fills and holds the accent */
+.product .wish-btn.is-wished {
+  color: var(--accent);
+}
+
+.product .wish-btn.is-wished svg {
+  fill: currentColor;
+}
+
+.product .wish-btn:active,
+.product .cart-btn:active {
+  transform: scale(0.9);
+}
+
+/* ---- swipeable tile image ----
+   The .ph track holds every shot in the product's gallery side by side and
+   snaps between them, so a swipe (or a trackpad's horizontal scroll) pages
+   through the images while a tap still follows the card's link. */
 .product .ph {
-  overflow: hidden;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  /* a swipe that reaches the end must not drag the page sideways or, on
+     iOS, trigger the back-navigation gesture */
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
   position: relative;
   background: #FFFFFF;
   width: 100%;
   aspect-ratio: 1 / 1;
 }
 
+.product .ph::-webkit-scrollbar {
+  display: none;
+}
+
+/* One clipping slot per shot. Without it the hover zoom scales the image
+   past its own slot and the edge of the next shot in the track shows
+   through — the track itself cannot clip, since it has to scroll. */
+.product .ph-slide {
+  display: block;
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
 .product .ph img {
   width: 100%;
+  height: 100%;
   aspect-ratio: 1 / 1;
   object-fit: cover;
   transition: transform .6s cubic-bezier(0.25, 1, 0.5, 1);
@@ -598,6 +1599,12 @@ header {
 
 .product:hover .ph img {
   transform: scale(1.05);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product .ph img {
+    transition: none;
+  }
 }
 
 .product-info {
@@ -655,13 +1662,19 @@ header {
    ============================================================ */
 
 /* ---- full-bleed hero campaign ---- */
+/* The hero is a direct child of <body>, not of .wrap, so it does not need
+   the 100vw + negative-margin break-out it used to carry. 100vw includes
+   the scrollbar gutter, which made the hero ~15px wider than the viewport
+   and ~7px off-centre whenever a scrollbar was visible; the excess was
+   then silently swallowed by body's `overflow-x: clip`. */
 .hero-full {
   position: relative;
-  width: 100vw;
+  width: 100%;
   overflow: hidden;
-  margin-left: calc(-50vw + 50%);
-  margin-right: calc(-50vw + 50%);
   background: #000000;
+  /* autoplay interval, shared with the progress rails below and with the
+     DELAY constant in the hero script on index.html */
+  --hero-delay: 6s;
 }
 
 .hero-full img {
@@ -670,6 +1683,175 @@ header {
   object-fit: cover;
 }
 
+/* ---- hero slides ----
+   Stacked in the same box and crossfaded, so the hero keeps its height from
+   the .hero-full rules rather than from whichever slide is showing. Only the
+   active slide takes pointer events — otherwise the hidden poster link would
+   sit over the campaign button and swallow the click. */
+.hero-slide {
+  position: absolute;
+  inset: 0;
+  display: block;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.9s ease, visibility 0.9s ease;
+}
+
+.hero-slide.is-active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* The first slide is in flow rather than absolute, so the hero still has a
+   height at any breakpoint even before the script runs. */
+.hero-slide:first-child {
+  position: relative;
+  height: 100%;
+}
+
+/* Poster slide: shown whole, undarkened, on a near-black ground. Cream
+   would have matched the poster's paper, but the header is transparent
+   with white links over the hero — they have to stay legible in the strip
+   beside and above the poster. */
+.hero-slide-poster {
+  background: #14120F;
+}
+
+.hero-slide-poster img {
+  object-fit: contain;
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+/* ---- hero progress rails ----
+   One rail per slide. The active rail fills across --hero-delay (declared on
+   .hero-full above), the same interval the script uses, so the fill reaching
+   the end and the crossfade starting are the same moment. */
+.hero-bars {
+  position: absolute;
+  left: 0;
+  right: 0;
+  /* sits on the lower edge of the image; the rail itself is centred in a
+     taller transparent button, which is what lifts it clear of the edge */
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+/* The button stays 14px tall for a real touch target while only the 1.5px
+   rail shows. The active rail is the long one — once its fill completes and
+   the hero moves on, it shrinks back to the short resting width. */
+.hero-bar {
+  position: relative;
+  width: 16px;
+  height: 14px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: width 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.hero-bar.is-active {
+  width: 40px;
+}
+
+.hero-bar::before {
+  content: '';
+  position: absolute;
+  inset: 50% 0 auto 0;
+  height: 1.5px;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.hero-bar-fill {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  transform-origin: left center;
+  height: 1.5px;
+  width: 100%;
+  background: #FFFFFF;
+  scale: 0 1;
+}
+
+.hero-bar.is-active .hero-bar-fill {
+  animation: heroProgress var(--hero-delay) linear forwards;
+}
+
+/* hover, or a hidden tab: the script stops the timer, so the fill must
+   stop with it or the rail would lie about when the shift comes */
+.hero-full.is-paused .hero-bar-fill {
+  animation-play-state: paused;
+}
+
+@keyframes heroProgress {
+  from {
+    scale: 0 1;
+  }
+
+  to {
+    scale: 1 1;
+  }
+}
+
+/* the phone sizing is deliberately discreet; on a full-height desktop hero
+   the same rail reads as a hairline, so it scales up here */
+@media (min-width: 1024px) {
+  .hero-bars {
+    bottom: 8px;
+    gap: 12px;
+  }
+
+  .hero-bar {
+    width: 28px;
+    height: 20px;
+  }
+
+  .hero-bar.is-active {
+    width: 96px;
+  }
+
+  .hero-bar::before,
+  .hero-bar-fill {
+    height: 3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-slide {
+    transition: none;
+  }
+
+  .hero-bar {
+    transition: none;
+  }
+
+  /* no autoplay here, so the rail marks the current slide rather than time */
+  .hero-bar.is-active .hero-bar-fill {
+    animation: none;
+    scale: 1 1;
+  }
+}
+
+/* ---- hero overlay: gradient layer and text layer are separate ----------
+   .hero-full-content must span the FULL hero, because it paints the
+   darkening gradient. Constraining it to --page-max leaves the hero's
+   outer strips undarkened and draws two hard vertical seams where the
+   gradient ends (visible from 1441px up, 240px per side at 1920px).
+
+   The text is constrained instead, by .hero-full-inner, so the campaign
+   headline still shares a left edge with "CURATED CATEGORIES" below it.
+   Before that, the headline was padded 48px from the viewport edge while
+   the content column started ~304px in on a 1920px display.
+   ---------------------------------------------------------------------- */
 .hero-full-content {
   position: absolute;
   inset: 0;
@@ -677,11 +1859,15 @@ header {
   flex-direction: column;
   justify-content: flex-end;
   color: #FFFFFF;
+  width: 100%;
 }
 
-.hero-full-kicker {
-  font-family: 'Jost', sans-serif;
-  text-transform: uppercase;
+.hero-full-inner {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: var(--page-max);
+  margin: 0 auto;
 }
 
 .hero-full-title {
@@ -689,14 +1875,30 @@ header {
   text-transform: uppercase;
 }
 
+/* Glass button: the campaign photograph reads through it, so the only
+   opaque things are the text and the hairline. The border needs
+   !important — section 15 forces border-color: transparent on every
+   element, and without it the outline never renders. backdrop-filter is
+   the whole effect, so where it is unsupported the rgba wash below is
+   what keeps the label legible. */
 .hero-full-btn {
   display: inline-block;
-  background: #FFFFFF;
-  color: #000000;
+  background: rgba(20, 18, 16, 0.65);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+  backdrop-filter: blur(10px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.65) !important;
+  color: #FFFFFF;
   font-family: 'Jost', sans-serif;
   text-transform: uppercase;
   font-weight: 500;
   width: fit-content;
+  transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+.hero-full-btn:hover {
+  background: #FFFFFF;
+  color: #141210;
+  border-color: #FFFFFF !important;
 }
 
 @media (max-width: 1023px) {
@@ -711,20 +1913,17 @@ header {
     filter: brightness(0.9) contrast(1.05);
   }
 
+  /* gradient on the full-width layer, padding on the text layer */
   .hero-full-content {
     background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.15) 60%, transparent 100%);
+  }
+
+  .hero-full-inner {
     padding: 28px 20px;
   }
 
-  .hero-full-kicker {
-    font-size: 10px;
-    letter-spacing: 0.22em;
-    color: #E8D3B0;
-    margin-bottom: 6px;
-  }
-
   .hero-full-title {
-    font-size: 32px;
+    font-size: 24px;
     line-height: 1.05;
     margin-bottom: 16px;
   }
@@ -751,21 +1950,21 @@ header {
     transform: scale(1.02);
   }
 
+  /* The gradient layer spans the whole hero and takes no horizontal
+     padding, so it darkens edge to edge. */
   .hero-full-content {
     background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.15) 50%, transparent 100%);
-    padding: 60px 48px;
   }
 
-  .hero-full-kicker {
-    font-size: 11px;
-    letter-spacing: 0.3em;
-    color: var(--gold);
-    font-weight: 500;
-    margin-bottom: 12px;
+  /* The text layer mirrors .wrap exactly — same max-width, same auto
+     margins, same --page-pad — so the headline lands on the content
+     column's left edge at every viewport width. */
+  .hero-full-inner {
+    padding: 60px var(--page-pad);
   }
 
   .hero-full-title {
-    font-size: clamp(48px, 5.5vw, 84px);
+    font-size: clamp(34px, 3.8vw, 58px);
     font-weight: 400;
     letter-spacing: 0.04em;
     line-height: 0.95;
@@ -774,15 +1973,8 @@ header {
 
   .hero-full-btn {
     padding: 14px 36px;
-    border: 1px solid #FFFFFF;
     font-size: 11px;
     letter-spacing: 0.24em;
-    transition: all 0.3s ease;
-  }
-
-  .hero-full-btn:hover {
-    background: transparent;
-    color: #FFFFFF;
   }
 }
 
@@ -793,10 +1985,10 @@ header {
 }
 
 @media (min-width: 1024px) {
-  .home-main {
-    padding-left: 40px;
-    padding-right: 40px;
-  }
+
+  /* .home-main used to add 40px on top of .wrap's gutter, making the home
+     page's content column 80px narrower than every other page's. The
+     gutter now lives in .wrap alone (--page-pad). */
 
   .home-main>section {
     margin-top: 48px;
@@ -805,6 +1997,40 @@ header {
 
   .home-main>section:first-child {
     margin-top: 24px;
+  }
+
+  /* Home sections run on a 24px rhythm rather than the 48px default that
+     .home-main>section sets above. Each needs the `.home-main>` prefix to
+     out-specify that rule — a bare class selector would lose to it.
+
+     These are collapsing margins: the gap between two sections is the
+     larger of the pair, not their sum, so a section's 24px bottom only
+     reads as 24px when its neighbour's top is 24px too. All four are set
+     here, so every gap on the page resolves to 24px.
+
+     The `.reveal` / `.is-visible` classes that also appear on these
+     sections are added at runtime by the scroll-reveal observer in
+     script.js and carry no margins — they only animate opacity and
+     transform, so they do not interact with this rhythm. */
+  .home-main>.curated-section {
+    margin-bottom: 24px;
+  }
+
+  /* the one exception to the 24px rhythm above — see the 4px note further
+     down, where this section is tightened to match its own tile spacing */
+  .home-main>.gallery-tiles {
+    margin-top: 4px;
+    margin-bottom: 4px;
+  }
+
+  .home-main>.jenjum-section {
+    margin-top: 24px;
+    margin-bottom: 24px;
+  }
+
+  .home-main>.trio-minimal {
+    margin-top: 4px;
+    margin-bottom: 24px;
   }
 
   .home-main .sec-head {
@@ -834,7 +2060,11 @@ header {
   flex-wrap: nowrap;
   gap: 4px;
   overflow-x: auto;
-  padding: 5px;
+  /* No vertical padding: it added 5px of dead space above and below the
+     rail on phones, on top of the section's own margins. The 5px sides are
+     kept so the first and last card are not flush against the scroll edge.
+     Desktop overrides this to 0 entirely (the rail becomes a grid there). */
+  padding: 0 5px;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
@@ -897,9 +2127,11 @@ header {
   .home-main .curated-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 14px;
+    gap: 4px;
     overflow: visible;
-    padding-bottom: 0;
+    /* no side padding: the base rule's 5px inset left the first card 5px
+       right of the section title above it, so the two never lined up */
+    padding: 0;
   }
 
   .home-main .curated-card {
@@ -913,6 +2145,13 @@ header {
     font-size: 14px;
     letter-spacing: 0.2em;
   }
+
+  /* Tighter than the 48px the other home sections carry, to match the 4px
+     gap between the cards — 48px below a rail that close reads as a gap in
+     the page rather than a section break. */
+  .home-main .curated-section {
+    margin-bottom: 24px;
+  }
 }
 
 /* ---- gallery tiles (Inside Vayu) ---- */
@@ -925,7 +2164,7 @@ header {
   display: block;
   position: relative;
   width: 100%;
-  aspect-ratio: 21 / 9;
+  aspect-ratio: 16 / 9;
   overflow: hidden;
 }
 
@@ -940,28 +2179,14 @@ header {
   transform: scale(1.03);
 }
 
-.gallery-tiles-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.08) 40%, transparent 70%);
-  display: flex;
-  align-items: flex-end;
-  padding: 28px 32px;
-  pointer-events: none;
-}
+/* .gallery-tiles-overlay and .gallery-tiles-label were removed: the Inside
+   Vayu hero on the home page dropped its caption overlay, and no element has
+   carried either class since. */
 
-.gallery-tiles-label {
-  font-family: 'Cormorant Garamond', 'Georgia', serif;
-  font-size: clamp(22px, 3vw, 36px);
-  font-weight: 300;
-  color: #fff;
-  letter-spacing: 0.02em;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
-}
-
+/* two tiles under the hero, so each is half the width rather than a third */
 .gallery-tiles-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 4px;
   margin-top: 4px;
 }
@@ -969,7 +2194,7 @@ header {
 .gallery-tiles-thumb {
   display: block;
   overflow: hidden;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 9;
 }
 
 .gallery-tiles-thumb img {
@@ -996,16 +2221,25 @@ header {
     font-size: 20px;
   }
 
+  /* 4px here too, so the tile spacing is the same on every view */
   .gallery-tiles-row {
-    gap: 3px;
-    margin-top: 3px;
+    gap: 4px;
+    margin-top: 4px;
   }
+}
+
+/* The section sits as tight to its neighbours as its tiles sit to each
+   other, rather than carrying the 15/48px rhythm of the other home
+   sections. Its own .sec-head keeps the title clear of the block above. */
+.home-main>.gallery-tiles {
+  margin-top: 4px;
+  margin-bottom: 4px;
 }
 
 @media (min-width: 1024px) {
   .home-main .gallery-tiles-row {
-    gap: 14px;
-    margin-top: 14px;
+    gap: 4px;
+    margin-top: 4px;
   }
 
   .home-main .gallery-tiles-overlay {
@@ -1021,7 +2255,7 @@ header {
 .trio-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  gap: 4px;
 }
 
 .trio-item {
@@ -1103,12 +2337,17 @@ header {
 }
 
 @media (min-width: 1024px) {
+  /* Bigger photographs, tighter spacing. The narrower gap does double duty:
+     it reduces the space between the three items AND widens each column,
+     since the columns are 1fr of what the gaps leave over. The taller 5:4
+     frame (from the base 4:3) adds the rest of the height. */
   .home-main .trio-grid {
-    gap: 32px;
+    gap: 4px;
   }
 
   .home-main .trio-img-box {
-    margin-bottom: 18px;
+    aspect-ratio: 5 / 4;
+    margin-bottom: 10px;
   }
 
   .home-main .trio-meta h3 {
@@ -1130,22 +2369,32 @@ header {
 
 /* phone: compact image-left rows instead of stacked blocks */
 @media (max-width: 768px) {
+  /* 4px between rows, expressed as the flex gap rather than as doubled
+     row padding. The rows previously had `padding: 14px 2px` with
+     `gap: 0`, so the space between two images was the sum of one row's
+     bottom padding and the next row's top padding — 28px, and easy to
+     misread as 14px. */
   .trio-grid {
     display: flex;
     flex-direction: column;
-    gap: 0;
+    gap: 4px;
   }
 
   .trio-item {
     flex-direction: row;
     align-items: center;
+    /* this gap is horizontal — image to text */
     gap: 14px;
-    padding: 14px 2px;
+    padding: 0 2px;
   }
 
+  /* Larger photographs. Was a fixed 104px square, which read as a small
+     thumbnail next to a 19px heading. The clamp scales with the screen but
+     resolves to one value per viewport, so all three rows stay aligned; the
+     118px floor keeps enough width for the text column on a 320px phone. */
   .trio-img-box {
-    flex: 0 0 104px;
-    width: 104px;
+    flex: 0 0 clamp(118px, 34vw, 150px);
+    width: clamp(118px, 34vw, 150px);
     aspect-ratio: 1 / 1;
     margin-bottom: 0;
   }
@@ -1191,10 +2440,10 @@ header {
 /* ============================================================
    09 — COLLECTION DIRECTORY PAGE
    ============================================================ */
-.collection-page {
-  padding-left: 4px;
-  padding-right: 4px;
-}
+/* .collection-page declares NO horizontal padding — not even 0. It shares
+   its element with .wrap, so a `padding-left: 0` here would zero the page
+   gutter rather than merely decline to add to it. It previously added 4px
+   unconditionally, making collection pages narrower than the rest. */
 
 .collection-directory {
   display: flex;
@@ -1212,14 +2461,16 @@ header {
   display: block;
   position: relative;
   width: 100%;
-  aspect-ratio: 21 / 9;
+  aspect-ratio: 32 / 9;
   overflow: hidden;
   border-radius: 2px;
 }
 
+/* The source banners are 21:9, so 32:9 crops them top and bottom. They are
+   `object-fit: cover` and centred, which keeps the subject in frame. */
 @media (max-width: 768px) {
   .collection-cat-banner {
-    aspect-ratio: 21 / 9;
+    aspect-ratio: 32 / 9;
   }
 }
 
@@ -1234,13 +2485,18 @@ header {
   transform: scale(1.04);
 }
 
+/* The label sits in the bottom-left corner of the banner. The inset is kept
+   small and fixed rather than the old clamp(16px, 4vw, 40px), which pushed
+   it well inside the frame on wide screens — and the 32:9 banner has little
+   height to spare. */
 .collection-cat-overlay {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.25);
   display: flex;
   align-items: flex-end;
-  padding: clamp(16px, 4vw, 40px);
+  justify-content: flex-start;
+  padding: 10px 12px;
   transition: background 0.3s ease;
 }
 
@@ -1257,58 +2513,114 @@ header {
   text-transform: uppercase;
 }
 
+/* Category name on the collection-detail banner. Same corner, same wash and
+   the same type as the directory's banners above, so a category page reads
+   as a continuation of the tile that was clicked to reach it. */
+.cat-banner-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 10px 12px;
+  pointer-events: none;
+}
+
+.cat-banner-overlay h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(28px, 4vw, 56px);
+  color: #FFFFFF;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
 .collection-sub-carousel {
   display: flex;
+  align-items: flex-start;
   overflow-x: auto;
-  gap: 8px;
-  padding: 10px 0;
+  /* tiles sit close together; the row is inset from the page edges instead */
+  gap: 5px;
+  padding: 10px 12px 4px;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+  /* the row scrolls sideways on narrow screens without dragging the page */
+  overscroll-behavior-x: contain;
 }
 
 .collection-sub-carousel::-webkit-scrollbar {
   display: none;
 }
 
+/* subcategory tile: thumbnail with the label beneath, matching the caption
+   treatment used on the gallery/artist grids and the COLLECTION dropdown */
 .collection-sub-link {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 20px;
-  background: #F9F9F8;
-  border-radius: 2px;
-  font-size: 13.5px;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  width: 92px;
   color: var(--ink);
-  white-space: nowrap;
-  transition: all 0.25s ease;
+  transition: color 0.2s ease;
+}
+
+.collection-sub-thumb {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  background: #FAF8F5;
+}
+
+.collection-sub-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.collection-sub-link:hover .collection-sub-thumb img {
+  transform: scale(1.06);
+}
+
+.collection-sub-name {
+  display: block;
+  padding-top: 6px;
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  text-align: center;
+  /* long labels wrap instead of widening the tile */
+  overflow-wrap: break-word;
 }
 
 .collection-sub-link:hover {
-  background: var(--ink);
-  color: #fff;
-}
-
-.collection-sub-link-all {
-  font-weight: 500;
-  background: transparent;
   color: var(--accent);
 }
 
-.collection-sub-link-all:hover {
-  background: transparent;
-  color: var(--ink);
+@media (min-width: 1024px) {
+  .collection-sub-carousel {
+    gap: 8px;
+    padding: 12px 16px 6px;
+  }
+
+  .collection-sub-link {
+    width: 168px;
+  }
+
+  .collection-sub-name {
+    font-size: 13.5px;
+    padding-top: 8px;
+  }
 }
 
 
 /* ============================================================
    10 — INNER PAGES (journal, about, text documents)
    ============================================================ */
-.journal-list {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-  max-width: 900px;
-  margin: 0 auto 40px;
-}
+/* .journal-list was removed: the journal page renders .journal-grid, and
+   nothing on the site has carried this class since. */
 
 .about-split {
   display: grid;
@@ -1440,76 +2752,166 @@ header {
   font-size: 15px;
 }
 
-.order-card {
+.order-row {
+  display: grid;
+  grid-template-columns: 72px 110px 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  background: #FAF8F5;
   border-radius: 2px;
-  padding: 20px;
-  margin-bottom: 20px;
+  color: inherit;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.order-row:hover {
+  background: #FFFFFF;
   box-shadow: var(--shadow);
 }
 
-.order-header {
-  display: flex;
-  justify-content: space-between;
-  padding-bottom: 15px;
-  margin-bottom: 15px;
-  align-items: center;
+.order-thumb {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
-.order-header .order-id {
+.order-meta {
+  min-width: 0;
+}
+
+.order-meta .order-id {
   font-weight: 500;
   color: var(--ink);
-  font-size: 16px;
-}
-
-.order-header .order-date {
   font-size: 13px;
-  color: #7a7a74;
-  margin-top: 4px;
+  letter-spacing: 0.02em;
 }
 
-.order-header .order-status {
+.order-meta .order-date {
+  font-size: 11.5px;
+  color: #9a958c;
+  margin-top: 2px;
+}
+
+.order-desc {
+  min-width: 0;
+}
+
+.order-desc h4 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px;
+  color: var(--ink);
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.order-desc .qty {
+  font-size: 12px;
+  color: #7a7a74;
+  margin-top: 2px;
+  display: inline-block;
+}
+
+.order-row .order-status {
   background: #FDF0EB;
   color: var(--accent);
-  padding: 5px 12px;
+  padding: 4px 10px;
   border-radius: 2px;
-  font-size: 11px;
+  font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   font-weight: 500;
+  white-space: nowrap;
 }
 
-.order-items {
-  display: flex;
-  gap: 15px;
+.order-row.delivered .order-status {
+  background: #EAF3EC;
+  color: #5B7361;
 }
 
-.order-items img {
-  width: 70px;
-  height: 70px;
-  object-fit: cover;
-  border-radius: 2px;
-}
+/* ---- desktop scale-up (matches the cart page) ----
+   The account page was sized phone-first, so on a 1440-1800px column the
+   sidebar, the order rows and their type all read small. Proportion only —
+   no structural change. */
+@media (min-width: 1024px) {
+  .account-wrap {
+    grid-template-columns: 320px 1fr;
+    gap: 44px;
+  }
 
-.order-item-details {
-  flex-grow: 1;
-}
+  .account-nav {
+    padding: 32px 28px;
+  }
 
-.order-item-details h4 {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 18px;
-  color: var(--ink);
-  margin-bottom: 4px;
-  font-weight: 500;
-}
+  .account-nav h3 {
+    font-size: 27px;
+    margin-bottom: 26px;
+  }
 
-.order-item-details .qty {
-  font-size: 13px;
-  color: #7a7a74;
-}
+  .account-nav li {
+    margin-bottom: 18px;
+  }
 
-.order-action {
-  margin-top: 15px;
-  text-align: right;
+  .account-nav a,
+  .account-nav button.acct-tab {
+    font-size: 16.5px;
+  }
+
+  .account-nav a svg,
+  .account-nav button.acct-tab svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .account-content {
+    padding: 44px 40px;
+  }
+
+  .account-content h2 {
+    font-size: 40px;
+    margin-bottom: 10px;
+  }
+
+  .account-content p {
+    font-size: 16.5px;
+  }
+
+  .order-row {
+    grid-template-columns: 104px 132px 1fr auto;
+    gap: 22px;
+    padding: 18px 20px;
+  }
+
+  .order-thumb {
+    width: 104px;
+    height: 104px;
+  }
+
+  .order-meta .order-id {
+    font-size: 15px;
+  }
+
+  .order-meta .order-date {
+    font-size: 13px;
+  }
+
+  .order-desc h4 {
+    font-size: 20px;
+  }
+
+  .order-desc .qty {
+    font-size: 14px;
+  }
+
+  .order-row .order-status {
+    font-size: 11px;
+    padding: 6px 13px;
+  }
 }
 
 /* ---- mobile order history ---- */
@@ -1526,79 +2928,54 @@ header {
   }
 
   .account-content h2 {
-    font-size: 26px;
+    font-size: 24px;
     margin-bottom: 4px;
   }
 
   .account-content p {
-    font-size: 13.5px;
-    margin-bottom: 18px;
-  }
-
-  .order-card {
-    background: var(--card);
-    padding: 16px;
-    margin-bottom: 12px;
-  }
-
-  /* status pill leads, then id + date beneath it */
-  .order-header {
-    flex-direction: column-reverse;
-    align-items: flex-start;
-    gap: 10px;
-    padding-bottom: 14px;
+    font-size: 13px;
     margin-bottom: 14px;
   }
 
-  .order-header .order-status {
-    font-size: 10px;
-    padding: 5px 11px;
+  .order-row {
+    grid-template-columns: 62px 1fr auto;
+    grid-template-areas:
+      "thumb meta status"
+      "thumb desc status";
+    gap: 4px 12px;
+    padding: 12px;
   }
 
-  .order-header .order-id {
-    font-size: 15px;
+  .order-thumb {
+    grid-area: thumb;
+    width: 62px;
+    height: 62px;
   }
 
-  .order-header .order-date {
-    font-size: 12.5px;
-    margin-top: 3px;
-  }
-
-  .order-items {
-    gap: 12px;
-    align-items: center;
-  }
-
-  .order-items img {
-    width: 78px;
-    height: 78px;
-    flex-shrink: 0;
-  }
-
-  .order-item-details h4 {
-    font-size: 17px;
-    line-height: 1.25;
-  }
-
-  .order-item-details .qty {
-    font-size: 12.5px;
-  }
-
-  /* full-width action — comfortable tap target */
-  .order-action {
-    margin-top: 14px;
-    padding-top: 14px;
-    text-align: center;
-  }
-
-  .order-action .btn-outline {
+  .order-meta {
+    grid-area: meta;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    min-height: 44px;
-    font-size: 11.5px;
-    letter-spacing: 0.14em;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .order-meta .order-date {
+    margin-top: 0;
+  }
+
+  .order-desc {
+    grid-area: desc;
+  }
+
+  .order-row .order-status {
+    grid-area: status;
+    align-self: start;
+    font-size: 9px;
+    padding: 3px 8px;
+  }
+
+  .order-desc h4 {
+    font-size: 15px;
   }
 }
 
@@ -2126,11 +3503,13 @@ footer::before,
   margin: 0;
   height: 56px;
   background: #FFFFFF;
-  z-index: 1000;
+  /* above .mobile-menu-overlay so the bar stays crisp and reads as one
+     surface with the sheet that slides up out of it */
+  z-index: 1002;
   justify-content: space-around;
   align-items: center;
-  padding: 10px 12px;
-  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.04);
+  padding: 0;
+  box-shadow: none;
 }
 
 @media (max-width: 768px) {
@@ -2181,11 +3560,13 @@ footer::before,
 
 .mobile-bottom-nav a.active,
 .mobile-bottom-nav a:hover,
-.mobile-menu-trigger-btn:hover {
+.mobile-menu-trigger-btn:hover,
+.mobile-menu-trigger-btn.menu-open {
   color: var(--accent);
 }
 
-.mobile-bottom-nav a.active svg {
+.mobile-bottom-nav a.active svg,
+.mobile-menu-trigger-btn.menu-open svg {
   stroke: var(--accent);
   transform: translateY(-1px);
 }
@@ -2207,14 +3588,16 @@ footer::before,
   background: rgba(22, 25, 23, 0.55);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  z-index: 1000;
+  z-index: 1001;
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1), visibility 0.3s ease;
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  padding: 0 8px 8px;
+  padding: 0;
+  /* stop rubber-band chaining, which lifts the sheet off the nav bar */
+  overscroll-behavior: none;
 }
 
 .mobile-menu-overlay.active {
@@ -2224,14 +3607,17 @@ footer::before,
 
 .mobile-menu-sheet {
   width: 100%;
-  max-width: 524px;
+  max-width: none;
   background: #FFFFFF;
-  padding: 18px 16px 22px;
-  border-radius: 4px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
-  transform: translateY(105%);
+  padding: 12px 14px 6px;
+  border-radius: 0;
+  /* overlaps the 56px nav by 1px so no hairline seam can appear between
+     them at fractional device pixel ratios — the two read as one panel */
+  margin-bottom: 55px;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.16);
+  transform: translateY(calc(100% + 56px));
   transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
-  max-height: 88vh;
+  max-height: calc(100vh - 56px - 24px);
   display: flex;
   flex-direction: column;
 }
@@ -2244,68 +3630,61 @@ footer::before,
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 14px;
+  padding-bottom: 8px;
 }
 
 .mobile-menu-brand .word {
   font-family: 'Cormorant Garamond', serif;
-  font-size: 22px;
+  font-size: 18px;
   letter-spacing: 0.12em;
   color: var(--ink);
   font-weight: 500;
 }
 
-.mobile-menu-brand .script {
-  font-family: 'Pinyon Script', cursive;
-  font-size: 16px;
-  color: var(--accent);
-  margin-left: 4px;
-}
-
 .mobile-menu-close {
-  background: var(--card);
+  background: transparent;
   border: none;
   border-radius: 2px;
-  width: 34px;
-  height: 34px;
-  font-size: 20px;
+  width: 28px;
+  height: 28px;
+  font-size: 19px;
   line-height: 1;
   display: grid;
   place-items: center;
-  color: var(--ink);
+  color: #8A8681;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease;
 }
 
 .mobile-menu-close:hover {
-  background: var(--accent);
-  color: #fff;
+  color: var(--accent);
 }
 
 .mobile-menu-body {
-  padding: 16px 0;
+  padding: 4px 0;
   overflow-y: auto;
+  /* overflow-y:auto makes the browser compute overflow-x as auto too, so a
+     long sub-link would raise a horizontal scrollbar — pin it shut */
+  overflow-x: hidden;
+  /* keep momentum scrolling inside the list instead of bouncing the sheet */
+  overscroll-behavior: contain;
   flex-grow: 1;
 }
 
 .mm-collection-all {
   display: block;
-  text-align: center;
-  font-size: 11px;
-  letter-spacing: 0.14em;
+  font-size: 10px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   font-weight: 600;
   color: var(--accent);
-  padding: 10px 14px;
-  margin: 0 0 10px;
-  background: var(--card);
-  border-radius: 2px;
-  transition: background 0.2s ease;
+  padding: 6px 2px;
+  margin: 0 0 2px;
+  transition: opacity 0.2s ease;
 }
 
 .mm-collection-all:hover {
-  background: var(--accent);
-  color: #fff;
+  opacity: 0.65;
 }
 
 /* collapsed category accordion — one open at a time (script.js) */
@@ -2314,16 +3693,20 @@ footer::before,
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 46px;
-  padding: 0 2px;
+  min-height: 38px;
+  /* extra right padding absorbs the 45deg-rotated "+" marker: the rotation
+     does not change layout but does enlarge the scrollable overflow area,
+     which raised a horizontal scrollbar on the open group */
+  padding: 0 8px 0 2px;
   font-family: 'Cormorant Garamond', serif;
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  transition: color 0.25s ease;
 }
 
 .macc-group summary::-webkit-details-marker {
@@ -2337,7 +3720,8 @@ footer::before,
   font-weight: 300;
   line-height: 1;
   color: var(--accent);
-  transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  /* matches the panel reveal in script.js so marker and content settle together */
+  transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), color 0.3s ease;
 }
 
 .macc-group[open] summary::after {
@@ -2348,19 +3732,28 @@ footer::before,
   color: var(--accent);
 }
 
+/* two columns: sub-lists run 6 items deep, so a single column wasted
+   half the sheet width and pushed the accordion off-screen */
 .macc-links {
-  display: flex;
-  flex-direction: column;
-  padding: 0 2px 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 8px;
+  padding: 0 2px 8px;
+  /* clips the panel while its height is animated open/closed (script.js) */
+  overflow: hidden;
 }
 
 .macc-links a {
   display: block;
-  padding: 9px 12px;
-  font-size: 14px;
+  padding: 6px 8px;
+  font-size: 13px;
   letter-spacing: 0.02em;
   color: var(--body);
   transition: color 0.18s ease;
+  /* grid children default to min-width:auto, which refuses to shrink below
+     the longest word and pushes the panel wider than the sheet */
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .macc-links a:hover {
@@ -2368,57 +3761,98 @@ footer::before,
 }
 
 .macc-links .macc-all {
-  font-size: 11px;
+  grid-column: 1 / -1;
+  font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   font-weight: 600;
   color: var(--accent);
+  padding-top: 2px;
 }
 
 .mm-pages-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: 14px;
+  gap: 2px 8px;
+  margin-top: 8px;
 }
 
 .mm-pages-row a {
   display: block;
-  text-align: center;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   color: var(--ink);
-  padding: 11px 14px;
-  border-radius: 2px;
-  background: var(--card);
-  transition: all 0.2s ease;
+  padding: 7px 8px;
+  transition: color 0.2s ease;
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .mm-pages-row a:hover {
-  background: var(--accent);
-  color: #fff;
-}
-
-.mobile-menu-footer {
-  margin-top: auto;
-  padding-top: 14px;
-  font-size: 12px;
-  color: #7A7E7C;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.mobile-menu-footer a {
   color: var(--accent);
-  font-weight: 500;
 }
 
 
 /* ============================================================
    14 — MOTION
    ============================================================ */
+
+/* ---- Lenis smooth scroll (js/vendor/lenis.min.js, wired in include.js) ---- */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+/* opt-out regions keep their own native scrolling (e.g. the menu sheet body) */
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
+/* ---- toast (product tile confirmations, script.js) ---- */
+.vayu-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 76px;
+  transform: translate(-50%, 8px);
+  z-index: 1200;
+  max-width: min(88vw, 360px);
+  padding: 10px 16px;
+  background: var(--ink);
+  color: #FFFFFF;
+  border-radius: 2px;
+  font-family: 'Jost', sans-serif;
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.vayu-toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+@media (min-width: 1024px) {
+  .vayu-toast {
+    bottom: 28px;
+  }
+}
+
 body.page-transitioning {
   opacity: 0;
 }
@@ -2436,15 +3870,51 @@ body.page-transitioning {
     }
   }
 
+  /* the page settles in rather than snapping on */
+  @keyframes pageRiseIn {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  main {
+    animation: pageRiseIn 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
   body {
     animation: pageFadeIn 0.45s ease both;
   }
 
-  /* page exit fade (class added on link click in include.js) */
+  /* Page exit (class added on link click in include.js). The fade is on
+     <body>, the drift on <main>: a transform on <body> would make it the
+     containing block for the fixed header and the dropdown panels, which
+     would drag the bar down with the page. */
   body.page-transitioning {
     animation: none;
     opacity: 0;
-    transition: opacity 0.22s ease;
+    transition: opacity 0.14s ease;
+  }
+
+  body.page-transitioning main {
+    transform: translateY(8px);
+    transition: transform 0.14s cubic-bezier(0.4, 0, 1, 1);
+  }
+
+  /* Browsers that run the view transition never get the class, but the
+     page-enter animations still play on top of the crossfade and read as
+     a double move. The transition itself is the entrance there. */
+  @supports (view-transition-name: none) {
+
+    body,
+    main {
+      animation: none;
+    }
   }
 
   /* consistent easing on interactive elements */
@@ -2459,17 +3929,130 @@ body.page-transitioning {
   }
 
   /* scroll-reveal fade-up — .reveal added by script.js,
-     .is-visible toggled when the element enters the viewport */
+     .is-visible toggled when the element enters the viewport. Longer and
+     further than before, on a decelerating curve, so blocks arrive with
+     some weight instead of blinking in. */
   .reveal {
     opacity: 0;
-    transform: translateY(18px);
-    transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    transform: translateY(34px);
+    transition: opacity 0.85s ease, transform 1s cubic-bezier(0.22, 1, 0.36, 1);
     will-change: opacity, transform;
   }
 
   .reveal.is-visible {
     opacity: 1;
     transform: none;
+  }
+
+  /* ---- staggered children ----
+     Tiles inside a revealed block arrive one after another rather than as
+     a slab. Listed explicitly: horizontally scrolling rails and anything
+     position-critical are left out, since transforms on those would fight
+     the scroll or the sticky offsets. */
+  .reveal .curated-grid>*,
+  .reveal .prod-grid>*,
+  .reveal .trio-grid>*,
+  .reveal .gallery-tiles-row>*,
+  .reveal .collection-directory>*,
+  .reveal .g-grid>*,
+  .reveal .g-pair>*,
+  .reveal .a-grid>* {
+    opacity: 0;
+    transform: translateY(26px);
+    transition: opacity 0.7s ease, transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .reveal.is-visible .curated-grid>*,
+  .reveal.is-visible .prod-grid>*,
+  .reveal.is-visible .trio-grid>*,
+  .reveal.is-visible .gallery-tiles-row>*,
+  .reveal.is-visible .collection-directory>*,
+  .reveal.is-visible .g-grid>*,
+  .reveal.is-visible .g-pair>*,
+  .reveal.is-visible .a-grid>* {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* the cascade — 70ms apart, capped so a long grid does not crawl */
+  .reveal.is-visible :is(.curated-grid, .prod-grid, .trio-grid, .gallery-tiles-row, .collection-directory, .g-grid, .g-pair, .a-grid)>*:nth-child(1) {
+    transition-delay: 0.05s;
+  }
+
+  .reveal.is-visible :is(.curated-grid, .prod-grid, .trio-grid, .gallery-tiles-row, .collection-directory, .g-grid, .g-pair, .a-grid)>*:nth-child(2) {
+    transition-delay: 0.12s;
+  }
+
+  .reveal.is-visible :is(.curated-grid, .prod-grid, .trio-grid, .gallery-tiles-row, .collection-directory, .g-grid, .g-pair, .a-grid)>*:nth-child(3) {
+    transition-delay: 0.19s;
+  }
+
+  .reveal.is-visible :is(.curated-grid, .prod-grid, .trio-grid, .gallery-tiles-row, .collection-directory, .g-grid, .g-pair, .a-grid)>*:nth-child(4) {
+    transition-delay: 0.26s;
+  }
+
+  .reveal.is-visible :is(.curated-grid, .prod-grid, .trio-grid, .gallery-tiles-row, .collection-directory, .g-grid, .g-pair, .a-grid)>*:nth-child(5) {
+    transition-delay: 0.33s;
+  }
+
+  .reveal.is-visible :is(.curated-grid, .prod-grid, .trio-grid, .gallery-tiles-row, .collection-directory, .g-grid, .g-pair, .a-grid)>*:nth-child(n+6) {
+    transition-delay: 0.4s;
+  }
+
+  /* ---- interaction weight ----
+     Cards lift on hover and press back down on click, so a tap or click
+     has a physical answer on both desktop and phone. */
+  .product:hover,
+  .curated-card:hover,
+  .trio-item:hover,
+  .collection-sub-link:hover,
+  .gdrop-tile:hover {
+    transform: translateY(-4px);
+  }
+
+  .product,
+  .curated-card,
+  .trio-item,
+  .collection-sub-link,
+  .gdrop-tile {
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.45s ease, color 0.25s ease;
+  }
+
+  .product:active,
+  .curated-card:active,
+  .trio-item:active,
+  .collection-sub-link:active,
+  .gdrop-tile:active,
+  .cart-checkout-btn:active,
+  .hero-full-btn:active,
+  .acct-save:active,
+  .btn-outline:active {
+    transform: translateY(0) scale(0.985);
+    transition-duration: 0.12s;
+  }
+
+  /* nav labels get a sliding underline rather than a colour flip alone */
+  .menu>li>a {
+    position: relative;
+  }
+
+  .menu>li>a::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -6px;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .menu>li:hover>a::after,
+  .menu>li:focus-within>a::after {
+    transform: scaleX(1);
   }
 }
 
@@ -2489,8 +4072,8 @@ body.page-transitioning {
    15 — FLAT-DESIGN GLOBAL OVERRIDES
    These two rules define the site's flat look and also guard
    against borders/radii introduced by page-local <style>
-   blocks. Visible exceptions (mm-head hairline, footer gold
-   line, .m-directions-btn) re-assert their colors with
+   blocks. Visible exceptions (footer gold line,
+   .m-directions-btn) re-assert their colors with
    !important AFTER this layer.
    ============================================================ */
 *,
@@ -2522,10 +4105,138 @@ a {
 }
 
 /* re-assert the intentional visible hairlines over the layer above */
-.mm-head {
-  border-bottom-color: #E8E2D8 !important;
-}
-
 .m-directions-btn {
   border-color: var(--ink) !important;
+}
+
+/* ---- shapes the flat layer was silently flattening -------------------
+   `border-radius: 2px !important` above matches a, button, div, input and
+   img, and a stylesheet !important also beats an inline style. Several
+   elements authored as round were therefore rendering square with no
+   indication that their own rule had lost:
+
+     .prod-dot  authored `border-radius: 50%`  -> square carousel dot
+
+   A round dot carries meaning, so it is re-asserted here. The sub-category
+   filter chips used to be re-asserted alongside it; they are now square by
+   request and simply take the flat layer's 2px. The dead
+   `border-radius: 20px / 14px` inline styles on about/help/legal were
+   removed from those pages instead — the flat look is deliberate.
+   -------------------------------------------------------------------- */
+.prod-dot,
+.icon-badge {
+  border-radius: 999px !important;
+}
+
+
+/* ============================================================
+   16 — SUB-CATEGORY FILTER RAIL (collection detail)
+   Was an inline <style> block in collection-detail.html. Its
+   border-based hover could never render: the flat layer forces
+   border-color: transparent !important, so hovering a filter
+   gave no feedback at all. Tinted background instead.
+   ============================================================ */
+/* ---- sticky control rail (collection detail) ----
+   The sub-category pills and the Filter/Sort bar stay reachable once the
+   banner has scrolled past, on phones and desktop alike. They ride in one
+   wrapper so they never separate mid-scroll, and it parks directly beneath
+   the site bar — sticky on phones, fixed on desktop, --hdr-h either way.
+
+   The white background and the negative-then-positive padding matter: the
+   rail is transparent by default, so product tiles would show through it
+   as they pass underneath, and content must not peek out at its edges. */
+.collection-sticky {
+  position: sticky;
+  top: var(--hdr-h, 64px);
+  z-index: 20;
+  background: #FFFFFF;
+  padding-top: 6px;
+  margin-bottom: 6px;
+}
+
+/* hairline at the foot of the rail, drawn as a background because the
+   flat-design layer forces border-color: transparent */
+.collection-sticky::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: #F0EDE7;
+}
+
+.sub-nav {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 2px 0;
+  margin-bottom: 4px;
+}
+
+.sub-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.sub-nav .sub-pill {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 9px 20px;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--body);
+  background: #FAF8F5;
+  white-space: nowrap;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.sub-nav .sub-pill:hover {
+  background: #F0EAE1;
+  color: var(--ink);
+}
+
+.sub-nav .sub-pill.active {
+  background: var(--ink);
+  color: #FFFFFF;
+}
+
+/* ---- category-not-found state (collection detail) ----
+   Reaching collection-detail.html without a valid ?cat= used to render a
+   silent dead page: the home hero as the banner, the title "Collection",
+   an empty grid and no message. */
+.cat-missing {
+  padding: 72px 16px 90px;
+  text-align: center;
+}
+
+.cat-missing h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(24px, 3vw, 34px);
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+
+.cat-missing p {
+  font-size: 14px;
+  color: var(--body);
+  margin-bottom: 22px;
+}
+
+.cat-missing-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+/* empty result for a journal category filter */
+.journal-empty {
+  grid-column: 1 / -1;
+  padding: 40px 8px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--body);
+  letter-spacing: 0.02em;
 }

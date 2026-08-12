@@ -8,9 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&family=Pinyon+Script&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="/css/styles.css?v=20">
+    <link rel="stylesheet" href="/css/styles.css?v=113">
 </head>
 
 <body>
@@ -45,21 +45,24 @@
                 <h1 id="prodName" class="prod-title"></h1>
                 <div id="prodPrice" class="prod-price"></div>
                 <div class="prod-action-bar">
-                    <div class="prod-qty">
-                        <button class="prod-qty-btn" id="qtyMinus" aria-label="Decrease quantity">−</button>
-                        <span class="prod-qty-val" id="qtyVal">1</span>
-                        <button class="prod-qty-btn" id="qtyPlus" aria-label="Increase quantity">+</button>
+                    <div class="prod-action-row">
+                        <div class="prod-qty">
+                            <button class="prod-qty-btn" id="qtyMinus" aria-label="Decrease quantity">−</button>
+                            <span class="prod-qty-val" id="qtyVal">1</span>
+                            <button class="prod-qty-btn" id="qtyPlus" aria-label="Increase quantity">+</button>
+                        </div>
+                        <button class="prod-cart-btn" id="prodCartBtn">Add to Cart</button>
                     </div>
-                    <button class="prod-wish-btn" id="prodWishBtn" aria-label="Add to Wishlist">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="1.5">
+                    <button class="prod-buy-btn" id="prodBuyBtn">Buy Now</button>
+                    <button class="prod-wish-btn" id="prodWishBtn" aria-pressed="false">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                             <path
                                 d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z">
                             </path>
                         </svg>
+                        <span class="prod-wish-label">Add to Wishlist</span>
                     </button>
-                    <button class="prod-cart-btn" id="prodCartBtn">Add to Cart</button>
-                    <button class="prod-buy-btn" id="prodBuyBtn">Buy Now</button>
                 </div>
 
                 <div class="prod-accordion" id="prodAccordion">
@@ -74,7 +77,7 @@
                         <div class="prod-acc-body" id="acc-desc">
                             <p id="prodDesc">
                                 A singular piece from the Vayu atelier — crafted by hand using time-honoured techniques
-                                and natural materials. Each object carries the quiet imperfection of the artisan's
+                                and natural materials. Each object carries the quiet imperfection of the artist's
                                 touch, making it uniquely yours.
                             </p>
                         </div>
@@ -162,7 +165,10 @@
         <!-- Suggested Products -->
         <section class="prod-suggest-section">
             <h2 class="prod-suggest-title">You May Also Like</h2>
-            <div class="prod-suggest-grid" id="prodSuggestGrid"></div>
+            <!-- .prod-grid, not a grid of its own: these are the same tiles as
+                 the collection page, so they inherit its columns, its 4px
+                 gaps and the .product card styling from styles.css -->
+            <div class="prod-grid" id="prodSuggestGrid"></div>
         </section>
 
         <style>
@@ -180,59 +186,8 @@
                 border-bottom: 1px solid #E8E2D8;
             }
 
-            .prod-suggest-grid {
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                gap: 20px;
-            }
-
-            .suggest-card {
-                cursor: pointer;
-                text-decoration: none;
-                color: inherit;
-                display: block;
-            }
-
-            .suggest-card-img {
-                width: 100%;
-                aspect-ratio: 1 / 1;
-                overflow: hidden;
-                border-radius: 2px;
-                background: #FFFFFF;
-            }
-
-            .suggest-card-img img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-                transition: transform 0.4s ease;
-            }
-
-            .suggest-card:hover .suggest-card-img img {
-                transform: scale(1.04);
-            }
-
-            .suggest-card-name {
-                font-family: 'Cormorant Garamond', serif;
-                font-size: 16px;
-                font-weight: 500;
-                color: var(--ink);
-                margin: 10px 0 4px;
-            }
-
-            .suggest-card-price {
-                font-family: 'Jost', sans-serif;
-                font-size: 13px;
-                color: var(--body);
-                font-weight: 500;
-            }
-
-            @media (max-width: 900px) {
-                .prod-suggest-grid {
-                    grid-template-columns: repeat(2, 1fr);
-                    gap: 16px;
-                }
-            }
+            /* The grid and the cards are .prod-grid / .product from
+               styles.css — nothing to declare here. */
         </style>
 
         <style>
@@ -337,115 +292,135 @@
                 margin: 16px 0;
             }
 
-            /* ---- Single-line action bar ---- */
+            /* ---- Action bar --------------------------------------------
+               Stacked hierarchy instead of four controls fighting on one
+               line: qty + Add to Cart share a row, Buy Now sits full width
+               beneath it, and the wishlist drops to a quiet text button.
+               Outlines are inset box-shadows, not borders — the global layer
+               in styles.css forces border-color: transparent !important.
+               ------------------------------------------------------------ */
             .prod-action-bar {
+                display: grid;
+                gap: 6px;
+                margin-bottom: 22px;
+            }
+
+            .prod-action-row {
                 display: flex;
-                align-items: center;
-                gap: 10px;
-                margin-bottom: 32px;
-                flex-wrap: wrap;
+                align-items: stretch;
+                gap: 6px;
             }
 
             .prod-qty {
                 display: flex;
                 align-items: center;
-                border: 1px solid #D4CFC4;
+                background: #FAF8F5;
                 border-radius: 2px;
                 overflow: hidden;
-                height: 48px;
-                flex-shrink: 0;
+                height: 40px;
+                flex: 0 0 auto;
             }
 
             .prod-qty-btn {
-                width: 38px;
+                width: 30px;
                 height: 100%;
                 border: none;
-                background: #FAF8F5;
-                color: var(--ink);
-                font-size: 18px;
+                background: transparent;
+                color: #8A8681;
+                font-size: 15px;
+                line-height: 1;
                 cursor: pointer;
                 display: grid;
                 place-items: center;
-                transition: background 0.2s ease;
+                transition: color 0.2s ease;
             }
 
             .prod-qty-btn:hover {
-                background: #EDE9E3;
+                color: var(--accent);
             }
 
             .prod-qty-val {
-                min-width: 34px;
+                min-width: 22px;
                 text-align: center;
                 font-family: 'Jost', sans-serif;
-                font-size: 14px;
+                font-size: 12.5px;
                 font-weight: 500;
                 color: var(--ink);
             }
 
-            .prod-wish-btn {
-                width: 48px;
-                height: 48px;
-                background: #FAF8F5;
-                border: 1px solid #D4CFC4;
-                border-radius: 2px;
-                display: grid;
-                place-items: center;
-                cursor: pointer;
-                color: var(--ink);
-                transition: all 0.25s ease;
-                flex-shrink: 0;
-            }
-
-            .prod-wish-btn:hover {
-                background: var(--ink);
-                color: #fff;
-                border-color: var(--ink);
-            }
-
+            /* primary — the one solid block on the page */
             .prod-cart-btn {
-                flex: 1;
-                min-width: 120px;
-                padding: 0 24px;
-                height: 48px;
+                flex: 1 1 auto;
+                min-width: 0;
+                padding: 0 18px;
+                height: 40px;
                 background: var(--ink);
                 color: #fff;
                 border: none;
                 border-radius: 2px;
                 font-family: 'Jost', sans-serif;
-                font-size: 12px;
+                font-size: 10.5px;
                 letter-spacing: 0.16em;
                 text-transform: uppercase;
                 font-weight: 500;
                 cursor: pointer;
-                transition: all 0.25s ease;
+                transition: background 0.25s ease;
             }
 
             .prod-cart-btn:hover {
                 background: var(--accent);
             }
 
+            /* secondary — outlined so it does not compete with the primary */
             .prod-buy-btn {
-                flex: 1;
-                min-width: 120px;
-                padding: 0 24px;
-                height: 48px;
-                background: var(--accent);
-                color: #fff;
-                border: 1px solid var(--accent);
+                width: 100%;
+                height: 40px;
+                padding: 0 18px;
+                background: transparent;
+                color: var(--ink);
+                border: none;
                 border-radius: 2px;
+                box-shadow: inset 0 0 0 1px #D9D3C9;
                 font-family: 'Jost', sans-serif;
-                font-size: 12px;
+                font-size: 10.5px;
                 letter-spacing: 0.16em;
                 text-transform: uppercase;
                 font-weight: 500;
                 cursor: pointer;
-                transition: all 0.25s ease;
+                transition: box-shadow 0.25s ease, color 0.25s ease;
             }
 
             .prod-buy-btn:hover {
-                background: var(--ink);
-                color: #fff;
-                border-color: var(--ink);
+                color: var(--accent);
+                box-shadow: inset 0 0 0 1px var(--accent);
+            }
+
+            /* tertiary — plain text, no chrome */
+            .prod-wish-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                padding: 3px 4px;
+                background: none;
+                border: none;
+                cursor: pointer;
+                color: #8A8681;
+                font-family: 'Jost', sans-serif;
+                font-size: 10px;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                font-weight: 500;
+                transition: color 0.2s ease;
+            }
+
+            .prod-wish-btn:hover,
+            .prod-wish-btn.is-wished {
+                color: var(--accent);
+            }
+
+            .prod-wish-btn.is-wished svg {
+                fill: currentColor;
             }
 
             /* ---- Accordion dropdowns ---- */
@@ -536,14 +511,12 @@
                     position: static;
                 }
 
-                .prod-action-bar {
-                    flex-wrap: wrap;
-                }
-
+                /* the stacked bar already reflows; phones just get a slightly
+                   taller tap target than the desktop 40px */
+                .prod-qty,
                 .prod-cart-btn,
                 .prod-buy-btn {
-                    flex: 1 1 calc(50% - 5px);
-                    min-width: 0;
+                    height: 42px;
                 }
             }
         </style>
@@ -551,116 +524,23 @@
 
     <div id="site-footer"></div>
 
+    <!-- script.js is NOT loaded here. include.js appends it on every page,
+         so this page used to execute it twice: every scroll and click
+         listener bound twice, the cart/wishlist badge updater bound twice,
+         and showToast defined in two separate scopes. The `type="module"`
+         on the second copy also changed its scoping, even though script.js
+         is written as a classic script that reads window.vayuCatalogue. -->
     <script type="module" src="/js/include.js"></script>
-    <script type="module" src="/js/script.js"></script>
     <script type="module">
         import { addToCart, toggleWishlist, isInWishlist } from '../js/shop.js';
+        import { productData } from '../js/catalogue.js';
+        import { categoryTitle } from '../js/taxonomy.js';
+        import { productCardHTML, bindProductTiles } from '../js/product-card.js';
 
-        // Product detail page logic
-        const catData = {
-            fashion: { title: 'Fashion' },
-            furniture: { title: 'Furniture' },
-            home: { title: 'Home' },
-            decor: { title: 'Decor' },
-            materials: { title: 'Materials' }
-        };
-
-        const productData = {
-            fashion: [
-                {
-                    name: 'Sanganer Silk Stole', price: '₹ 3,200', img: '/assets/images/prod_silk_stole.png', sub: 'women', isNew: true,
-                    gallery: ['/assets/images/prod_silk_stole.png', '/assets/images/cat_textiles.png', '/assets/images/prod_wool_shawl.png']
-                },
-                {
-                    name: 'Heritage Linen Kurta', price: '₹ 5,400', img: '/assets/images/prod_linen_kurta.png', sub: 'men',
-                    gallery: ['/assets/images/prod_linen_kurta.png', '/assets/images/cat_apparel.png', '/assets/images/prod_silk_stole.png']
-                },
-                {
-                    name: 'Handwoven Wool Shawl', price: '₹ 4,100', img: '/assets/images/prod_wool_shawl.png', sub: 'women',
-                    gallery: ['/assets/images/prod_wool_shawl.png', '/assets/images/cat_textiles.png', '/assets/images/prod_silk_stole.png']
-                },
-                {
-                    name: 'Brass Cuff Bracelet', price: '₹ 2,800', img: '/assets/images/prod_brass_cuff.png', sub: 'accessories', isNew: true,
-                    gallery: ['/assets/images/prod_brass_cuff.png', '/assets/images/cat_jewelry.png', '/assets/images/cat_objects.png']
-                },
-                {
-                    name: 'Black Obsidian Lamp', price: '₹ 14,500', img: '/assets/images/black_lamp.png', sub: 'accessories',
-                    gallery: ['/assets/images/black_lamp.png', '/assets/images/prod_crimson_floor_lamp.png', '/assets/images/prod_lotus_urli_lamp.png']
-                }
-            ],
-            furniture: [
-                {
-                    name: 'Teakwood Lounge Chair', price: '₹ 24,500', img: '/assets/images/prod_teak_chair.png', sub: 'seating', isNew: true,
-                    gallery: ['/assets/images/prod_teak_chair.png', '/assets/images/cat_furniture.png', '/assets/images/prod_cane_side_table.png']
-                },
-                {
-                    name: 'Carved Console Table', price: '₹ 32,000', img: '/assets/images/prod_console_table.png', sub: 'console-tables',
-                    gallery: ['/assets/images/prod_console_table.png', '/assets/images/cat_furniture.png', '/assets/images/prod_stone_coffee_table.png']
-                },
-                {
-                    name: 'Stone-Top Coffee Table', price: '₹ 28,400', img: '/assets/images/prod_stone_coffee_table.png', sub: 'coffee-tables',
-                    gallery: ['/assets/images/prod_stone_coffee_table.png', '/assets/images/prod_console_table.png', '/assets/images/prod_cane_side_table.png']
-                },
-                {
-                    name: 'Cane Side Table', price: '₹ 12,900', img: '/assets/images/prod_cane_side_table.png', sub: 'side-tables',
-                    gallery: ['/assets/images/prod_cane_side_table.png', '/assets/images/prod_teak_chair.png', '/assets/images/cat_furniture.png']
-                }
-            ],
-            home: [
-                {
-                    name: 'Ceramic Dinner Plate Set', price: '₹ 6,200', img: '/assets/images/prod_ceramic_plate_set.png', sub: 'tableware',
-                    gallery: ['/assets/images/prod_ceramic_plate_set.png', '/assets/images/cat_tableware.png', '/assets/images/prod_murano_glassware.png']
-                },
-                {
-                    name: 'Murano Glassware Pair', price: '₹ 7,800', img: '/assets/images/prod_murano_glassware.png', sub: 'drinkware', isNew: true,
-                    gallery: ['/assets/images/prod_murano_glassware.png', '/assets/images/prod_ceramic_plate_set.png', '/assets/images/cat_tableware.png']
-                },
-                {
-                    name: 'Lotus Urli Lamp', price: '₹ 6,900', img: '/assets/images/prod_lotus_urli_lamp.png', sub: 'lighting',
-                    gallery: ['/assets/images/prod_lotus_urli_lamp.png', '/assets/images/prod_crimson_floor_lamp.png', '/assets/images/black_lamp.png']
-                },
-                {
-                    name: 'Raga Crimson Floor Lamp', price: '₹ 38,500', img: '/assets/images/prod_crimson_floor_lamp.png', sub: 'lighting', isNew: true,
-                    gallery: ['/assets/images/prod_crimson_floor_lamp.png', '/assets/images/prod_lotus_urli_lamp.png', '/assets/images/black_lamp.png']
-                }
-            ],
-            decor: [
-                {
-                    name: 'Terracotta Ritual Vase', price: '₹ 4,600', img: '/assets/images/prod_terracotta_vase.png', sub: 'vases',
-                    gallery: ['/assets/images/prod_terracotta_vase.png', '/assets/images/cat_objects.png', '/assets/images/cat_art.png']
-                },
-                {
-                    name: 'Bronze Sculpture Study', price: '₹ 15,200', img: '/assets/images/cat_objects.png', sub: 'artifacts', isNew: true,
-                    gallery: ['/assets/images/cat_objects.png', '/assets/images/prod_terracotta_vase.png', '/assets/images/cat_art.png']
-                },
-                {
-                    name: 'Ritual Candle Stand', price: '₹ 3,400', img: '/assets/images/cat_objects.png', sub: 'candle-holders',
-                    gallery: ['/assets/images/cat_objects.png', '/assets/images/prod_lotus_urli_lamp.png', '/assets/images/prod_terracotta_vase.png']
-                },
-                {
-                    name: 'Framed Miniature Art', price: '₹ 9,800', img: '/assets/images/cat_art.png', sub: 'wall-art',
-                    gallery: ['/assets/images/cat_art.png', '/assets/images/prod_silk_stole.png', '/assets/images/cat_textiles.png']
-                }
-            ],
-            materials: [
-                {
-                    name: 'Hand-Beaten Brass Bowl', price: '₹ 3,900', img: '/assets/images/cat_objects.png', sub: 'brass',
-                    gallery: ['/assets/images/cat_objects.png', '/assets/images/prod_brass_cuff.png', '/assets/images/prod_lotus_urli_lamp.png']
-                },
-                {
-                    name: 'Marble Serving Board', price: '₹ 5,600', img: '/assets/images/prod_stone_coffee_table.png', sub: 'marble', isNew: true,
-                    gallery: ['/assets/images/prod_stone_coffee_table.png', '/assets/images/prod_ceramic_plate_set.png', '/assets/images/cat_furniture.png']
-                },
-                {
-                    name: 'Murano Glass Vessel', price: '₹ 8,200', img: '/assets/images/prod_murano_glassware.png', sub: 'murano-glass',
-                    gallery: ['/assets/images/prod_murano_glassware.png', '/assets/images/prod_ceramic_plate_set.png', '/assets/images/prod_terracotta_vase.png']
-                },
-                {
-                    name: 'Block-Print Textile Panel', price: '₹ 2,900', img: '/assets/images/prod_silk_stole.png', sub: 'textile',
-                    gallery: ['/assets/images/prod_silk_stole.png', '/assets/images/cat_textiles.png', '/assets/images/prod_wool_shawl.png']
-                }
-            ]
-        };
+        // catalogue lives in /js/catalogue.js and the category names in
+        // /js/taxonomy.js, so the grid, this page and header search all read
+        // the same lists. The local five-entry catData that used to sit here
+        // left the breadcrumb blank on an Accents or Souvenir product.
 
         const params = new URLSearchParams(location.search);
         const cat = (params.get('cat') || '').toLowerCase();
@@ -674,12 +554,11 @@
             product = allProducts.find(p => p.name === name);
         }
 
-        const catInfo = catData[cat];
         const crumbCategory = document.getElementById('crumbCategory');
         const crumbProduct = document.getElementById('crumbProduct');
 
-        if (catInfo && crumbCategory) {
-            crumbCategory.textContent = catInfo.title;
+        if (cat && crumbCategory) {
+            crumbCategory.textContent = categoryTitle(cat);
             crumbCategory.href = `/pages/collection-detail.html?cat=${cat}`;
         }
 
@@ -771,15 +650,16 @@
 
             // ---- Wishlist button ----
             const wishBtn = document.getElementById('prodWishBtn');
-            const wishSvg = wishBtn ? wishBtn.querySelector('svg') : null;
+            const wishLabel = wishBtn ? wishBtn.querySelector('.prod-wish-label') : null;
 
+            // state lives in a class now — the heart fill, colour and label
+            // all follow from .is-wished rather than inline styles
             function syncWishState() {
-                if (!wishSvg) return;
+                if (!wishBtn) return;
                 const wished = isInWishlist(cat, idx);
-                wishSvg.setAttribute('fill', wished ? 'currentColor' : 'none');
-                wishBtn.style.background = wished ? 'var(--ink)' : '';
-                wishBtn.style.color = wished ? '#fff' : '';
-                wishBtn.style.borderColor = wished ? 'var(--ink)' : '';
+                wishBtn.classList.toggle('is-wished', wished);
+                wishBtn.setAttribute('aria-pressed', String(wished));
+                if (wishLabel) wishLabel.textContent = wished ? 'In Wishlist' : 'Add to Wishlist';
             }
             syncWishState();
 
@@ -809,39 +689,31 @@
                 });
             }
 
-            // Suggested products — same category, excluding the current product
+            // Suggested products — same category first, topped up from the
+            // rest of the catalogue. Built as [cat, idx] pairs so the shared
+            // tile can resolve each product itself.
             const suggestGrid = document.getElementById('prodSuggestGrid');
             if (suggestGrid) {
-                const currentIdx = allProducts.findIndex((p, i) => p === product || allProducts[i] === product);
-                const suggestions = allProducts.filter((p, i) => i !== currentIdx).slice(0, 4);
+                const pairs = allProducts
+                    .map((_, i) => [cat, i])
+                    .filter(([, i]) => i !== idx)
+                    .slice(0, 4);
 
-                // If fewer than 4 in same category, fill from other categories
-                if (suggestions.length < 4) {
-                    const otherCats = Object.keys(productData).filter(k => k !== cat);
-                    for (const otherCat of otherCats) {
-                        if (suggestions.length >= 4) break;
-                        for (const p of productData[otherCat]) {
-                            if (suggestions.length >= 4) break;
-                            suggestions.push({ ...p, _cat: otherCat, _idx: productData[otherCat].indexOf(p) });
-                        }
+                for (const [otherCat, items] of Object.entries(productData)) {
+                    if (pairs.length >= 4) break;
+                    if (otherCat === cat) continue;
+                    for (let i = 0; i < items.length && pairs.length < 4; i++) {
+                        pairs.push([otherCat, i]);
                     }
                 }
 
-                suggestions.forEach((s, i) => {
-                    const sCat = s._cat || cat;
-                    const sIdx = s._idx !== undefined ? s._idx : allProducts.indexOf(s);
-                    const card = document.createElement('a');
-                    card.className = 'suggest-card';
-                    card.href = `/pages/product.html?cat=${sCat}&idx=${sIdx}`;
-                    card.innerHTML = `
-                        <div class="suggest-card-img">
-                            <img src="${s.img}" alt="${s.name}" loading="lazy">
-                        </div>
-                        <div class="suggest-card-name">${s.name}</div>
-                        <div class="suggest-card-price">${s.price}</div>
-                    `;
-                    suggestGrid.appendChild(card);
-                });
+                // The same tile as the collection grid and the artist
+                // capsule — one implementation in js/product-card.js rather
+                // than three copies that drift apart.
+                suggestGrid.innerHTML = pairs
+                    .map(([sCat, sIdx]) => productCardHTML(sCat, sIdx))
+                    .join('');
+                bindProductTiles(suggestGrid, showToast);
             }
         } else {
             const prodName = document.getElementById('prodName');

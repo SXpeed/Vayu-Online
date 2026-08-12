@@ -8,9 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&family=Pinyon+Script&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="/css/styles.css?v=20">
+  <link rel="stylesheet" href="/css/styles.css?v=113">
 </head>
 
 <body>
@@ -24,104 +24,19 @@
       <span>Collection</span>
     </nav>
 
-    <div class="page-header">
-      <h1>All Collections</h1>
-      <div class="ctrl-group">
-        <label for="collection-sort">Sort</label>
-        <select id="collection-sort">
-          <option>Featured</option>
-          <option>New Arrivals</option>
-          <option>Price: Low to High</option>
-          <option>Price: High to Low</option>
-        </select>
-      </div>
-    </div>
-
-    <section class="collection-directory">
-
-      <!-- Fashion -->
-      <div class="collection-cat-block">
-        <a class="collection-cat-banner" href="/pages/collection-detail.html?cat=fashion">
-          <img src="/assets/images/banner_fashion_21_9.png?v=2" alt="Fashion">
-          <div class="collection-cat-overlay">
-            <h2>Fashion</h2>
-          </div>
-        </a>
-        <div class="collection-sub-carousel">
-          <a class="collection-sub-link" href="/pages/collection-detail.html?cat=fashion&sub=men">Men</a>
-          <a class="collection-sub-link" href="/pages/collection-detail.html?cat=fashion&sub=women">Women</a>
-          <a class="collection-sub-link" href="/pages/collection-detail.html?cat=fashion&sub=accessories">Accessories</a>
-          <a class="collection-sub-link collection-sub-link-all" href="/pages/collection-detail.html?cat=fashion">All Fashion &nbsp;→</a>
-        </div>
-      </div>
-
-      <!-- Furniture -->
-      <div class="collection-cat-block">
-        <a class="collection-cat-banner" href="/pages/collection-detail.html?cat=furniture">
-          <img src="/assets/images/banner_furniture_21_9.png?v=2" alt="Furniture">
-          <div class="collection-cat-overlay">
-            <h2>Furniture</h2>
-          </div>
-        </a>
-        <div class="collection-sub-carousel">
-          <a class="collection-sub-link" href="/pages/collection-detail.html?cat=furniture&sub=seating">Seating</a>
-          <a class="collection-sub-link" href="/pages/collection-detail.html?cat=furniture&sub=coffee-tables">Coffee Tables</a>
-          <a class="collection-sub-link" href="/pages/collection-detail.html?cat=furniture&sub=side-tables">Side Tables</a>
-          <a class="collection-sub-link" href="/pages/collection-detail.html?cat=furniture&sub=console-tables">Console Tables</a>
-          <a class="collection-sub-link collection-sub-link-all" href="/pages/collection-detail.html?cat=furniture">All Furniture &nbsp;→</a>
-        </div>
-      </div>
-
-      <!-- Home -->
-      <div class="collection-cat-block">
-        <a class="collection-cat-banner" href="/pages/collection-detail.html?cat=home">
-          <img src="/assets/images/banner_home_21_9.png?v=2" alt="Home">
-          <div class="collection-cat-overlay">
-            <h2>Home</h2>
-          </div>
-        </a>
-        <div class="collection-sub-carousel">
-          <a class="collection-sub-link" href="/pages/collection-detail.html?cat=home&sub=tableware">Tableware</a>
-          <a class="collection-sub-link" href="/pages/collection-detail.html?cat=home&sub=linen">Linen</a>
-          <a class="collection-sub-link" href="/pages/collection-detail.html?cat=home&sub=lighting">Lighting</a>
-          <a class="collection-sub-link collection-sub-link-all" href="/pages/collection-detail.html?cat=home">All Home &nbsp;→</a>
-        </div>
-      </div>
-
-      <!-- Decor -->
-      <div class="collection-cat-block">
-        <a class="collection-cat-banner" href="/pages/collection-detail.html?cat=decor">
-          <img src="/assets/images/banner_decor_21_9.png?v=2" alt="Decor">
-          <div class="collection-cat-overlay">
-            <h2>Decor</h2>
-          </div>
-        </a>
-        <div class="collection-sub-carousel">
-          <a class="collection-sub-link" href="/pages/collection-detail.html?cat=decor&sub=artifacts">Artifacts</a>
-          <a class="collection-sub-link" href="/pages/collection-detail.html?cat=decor&sub=vases">Vases</a>
-          <a class="collection-sub-link" href="/pages/collection-detail.html?cat=decor&sub=wall-art">Wall Art</a>
-          <a class="collection-sub-link collection-sub-link-all" href="/pages/collection-detail.html?cat=decor">All Decor &nbsp;→</a>
-        </div>
-      </div>
-
-      <!-- Materials -->
-      <div class="collection-cat-block">
-        <a class="collection-cat-banner" href="/pages/collection-detail.html?cat=materials">
-          <img src="/assets/images/banner_materials_21_9.png?v=2" alt="Materials">
-          <div class="collection-cat-overlay">
-            <h2>Materials</h2>
-          </div>
-        </a>
-        <div class="collection-sub-carousel">
-          <a class="collection-sub-link" href="/pages/collection-detail.html?cat=materials&sub=brass">Brass</a>
-          <a class="collection-sub-link" href="/pages/collection-detail.html?cat=materials&sub=wood">Wood</a>
-          <a class="collection-sub-link" href="/pages/collection-detail.html?cat=materials&sub=marble">Marble</a>
-          <a class="collection-sub-link" href="/pages/collection-detail.html?cat=materials&sub=glass">Glass</a>
-          <a class="collection-sub-link collection-sub-link-all" href="/pages/collection-detail.html?cat=materials">All Materials &nbsp;→</a>
-        </div>
-      </div>
-
-    </section>
+    <!-- The Sort control that used to sit here was inert twice over: this
+         page is a directory of category banners with no product grid, so
+         the sort code in script.js (gated on #collectionGrid) never bound
+         to it; and its <option>s had no value attributes, so even wired it
+         would have fallen through to "featured" on every choice. Sorting
+         belongs on collection-detail.html, which has both. -->
+    <!-- Category banners with their sub-category carousels, rendered from
+         js/taxonomy.js by js/nav-render.js. This directory used to be
+         hand-written alongside five other copies of the same list, and had
+         drifted: it was missing Bowls, Candle Holders, Ceramic and Textile,
+         and linked ?sub=linen and ?sub=glass — two slugs that exist nowhere
+         in the taxonomy, so both landed on an empty grid. -->
+    <section class="collection-directory" id="collectionDirectory"></section>
   </main>
 
   <div id="site-footer"></div>

@@ -2,6 +2,7 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
+const { pipeline } = require('node:stream');
 
 const PORT = 3000;
 
@@ -38,9 +39,15 @@ const server = http.createServer((req, res) => {
   }
 
   fs.stat(filePath, (err, stats) => {
+    if (res.destroyed || res.writableEnded) {
+      return;
+    }
+
     if (err || !stats.isFile()) {
-      res.writeHead(404, { 'Content-Type': 'text/plain' });
-      res.end('404 Not Found');
+      if (!res.headersSent && !res.destroyed) {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('404 Not Found');
+      }
       return;
     }
 
@@ -54,9 +61,39 @@ const server = http.createServer((req, res) => {
       headers['Cache-Control'] = 'public, max-age=86400';
     }
 
-    res.writeHead(200, headers);
-    fs.createReadStream(filePath).pipe(res);
+    if (res.destroyed || res.writableEnded) {
+      return;
+    }
+
+    try {
+      res.writeHead(200, headers);
+      const stream = fs.createReadStream(filePath);
+
+      pipeline(stream, res, (pipelineErr) => {
+        if (pipelineErr && pipelineErr.code !== 'ERR_STREAM_PREMATURE_CLOSE') {
+          // Closed/aborted gracefully
+        }
+      });
+    } catch (pipeErr) {
+      // Ignored if socket closed during writeHead/pipeline
+    }
   });
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use.`);
+  } else {
+    console.error('Server error:', err.message);
+  }
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Handled Uncaught Exception:', err.message);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Handled Unhandled Rejection:', reason);
 });
 
 server.listen(PORT, '0.0.0.0', () => {

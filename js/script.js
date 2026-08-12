@@ -16,7 +16,8 @@ document.querySelectorAll('.mobile-bottom-nav a').forEach(a => {
         a.classList.add('active');
         a.addEventListener('click', (e) => {
             e.preventDefault();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            if (window.lenis) window.lenis.scrollTo(0);
+            else window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     }
 });
@@ -25,7 +26,10 @@ document.querySelectorAll('.mobile-bottom-nav a').forEach(a => {
 const header = document.getElementById('header');
 if (header) addEventListener('scroll', () => header.classList.toggle('scrolled', scrollY > 8), { passive: true });
 
-// expose the header + promo-banner heights so the fixed desktop bar can offset content correctly
+// Expose the header + promo-banner heights so the fixed desktop bar can
+// offset content correctly. Four things depend on --hdr-h: the body's top
+// padding on pages without the hero, the COLLECTION dropdown's `top`, and
+// the sticky gallery / order summary on the product and cart pages.
 const setBarHeights = () => {
     if (header) document.documentElement.style.setProperty('--hdr-h', header.offsetHeight + 'px');
     const banner = document.querySelector('.top-banner');
@@ -34,6 +38,11 @@ const setBarHeights = () => {
 setBarHeights();
 addEventListener('resize', setBarHeights, { passive: true });
 
+// The bar's height comes from the logo's Cormorant Garamond line box, so a
+// measurement taken before the webfont settles is wrong — and it used to
+// stay wrong for the life of the page, since this only ran on load/resize.
+if (document.fonts?.ready) document.fonts.ready.then(setBarHeights);
+
 // mobile menu popup sheet
 const burger = document.getElementById('burger');
 const mobileMenuBtn = document.getElementById('mobileMenuBtn');
@@ -41,14 +50,34 @@ const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
 const mobileMenuClose = document.getElementById('mobileMenuClose');
 
 if (mobileMenuOverlay) {
+    let scrollLockY = 0;
+
     const openMobileMenu = (e) => {
         if (e) e.preventDefault();
         mobileMenuOverlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
+        if (mobileMenuBtn) mobileMenuBtn.classList.add('menu-open');
+        // freeze the page at its current offset — plain overflow:hidden lets
+        // iOS rubber-band the page, which drags the sheet off the nav bar
+        if (window.lenis) window.lenis.stop();
+        scrollLockY = window.scrollY;
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${scrollLockY}px`;
+        document.body.style.width = '100%';
+        document.body.classList.add('menu-open');
     };
     const closeMobileMenu = () => {
         mobileMenuOverlay.classList.remove('active');
-        document.body.style.overflow = '';
+        if (mobileMenuBtn) mobileMenuBtn.classList.remove('menu-open');
+        document.body.classList.remove('menu-open');
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        window.scrollTo(0, scrollLockY);
+        if (window.lenis) {
+            // resync so Lenis does not animate back from a stale offset
+            window.lenis.scrollTo(scrollLockY, { immediate: true });
+            window.lenis.start();
+        }
     };
 
     if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', openMobileMenu);
@@ -61,33 +90,78 @@ if (mobileMenuOverlay) {
         }
     });
 
-    // accordion: keep only one category open at a time
-    mobileMenuOverlay.querySelectorAll('.macc-group').forEach(d => {
-        d.addEventListener('toggle', () => {
-            if (d.open) {
-                mobileMenuOverlay.querySelectorAll('.macc-group[open]').forEach(o => {
-                    if (o !== d) o.open = false;
+    // accordion: one category open at a time, with a smooth height reveal.
+    // <details> snaps open natively, so the panel is animated by hand and the
+    // open attribute is flipped at the edges of the animation.
+    const accGroups = [...mobileMenuOverlay.querySelectorAll('.macc-group')];
+    const stillMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+    const panelHeight = (panel) => {
+        // measure the natural height without disturbing the current animation
+        const prev = panel.style.height;
+        panel.style.height = 'auto';
+        const h = panel.scrollHeight;
+        panel.style.height = prev;
+        return h;
+    };
+
+    const slide = (group, opening) => {
+        const panel = group.querySelector('.macc-links');
+        if (!panel) return;
+        if (opening) group.open = true;
+
+        if (stillMotion.matches) {
+            group.open = opening;
+            return;
+        }
+
+        group.classList.add('is-sliding');
+        const full = panelHeight(panel);
+        const pad = Number.parseFloat(getComputedStyle(panel).paddingBottom) || 0;
+
+        const anim = panel.animate({
+            height: opening ? ['0px', `${full}px`] : [`${full}px`, '0px'],
+            paddingBottom: opening ? ['0px', `${pad}px`] : [`${pad}px`, '0px'],
+            opacity: opening ? [0, 1] : [1, 0]
+        }, {
+            duration: opening ? 300 : 220,
+            easing: opening ? 'cubic-bezier(0.25, 1, 0.5, 1)' : 'cubic-bezier(0.4, 0, 0.6, 1)'
+        });
+
+        anim.onfinish = () => {
+            if (!opening) group.open = false;
+            group.classList.remove('is-sliding');
+        };
+    };
+
+    accGroups.forEach(group => {
+        const summary = group.querySelector('summary');
+        if (!summary) return;
+        summary.addEventListener('click', e => {
+            e.preventDefault();
+            if (group.classList.contains('is-sliding')) return;
+            if (group.open) {
+                slide(group, false);
+            } else {
+                accGroups.forEach(other => {
+                    if (other !== group && other.open && !other.classList.contains('is-sliding')) {
+                        slide(other, false);
+                    }
                 });
+                slide(group, true);
             }
         });
     });
 }
 
 // ===== Collection Detail Dynamic Page =====
-const catData = {
-    fashion: { title: 'Fashion', img: '/assets/images/banner_fashion_21_9.png?v=2', subs: ['Men', 'Women', 'Accessories'] },
-    furniture: { title: 'Furniture', img: '/assets/images/banner_furniture_21_9.png?v=2', subs: ['Seating', 'Coffee Tables', 'Side Tables', 'Console Tables'] },
-    home: { title: 'Home', img: '/assets/images/banner_home_21_9.png?v=2', subs: ['Tableware', 'Drinkware', 'Serveware', 'Home Linen', 'Lighting'] },
-    decor: { title: 'Decor', img: '/assets/images/banner_decor_21_9.png?v=2', subs: ['Artifacts', 'Wall Art', 'Vases', 'Bowls', 'Candle Holders'] },
-    materials: { title: 'Materials', img: '/assets/images/banner_materials_21_9.png?v=2', subs: ['Brass', 'Wood', 'Marble', 'Murano Glass', 'Ceramic', 'Textile'] }
-};
-
-const slugToSub = (slug) => {
-    if (!slug) return '';
-    return slug.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
-};
-
-const subToSlug = (s) => s.toLowerCase().replace(/\s+/g, '-');
+// The category list is no longer written out here. It lives in
+// js/taxonomy.js, which include.js publishes on window before this classic
+// script loads (script.js cannot import). Every menu, the collection
+// directory and this page now read that one object.
+const catData = window.vayuTaxonomy?.categories || {};
+const slugToSub = window.vayuTaxonomy?.slugToLabel || ((s) => s || '');
+const subToSlug = window.vayuTaxonomy?.subToSlug || ((s) => String(s).toLowerCase().replace(/\s+/g, '-'));
 
 const collectionGrid = document.getElementById('collectionGrid');
 const crumbCategory = document.getElementById('crumbCategory');
@@ -99,6 +173,27 @@ if (collectionGrid) {
     const cat = (params.get('cat') || '').toLowerCase();
     const sub = (params.get('sub') || '').toLowerCase();
     const catInfo = catData[cat];
+
+    // An unknown or missing ?cat= used to leave the page in a silent dead
+    // state: the default banner image, the placeholder title "Collection",
+    // an empty grid still carrying its initial flex-rail class, and no
+    // message explaining any of it. Show a real not-found state instead.
+    if (!catInfo) {
+        const main = collectionGrid.closest('main') || document.body;
+        const links = Object.entries(catData)
+            .map(([slug, info]) =>
+                `<a class="sub-pill" href="/pages/collection-detail.html?cat=${slug}">${info.title}</a>`)
+            .join('');
+        main.innerHTML = `
+            <section class="cat-missing">
+              <h1>We couldn't find that collection</h1>
+              <p>The link may be out of date. Browse the collections instead:</p>
+              <div class="cat-missing-links">${links}
+                <a class="sub-pill" href="/pages/collection.html">All Collections</a>
+              </div>
+            </section>`;
+        document.title = 'Collection not found — Vayu';
+    }
 
     if (catInfo) {
         // Dynamic page header title (matches the collection page's styled card)
@@ -120,55 +215,30 @@ if (collectionGrid) {
             if (catTitle) catTitle.textContent = catInfo.title;
         }
 
-        // Update hero banner image
+        // Set the banner. The markup no longer ships a hardcoded src, so
+        // there is no longer a wasted request for the home hero followed by
+        // a visible flash as it was swapped out on every category load.
         const catHeroImg = document.getElementById('catHeroImg');
-        if (catHeroImg) catHeroImg.src = catInfo.img;
+        if (catHeroImg) {
+            catHeroImg.src = catInfo.banner;
+            catHeroImg.alt = `${catInfo.title} collection`;
+        }
 
         // Inject sub-nav pills ("All" first → full category, then sub filters)
         const subNav = document.getElementById('subNav');
         if (subNav) {
             const allPill = `<a href="/pages/collection-detail.html?cat=${cat}" class="sub-pill${sub ? '' : ' active'}">All</a>`;
-            subNav.innerHTML = allPill + catInfo.subs.map(s => {
-                const slug = subToSlug(s);
+            subNav.innerHTML = allPill + (catInfo.subs || []).map(s => {
+                const slug = subToSlug(s.label);
                 const isActive = sub === slug ? ' active' : '';
-                return `<a href="/pages/collection-detail.html?cat=${cat}&sub=${slug}" class="sub-pill${isActive}">${s}</a>`;
+                return `<a href="/pages/collection-detail.html?cat=${cat}&sub=${slug}" class="sub-pill${isActive}">${s.label}</a>`;
             }).join('');
         }
 
         // ===== Product catalogue (shared data) =====
-        const productData = {
-            fashion: [
-                { name: 'Sanganer Silk Stole', price: '₹ 3,200', img: '/assets/images/prod_silk_stole.png', sub: 'women', isNew: true },
-                { name: 'Heritage Linen Kurta', price: '₹ 5,400', img: '/assets/images/prod_linen_kurta.png', sub: 'men' },
-                { name: 'Handwoven Wool Shawl', price: '₹ 4,100', img: '/assets/images/prod_wool_shawl.png', sub: 'women' },
-                { name: 'Brass Cuff Bracelet', price: '₹ 2,800', img: '/assets/images/prod_brass_cuff.png', sub: 'accessories', isNew: true },
-                { name: 'Black Obsidian Lamp', price: '₹ 14,500', img: '/assets/images/black_lamp.png', sub: 'accessories' }
-            ],
-            furniture: [
-                { name: 'Teakwood Lounge Chair', price: '₹ 24,500', img: '/assets/images/prod_teak_chair.png', sub: 'seating', isNew: true },
-                { name: 'Carved Console Table', price: '₹ 32,000', img: '/assets/images/prod_console_table.png', sub: 'console-tables' },
-                { name: 'Stone-Top Coffee Table', price: '₹ 28,400', img: '/assets/images/prod_stone_coffee_table.png', sub: 'coffee-tables' },
-                { name: 'Cane Side Table', price: '₹ 12,900', img: '/assets/images/prod_cane_side_table.png', sub: 'side-tables' }
-            ],
-            home: [
-                { name: 'Ceramic Dinner Plate Set', price: '₹ 6,200', img: '/assets/images/prod_ceramic_plate_set.png', sub: 'tableware' },
-                { name: 'Murano Glassware Pair', price: '₹ 7,800', img: '/assets/images/prod_murano_glassware.png', sub: 'drinkware', isNew: true },
-                { name: 'Lotus Urli Lamp', price: '₹ 6,900', img: '/assets/images/prod_lotus_urli_lamp.png', sub: 'lighting' },
-                { name: 'Raga Crimson Floor Lamp', price: '₹ 38,500', img: '/assets/images/prod_crimson_floor_lamp.png', sub: 'lighting', isNew: true }
-            ],
-            decor: [
-                { name: 'Terracotta Ritual Vase', price: '₹ 4,600', img: '/assets/images/prod_terracotta_vase.png', sub: 'vases' },
-                { name: 'Bronze Sculpture Study', price: '₹ 15,200', img: '/assets/images/cat_objects.png', sub: 'artifacts', isNew: true },
-                { name: 'Ritual Candle Stand', price: '₹ 3,400', img: '/assets/images/cat_objects.png', sub: 'candle-holders' },
-                { name: 'Framed Miniature Art', price: '₹ 9,800', img: '/assets/images/cat_art.png', sub: 'wall-art' }
-            ],
-            materials: [
-                { name: 'Hand-Beaten Brass Bowl', price: '₹ 3,900', img: '/assets/images/cat_objects.png', sub: 'brass' },
-                { name: 'Marble Serving Board', price: '₹ 5,600', img: '/assets/images/prod_stone_coffee_table.png', sub: 'marble', isNew: true },
-                { name: 'Murano Glass Vessel', price: '₹ 8,200', img: '/assets/images/prod_murano_glassware.png', sub: 'murano-glass' },
-                { name: 'Block-Print Textile Panel', price: '₹ 2,900', img: '/assets/images/prod_silk_stole.png', sub: 'textile' }
-            ]
-        };
+        // Shared catalogue, published on window by include.js before this
+        // file loads (script.js is a classic script and cannot import).
+        const productData = window.vayuCatalogue || {};
 
         // Extract numeric price from formatted string (e.g. "₹ 3,200" → 3200)
         const parsePrice = (str) => Number(str.replace(/[^\d]/g, '')) || 0;
@@ -181,31 +251,39 @@ if (collectionGrid) {
             'price-desc': (a, b) => parsePrice(b.price) - parsePrice(a.price)
         };
 
-        // Reusable product-card template
-        const productCardHTML = (p) => `<a class="product" href="/pages/product.html?cat=${cat}&idx=${p._idx}">
-                <button class="wish-btn" aria-label="Add to Wishlist" onclick="event.preventDefault()">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-                </button>
-                <div class="ph"><img src="${p.img}" alt="${p.name}"></div>
-                <div class="product-info">
-                    <div>
-                        <h3>${p.name}</h3>
-                        <div class="price">${p.price}</div>
-                    </div>
-                    <button class="cart-btn" aria-label="Add to Cart" onclick="event.preventDefault()">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-                    </button>
-                </div>
-            </a>`;
+        // The tile markup and its wishlist / add-to-cart handler now live in
+        // js/product-card.js, published on window by include.js. The same
+        // card is used by the product page's "You May Also Like" and the
+        // artist capsule on jenjum.html — it used to be written out three
+        // separate times.
+        const productCardHTML = window.vayuProductCard?.productCardHTML
+            || (() => '');
 
         const emptyStateHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 80px 16px; color: var(--body); font-family: 'Jost', sans-serif; font-size: 14px; letter-spacing: 0.04em;">No pieces listed yet in this collection.<br>New arrivals coming soon.</div>`;
 
+        const noMatchHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 80px 16px; color: var(--body); font-family: 'Jost', sans-serif; font-size: 14px; letter-spacing: 0.04em;">No pieces match this filter.<br>Try a wider price range.</div>`;
+
+        // Filter predicates keyed by the Filter By select's values. They
+        // narrow the set; the sort comparators above only reorder it.
+        const filterPredicates = {
+            'all': () => true,
+            'new': (p) => Boolean(p.isNew),
+            'under-5000': (p) => parsePrice(p.price) < 5000,
+            '5000-15000': (p) => {
+                const v = parsePrice(p.price);
+                return v >= 5000 && v <= 15000;
+            },
+            'above-15000': (p) => parsePrice(p.price) > 15000
+        };
+
         const subGrid = document.getElementById('subGrid');
         const sortSelect = document.getElementById('collection-sort');
+        const filterSelect = document.getElementById('collection-filter');
 
         let currentSort = 'featured';
+        let currentFilter = 'all';
 
-        // Sort select (native dropdown, same UI as the collection page)
+        // Native dropdowns, same UI as the collection page
         if (sortSelect) {
             sortSelect.addEventListener('change', () => {
                 currentSort = sortSelect.value || 'featured';
@@ -213,23 +291,59 @@ if (collectionGrid) {
             });
         }
 
-        // Render (and re-render on sort change)
+        if (filterSelect) {
+            filterSelect.addEventListener('change', () => {
+                currentFilter = filterSelect.value || 'all';
+                renderGrid();
+            });
+        }
+
+        // Render (and re-render whenever a control changes)
         function renderGrid() {
             if (!subGrid) return;
             const all = productData[cat] || [];
-            const items = sub ? all.filter(p => p.sub === sub) : all;
+            const inSub = sub ? all.filter(p => p.sub === sub) : all;
+            const predicate = filterPredicates[currentFilter] || filterPredicates.all;
+            const items = inSub.filter(predicate);
             subGrid.className = 'prod-grid';
             if (!items.length) {
-                subGrid.innerHTML = emptyStateHTML;
+                // a filter that matches nothing is a different dead end from an
+                // empty category, and says so rather than claiming the
+                // collection is unstocked
+                subGrid.innerHTML = currentFilter === 'all' ? emptyStateHTML : noMatchHTML;
                 return;
             }
             const comparator = sortComparators[currentSort] || sortComparators.featured;
-            const sorted = [...items].map((p, i) => ({ ...p, _idx: all.indexOf(p) })).sort(comparator);
-            subGrid.innerHTML = sorted.map(productCardHTML).join('');
+            const sorted = [...items].map((p) => ({ ...p, _idx: all.indexOf(p) })).sort(comparator);
+            subGrid.innerHTML = sorted.map(p => productCardHTML(cat, p._idx)).join('');
         }
+
+        // Wishlist / add-to-cart on the tiles. Delegated inside the shared
+        // module, so it survives every re-render (sorting, subcategory
+        // switches) without rebinding.
+        window.vayuProductCard?.bindProductTiles(subGrid, showToast);
 
         renderGrid();
     }
+}
+
+// ===== Toast =====
+// Small confirmation used by the product tiles; the product detail page has
+// its own copy because it runs in a separate module scope.
+function showToast(message) {
+    let toast = document.getElementById('vayuToast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'vayuToast';
+        toast.className = 'vayu-toast';
+        toast.setAttribute('role', 'status');
+        toast.setAttribute('aria-live', 'polite');
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.add('is-visible');
+    clearTimeout(toast._hide);
+    toast._hide = setTimeout(() => toast.classList.remove('is-visible'), 2200);
 }
 
 // ===== Global scroll-reveal fade-up =====
@@ -296,4 +410,11 @@ if (collectionGrid) {
     window.addEventListener('vayu:cart-changed', updateBadges);
     window.addEventListener('vayu:wishlist-changed', updateBadges);
     window.addEventListener('storage', updateBadges);
+
+    // A prerendered page reads localStorage while it is still hidden, so an
+    // item added on the page the user is looking at would be missing from
+    // these counts. Re-read them the moment the page is activated.
+    if (document.prerendering) {
+        document.addEventListener('prerenderingchange', updateBadges, { once: true });
+    }
 })();

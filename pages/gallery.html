@@ -7,8 +7,470 @@
   <title>Gallery Vayu — Vayu</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&family=Pinyon+Script&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/styles.css?v=20">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css?v=113">
+  <style>
+    /* ------------------------------------------------------------
+       Gallery — follows the site language: flat surfaces, 2px radius,
+       Cormorant display + Jost labels, gold hairlines. Separators are
+       pseudo-element backgrounds because the global layer in styles.css
+       forces border-color: transparent !important.
+       ------------------------------------------------------------ */
+    /* No horizontal padding declared here at all — see the note in
+       artist.html: this element is both .wrap and .gallery-page, so even
+       `padding: 0` would wipe out the page gutter rather than leave it
+       alone. The 72px bottom-nav clearance applies only where that bar is. */
+    @media (max-width: 768px) {
+      .gallery-page {
+        padding-bottom: 72px;
+      }
+    }
+
+    /* ---------- editorial header ---------- */
+    .g-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 20px;
+      position: relative;
+      padding-bottom: 14px;
+      margin-bottom: 18px;
+    }
+
+    .g-head::after {
+      content: '';
+      position: absolute;
+      inset: auto 0 0 0;
+      height: 1px;
+      background: #EFEAE1;
+    }
+
+    .g-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(26px, 3vw, 40px);
+      font-weight: 400;
+      line-height: 1.05;
+      color: var(--ink);
+      margin: 0;
+    }
+
+    .g-meta {
+      font-size: 10.5px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #8A8681;
+      white-space: nowrap;
+      padding-bottom: 3px;
+    }
+
+    /* ---------- hero ---------- */
+    .g-hero {
+      display: block;
+      position: relative;
+      overflow: hidden;
+      background: #FAF8F5;
+      aspect-ratio: 16 / 9;
+      margin-bottom: 4px;
+    }
+
+    .g-hero img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.7s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .g-hero:hover img {
+      transform: scale(1.03);
+    }
+
+    .g-hero-label {
+      position: absolute;
+      inset: auto 0 0 0;
+      padding: 40px 18px 16px;
+      background: linear-gradient(to top, rgba(20, 18, 16, 0.72), rgba(20, 18, 16, 0));
+      color: #FFFFFF;
+      font-size: 10.5px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    /* ---------- statement ---------- */
+    .g-statement {
+      max-width: 620px;
+      margin: 26px auto 30px;
+      text-align: center;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(16px, 1.6vw, 20px);
+      font-weight: 300;
+      font-style: italic;
+      line-height: 1.55;
+      color: var(--body);
+    }
+
+    /* ---------- section heads (matches .sec-head language) ---------- */
+    .g-sec-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 14px;
+      margin-bottom: 10px;
+    }
+
+    .g-sec-title {
+      font-family: 'Jost', sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      font-weight: 500;
+      color: var(--ink);
+    }
+
+    .g-sec-note {
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #8A8681;
+    }
+
+    /* ---------- image grids ---------- */
+    /* 4px between plates at every size, matching the Inside Vayu tiles on
+       the home page. The 34px below each block is the section rhythm and is
+       deliberately left alone. */
+    .g-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 4px;
+      margin-bottom: 34px;
+    }
+
+    /* asymmetric pair: one wide plate beside a narrow one. The wide card's
+       3/2 ratio sets the row height and the narrow card stretches to match,
+       so the two captions sit on a shared baseline. */
+    .g-pair {
+      display: grid;
+      grid-template-columns: 1.55fr 1fr;
+      align-items: stretch;
+      gap: 4px;
+      margin-bottom: 34px;
+    }
+
+    .g-pair .g-card {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .g-card {
+      display: block;
+      margin: 0;
+    }
+
+    /* A <button>, not a <span>: the tiles carried two hover affordances
+       (image zoom + caption colour) while being inert <figure>s, so every
+       tile invited a click and did nothing. They now open the lightbox. */
+    .g-card-media {
+      display: block;
+      overflow: hidden;
+      background: #FAF8F5;
+      aspect-ratio: 4 / 5;
+      width: 100%;
+      padding: 0;
+      border: none;
+      cursor: zoom-in;
+      font: inherit;
+      color: inherit;
+    }
+
+    .g-grid .g-card-media {
+      aspect-ratio: 4 / 5;
+    }
+
+    .g-pair .g-card:first-child .g-card-media {
+      aspect-ratio: 3 / 2;
+    }
+
+    /* no intrinsic ratio — it fills whatever height the wide card establishes */
+    .g-pair .g-card:last-child .g-card-media {
+      aspect-ratio: auto;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    .g-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .g-card:hover img {
+      transform: scale(1.04);
+    }
+
+    /* caption under the image, never over it — light plates stay readable */
+    .g-card figcaption {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      padding-top: 8px;
+    }
+
+    .g-card-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--ink);
+      line-height: 1.2;
+      transition: color 0.2s ease;
+    }
+
+    .g-card:hover .g-card-name {
+      color: var(--accent);
+    }
+
+    .g-card-tag {
+      font-size: 9px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    /* ---------- lightbox ----------
+       A native <dialog> opened with showModal(), so Escape-to-close, the
+       focus trap and the inert backdrop all come from the platform. */
+    .g-lightbox {
+      padding: 0;
+      border: none;
+      background: transparent;
+      max-width: 100vw;
+      max-height: 100vh;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .g-lightbox::backdrop {
+      background: rgba(16, 14, 12, 0.92);
+    }
+
+    .g-lightbox-inner {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      place-items: center;
+      padding: 40px 56px 24px;
+      gap: 14px;
+    }
+
+    .g-lightbox img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display: block;
+    }
+
+    .g-lightbox-caption {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      color: #F4F1EC;
+      font-family: 'Jost', sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .g-lightbox-caption .g-lb-count {
+      color: #BDB7AE;
+    }
+
+    .g-lb-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      /* opaque dark chip rather than translucent white: the control has to
+         stay legible when a light-plated photograph sits behind it */
+      background: #1C1A17;
+      color: #FFFFFF;
+      border: none;
+      cursor: pointer;
+      font-size: 20px;
+      line-height: 1;
+      transition: background 0.2s ease;
+    }
+
+    .g-lb-btn:hover {
+      background: #3A3630;
+    }
+
+    .g-lb-prev {
+      left: 8px;
+    }
+
+    .g-lb-next {
+      right: 8px;
+    }
+
+    .g-lb-close {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      background: #1C1A17;
+      color: #FFFFFF;
+      border: none;
+      cursor: pointer;
+      font-size: 24px;
+      line-height: 1;
+      transition: background 0.2s ease;
+    }
+
+    .g-lb-close:hover {
+      background: #3A3630;
+    }
+
+    @media (max-width: 768px) {
+      .g-lightbox-inner {
+        padding: 56px 12px 20px;
+      }
+
+      .g-lb-prev {
+        left: 2px;
+      }
+
+      .g-lb-next {
+        right: 2px;
+      }
+    }
+
+    /* ---------- visit strip ---------- */
+    .g-visit {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
+      padding-top: 22px;
+    }
+
+    .g-visit::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 1px;
+      background: #EFEAE1;
+    }
+
+    .g-visit-label {
+      display: block;
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .g-visit-body {
+      font-size: 12.5px;
+      line-height: 1.65;
+      color: var(--body);
+    }
+
+    .g-visit-body a {
+      color: var(--ink);
+      transition: color 0.2s ease;
+    }
+
+    .g-visit-body a:hover {
+      color: var(--accent);
+    }
+
+    .g-directions {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      font-weight: 500;
+      color: var(--accent);
+      transition: opacity 0.2s ease;
+    }
+
+    .g-directions:hover {
+      opacity: 0.65;
+    }
+
+    /* ---------- responsive ---------- */
+    /* .gallery-page and .wrap share the same <main>, so the desktop gutter
+       has to be restated rather than zeroed */
+    @media (min-width: 1024px) {
+
+      .g-grid,
+      .g-pair {
+        gap: 4px;
+      }
+    }
+
+    /* normalised from 700px to the site's 768px content breakpoint */
+    @media (max-width: 768px) {
+      .g-head {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
+
+      .g-hero {
+        aspect-ratio: 16 / 9;
+      }
+
+      .g-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+      }
+
+      /* the third plate runs full width so the row never leaves a hole */
+      .g-grid .g-card:last-child {
+        grid-column: 1 / -1;
+      }
+
+      .g-grid .g-card:last-child .g-card-media {
+        aspect-ratio: 16 / 10;
+      }
+
+      .g-pair {
+        grid-template-columns: 1fr;
+        gap: 4px;
+      }
+
+      /* stacked: both plates take the same ratio again. The :last-child
+         selector has to be repeated or the desktop `aspect-ratio: auto`
+         out-specifies this rule and the image keeps its intrinsic height. */
+      .g-pair .g-card:first-child .g-card-media,
+      .g-pair .g-card:last-child .g-card-media {
+        aspect-ratio: 3 / 2;
+        flex: 0 0 auto;
+      }
+
+      .g-visit {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -22,138 +484,218 @@
       <span>Gallery Vayu</span>
     </nav>
 
-        <header class="g-head">
-            <div>
-                <span class="g-eyebrow">Gallery Vayu &middot; New Delhi</span>
-                <h1 class="g-title">Echoes of Craft</h1>
-            </div>
-            <div class="g-meta">On view till 10 August 2026</div>
-        </header>
+    <!-- a <header> here would match the global `header { position: fixed }`
+         desktop rule in styles.css and pin the title over the site nav -->
+    <div class="g-head">
+      <div>
+        <h1 class="g-title">Personal Heirlooms</h1>
+      </div>
+      <!-- Must match the date printed on the hero poster on the home page
+           (assets/images/personal_heirlooms.jpg). This read 10 August 2026
+           while that poster advertised the same show running to the 23rd. -->
+      <div class="g-meta">On view till 23 August 2026</div>
+    </div>
 
-        <section class="gallery-fit">
-            <figure class="g-fit-card">
-                <img src="/assets/images/gallery.jpg" alt="Echoes of Craft exhibition">
-                <figcaption>The Exhibition</figcaption>
-            </figure>
-            <figure class="g-fit-card">
-                <img src="/assets/images/hero.jpg" alt="Vayu campaign">
-                <figcaption>The Campaign</figcaption>
-            </figure>
-            <figure class="g-fit-card">
-                <img src="/assets/images/makers.jpg" alt="Artisan at work">
-                <figcaption>The Makers</figcaption>
-            </figure>
-        </section>
-        <style>
-            /* ---------- editorial header ---------- */
-            .g-head {
-                display: flex;
-                justify-content: space-between;
-                align-items: flex-end;
-                gap: 24px;
-                margin-bottom: 20px;
-            }
-            .g-eyebrow {
-                display: block;
-                font-size: 11px;
-                letter-spacing: 0.26em;
-                text-transform: uppercase;
-                color: var(--accent);
-                font-weight: 500;
-                margin-bottom: 8px;
-            }
-            .g-title {
-                font-family: 'Cormorant Garamond', serif;
-                font-size: clamp(30px, 3.4vw, 52px);
-                font-weight: 400;
-                letter-spacing: -0.01em;
-                line-height: 1;
-                color: var(--ink);
-                margin: 0;
-            }
-            .g-meta {
-                font-size: 12px;
-                letter-spacing: 0.14em;
-                text-transform: uppercase;
-                color: #8a8a86;
-                padding-bottom: 6px;
-                white-space: nowrap;
-            }
+    <a class="g-hero" href="#exhibition">
+      <img src="/assets/images/gallery_hero.jpg" alt="Personal Heirlooms">
+    </a>
 
-            /* ---------- whole gallery fits one screen — no scrolling ---------- */
-            .gallery-fit {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 16px;
-                height: calc(100dvh - 210px);
-                min-height: 300px;
-                margin-bottom: 24px;
-            }
-            .g-fit-card {
-                position: relative;
-                margin: 0;
-                border-radius: 20px;
-                overflow: hidden;
-                border: 1px solid var(--line);
-                box-shadow: var(--shadow);
-                background: var(--card);
-            }
-            .g-fit-card img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-                display: block;
-                transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-            }
-            .g-fit-card figcaption {
-                position: absolute;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                padding: 26px 24px 18px;
-                background: linear-gradient(to top, rgba(20, 18, 16, 0.65), transparent);
-                color: #fff;
-                font-size: 12px;
-                letter-spacing: 0.2em;
-                text-transform: uppercase;
-                font-weight: 500;
-            }
-            .g-fit-card:hover img { transform: scale(1.04); }
+    <p class="g-statement">
+      A room of quiet objects — brass, clay, cane and handwoven cloth — gathered
+      from the makers we have kept company with for a decade.
+    </p>
 
-            /* ---------- desktop refinements ---------- */
-            @media (min-width: 1024px) {
-                .gallery-page { padding-left: 40px; padding-right: 40px; }
-                .gallery-page .breadcrumb { margin-bottom: 6px; }
-                .g-head {
-                    margin-bottom: 28px;
-                    padding-bottom: 22px;
-                    border-bottom: 1px solid var(--line);
-                }
-                .gallery-fit {
-                    gap: 24px;
-                    height: calc(100dvh - 300px);
-                    min-height: 380px;
-                }
-                .g-fit-card { border-radius: 14px; }
-            }
+    <section id="exhibition" aria-labelledby="exhibition-title">
+      <div class="g-sec-head">
+        <h2 class="g-sec-title" id="exhibition-title">The Exhibition</h2>
+        <span class="g-sec-note">Three rooms</span>
+      </div>
+      <div class="g-grid">
+        <figure class="g-card">
+          <button type="button" class="g-card-media" aria-label="Enlarge image">
+            <img src="/assets/images/gallery_tile1.png" alt="Exhibition room — bedroom setting" loading="lazy">
+          </button>
+          <figcaption>
+            <span class="g-card-name">The Quiet Room</span>
+            <span class="g-card-tag">Room 01</span>
+          </figcaption>
+        </figure>
+        <figure class="g-card">
+          <button type="button" class="g-card-media" aria-label="Enlarge image">
+            <img src="/assets/images/gallery_tile2.png" alt="Exhibition room — living room setting" loading="lazy">
+          </button>
+          <figcaption>
+            <span class="g-card-name">The Long Table</span>
+            <span class="g-card-tag">Room 02</span>
+          </figcaption>
+        </figure>
+        <figure class="g-card">
+          <button type="button" class="g-card-media" aria-label="Enlarge image">
+            <img src="/assets/images/gallery_tile3.png" alt="Exhibition room — ceramics display" loading="lazy">
+          </button>
+          <figcaption>
+            <span class="g-card-name">The Clay Wall</span>
+            <span class="g-card-tag">Room 03</span>
+          </figcaption>
+        </figure>
+      </div>
+    </section>
 
-            @media (max-width: 768px) {
-                .g-head { flex-direction: column; align-items: flex-start; gap: 6px; margin-bottom: 14px; }
-                .gallery-fit {
-                    grid-template-columns: 1fr 1fr;
-                    grid-auto-rows: 1fr;
-                    height: calc(100dvh - 230px);
-                }
-                /* third image spans the full width so all three fit the grid */
-                .g-fit-card:last-child { grid-column: 1 / -1; }
-                .g-fit-card figcaption { padding: 18px 14px 12px; font-size: 10px; }
-            }
-        </style>
-        </main>
+    <section id="hands" aria-labelledby="hands-title">
+      <div class="g-sec-head">
+        <h2 class="g-sec-title" id="hands-title">The Hands Behind It</h2>
+        <a class="g-sec-note" href="/pages/artist.html" style="color:var(--accent);">All Artists →</a>
+      </div>
+      <div class="g-pair">
+        <figure class="g-card">
+          <button type="button" class="g-card-media" aria-label="Enlarge image">
+            <img src="/assets/images/journal_ceramics.png" alt="Potter shaping a vessel" loading="lazy">
+          </button>
+          <figcaption>
+            <span class="g-card-name">At the Wheel</span>
+            <span class="g-card-tag">Craft</span>
+          </figcaption>
+        </figure>
+        <figure class="g-card">
+          <button type="button" class="g-card-media" aria-label="Enlarge image">
+            <img src="/assets/images/journal_weaving.png" alt="Handloom weaving in progress" loading="lazy">
+          </button>
+          <figcaption>
+            <span class="g-card-name">On the Loom</span>
+            <span class="g-card-tag">Textile</span>
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="visit" aria-labelledby="visit-title">
+      <div class="g-visit">
+        <div>
+          <span class="g-visit-label" id="visit-title">Visit</span>
+          <div class="g-visit-body">
+            Shop No. 14, Main Market<br>
+            Lodhi Road, Block 8, Lodi Colony<br>
+            New Delhi — 110003
+          </div>
+          <a class="g-directions" href="https://maps.app.goo.gl/GdmtApHnAYBem1Cr8" target="_blank"
+            rel="noopener noreferrer">Get Directions →</a>
+        </div>
+        <div>
+          <span class="g-visit-label">Hours</span>
+          <div class="g-visit-body">
+            Tuesday — Sunday<br>
+            11:00 — 19:00<br>
+            Monday closed
+          </div>
+        </div>
+        <div>
+          <span class="g-visit-label">Enquiries</span>
+          <div class="g-visit-body">
+            <a href="tel:+918595977845">+91 8595977845</a><br>
+            <a href="mailto:info@vayuonline.com">info@vayuonline.com</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Lightbox. A native <dialog>, so Escape, the focus trap and the inert
+       backdrop are handled by the platform rather than by hand. -->
+  <dialog class="g-lightbox" id="galleryLightbox" aria-label="Gallery image viewer">
+    <div class="g-lightbox-inner">
+      <button type="button" class="g-lb-close" id="lbClose" aria-label="Close viewer">&times;</button>
+      <button type="button" class="g-lb-btn g-lb-prev" id="lbPrev" aria-label="Previous image">&#8249;</button>
+      <button type="button" class="g-lb-btn g-lb-next" id="lbNext" aria-label="Next image">&#8250;</button>
+      <img id="lbImage" src="" alt="">
+      <p class="g-lightbox-caption">
+        <span id="lbCaption"></span>
+        <span class="g-lb-count" id="lbCount"></span>
+      </p>
+    </div>
+  </dialog>
 
   <div id="site-footer"></div>
 
   <script type="module" src="/js/include.js"></script>
+  <script>
+    /* ============================================================
+       Gallery lightbox
+       ------------------------------------------------------------
+       Every tile is a <figure> with a hover zoom and a caption
+       colour change, so all of them looked clickable. They were
+       inert. Rather than strip the affordance, the tiles now do
+       what they promise: enlarge the photograph.
+       ============================================================ */
+    (() => {
+      const dialog = document.getElementById('galleryLightbox');
+      const imgEl = document.getElementById('lbImage');
+      const capEl = document.getElementById('lbCaption');
+      const countEl = document.getElementById('lbCount');
+      if (!dialog || !dialog.showModal) return;
+
+      // collected in DOM order, so prev/next follow the visual sequence
+      const tiles = [...document.querySelectorAll('.g-card-media')].map(btn => {
+        const img = btn.querySelector('img');
+        const fig = btn.closest('figure');
+        return {
+          btn,
+          src: img?.getAttribute('src') || '',
+          alt: img?.getAttribute('alt') || '',
+          name: fig?.querySelector('.g-card-name')?.textContent.trim() || '',
+          tag: fig?.querySelector('.g-card-tag')?.textContent.trim() || ''
+        };
+      }).filter(t => t.src);
+
+      if (!tiles.length) return;
+
+      let index = 0;
+      // the tile that opened the viewer, so focus can be handed back to it
+      let opener = null;
+
+      const show = (i) => {
+        index = (i + tiles.length) % tiles.length;
+        const t = tiles[index];
+        imgEl.src = t.src;
+        imgEl.alt = t.alt;
+        capEl.textContent = t.tag ? `${t.name} · ${t.tag}` : t.name;
+        countEl.textContent = `${index + 1} / ${tiles.length}`;
+      };
+
+      const open = (i, from) => {
+        opener = from || null;
+        show(i);
+        dialog.showModal();
+      };
+
+      tiles.forEach((t, i) => {
+        t.btn.addEventListener('click', () => open(i, t.btn));
+      });
+
+      document.getElementById('lbNext')?.addEventListener('click', () => show(index + 1));
+      document.getElementById('lbPrev')?.addEventListener('click', () => show(index - 1));
+      document.getElementById('lbClose')?.addEventListener('click', () => dialog.close());
+
+      // arrow keys, alongside the Escape the dialog handles natively
+      dialog.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') { e.preventDefault(); show(index + 1); }
+        if (e.key === 'ArrowLeft') { e.preventDefault(); show(index - 1); }
+      });
+
+      // click the backdrop (i.e. outside the image and controls) to close
+      dialog.addEventListener('click', (e) => {
+        if (e.target === dialog || e.target.classList.contains('g-lightbox-inner')) {
+          dialog.close();
+        }
+      });
+
+      // return focus to the tile that was activated
+      dialog.addEventListener('close', () => {
+        opener?.focus();
+        // drop the src so a large image is not held in memory while closed
+        imgEl.removeAttribute('src');
+      });
+    })();
+  </script>
 
 </body>
 
