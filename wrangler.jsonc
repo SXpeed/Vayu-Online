@@ -1,0 +1,54 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "vayu-site",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // The site's own files are served straight from Cloudflare's edge; the
+  // Worker only sees the routes listed in run_worker_first.
+  //
+  // public/ holds nothing but the site: server code, SQL and the data file
+  // live outside it, so there is no way to reach them over HTTP even by
+  // accident. (Pointing this at the repo root also makes `wrangler dev`
+  // watch its own state directory and reload in a loop.)
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "none",
+    // Every link on this site is written out in full ("/pages/cart.html").
+    // The default would redirect those to extensionless, trailing-slash
+    // URLs, so each navigation would cost a 307 and every existing link
+    // and bookmark would bounce. Serve the paths as they are written.
+    "html_handling": "none",
+    "run_worker_first": [
+      "/api/*",
+      "/admin",
+      "/admin/*",
+      "/uploads/*"
+    ]
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "vayu-db",
+      // vayu-db on the vayuxdesign@gmail.com account.
+      "database_id": "4162de18-3cd3-409e-a196-bd91cab8bee2",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // Admin image uploads. D1 rows cap at 1 MB and are the wrong home for
+  // binaries, so the bytes live here and the row keeps the key.
+  "r2_buckets": [
+    {
+      "binding": "UPLOADS",
+      "bucket_name": "vayuindia"
+    }
+  ],
+
+  "observability": {
+    "enabled": true
+  }
+}

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About Us — Vayu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css?v=118">
+  <style>
+    .about-split {
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(30px, 4vw, 50px);
+      margin-bottom: 50px;
+      /* No padding on the card. It used to inset everything inside it,
+         the image included, so the photograph floated in a frame of card
+         background. The padding now belongs to the text column alone and
+         the image runs to the card's own edge. */
+      padding: 0;
+    }
+
+    /* the image column stretches to the row height, so no card background
+       shows beneath the photograph when the text column is the taller one */
+    .about-split>:first-child {
+      display: flex;
+    }
+
+    .about-split>:last-child {
+      padding: clamp(24px, 4vw, 48px) clamp(24px, 4vw, 48px) clamp(24px, 4vw, 48px) 0;
+    }
+
+    .about-img {
+      width: 100%;
+      height: 100%;
+      aspect-ratio: 4 / 5;
+      object-fit: cover;
+    }
+
+    .about-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(32px, 3vw, 44px);
+      color: var(--ink);
+      font-weight: 500;
+      line-height: 1.2;
+      margin-bottom: 24px;
+    }
+
+    .about-copy {
+      font-size: 16.5px;
+      color: var(--body);
+      line-height: 1.8;
+      margin-bottom: 20px;
+    }
+
+    .about-copy:last-of-type {
+      margin-bottom: 30px;
+    }
+
+    .about-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      padding-top: 20px;
+      /* drawn as a background: the flat layer forces border-color to
+         transparent, so a border-top here would be invisible */
+      background-image: linear-gradient(#E8E2D8, #E8E2D8);
+      background-size: 100% 1px;
+      background-position: 0 0;
+      background-repeat: no-repeat;
+    }
+
+    .about-stat-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 26px;
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .about-stat-label {
+      font-size: 13px;
+      color: #6A6A64;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 500;
+    }
+
+    @media (max-width: 768px) {
+      .about-split {
+        grid-template-columns: 1fr;
+        margin-bottom: 32px;
+        /* stacked, the text column's own padding is the separation — the
+           gap would add a second band of card background under the image */
+        gap: 0;
+      }
+
+      .about-split>:last-child {
+        padding: clamp(20px, 6vw, 32px);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="site-header"></div>
+
+  <main class="wrap">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="/index.html">Home</a>
+      <span class="sep">|</span>
+      <span>About Us</span>
+    </nav>
+
+    <!-- Styling moved out of the style attributes into classes. The inline
+         block also carried `border-radius: 20px` on the card and `14px` on
+         the image plus `border: 1px solid var(--line)`, none of which ever
+         rendered: --line is transparent, and the flat-design layer at the
+         end of styles.css forces `border-radius: 2px !important`, which
+         beats an inline style. They were removed rather than un-flattened,
+         because the flat look is deliberate. Same for the two
+         `border-top: 1px solid var(--line)` rules, which drew nothing —
+         the stat divider is now a real hairline. -->
+    <section class="about-split">
+      <div>
+        <img class="about-img" src="/assets/images/hero.jpg" alt="Inside the Vayu space, New Delhi" loading="lazy">
+      </div>
+      <div>
+        <h2 class="about-title">Design For Living,<br>Rooted in Culture.</h2>
+        <p class="about-copy">Vayu is a cultural art and design space from New Delhi, celebrating Indian
+          craftsmanship in all its contemporary glory. We collaborate with independent designers and master artists
+          across the subcontinent.</p>
+        <p class="about-copy">Our philosophy is simple: surround yourself with objects that have a story. From
+          hand-carved teakwood furniture to meticulously woven textiles, every piece in our curation is chosen for its
+          integrity, beauty, and timelessness.</p>
+        <div class="about-stats">
+          <div>
+            <div class="about-stat-num">2011</div>
+            <div class="about-stat-label">Year Established</div>
+          </div>
+          <div>
+            <div class="about-stat-num">45+</div>
+            <div class="about-stat-label">Artist Partners</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script type="module" src="/js/include.js"></script>
+
+</body>
+
+</html>

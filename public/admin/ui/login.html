@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Vayu — Admin Sign In</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/admin/admin.css">
+</head>
+
+<body>
+    <div class="login-wrap">
+        <div class="login-card">
+            <div class="login-brand">Vayu</div>
+            <div class="login-sub">Atelier · Admin</div>
+            <form id="login-form">
+                <div>
+                    <label for="email">Email</label>
+                    <input type="email" id="email" autocomplete="username" required autofocus>
+                </div>
+                <div>
+                    <label for="password">Password</label>
+                    <input type="password" id="password" autocomplete="current-password" required>
+                </div>
+                <div class="login-error" id="err"></div>
+                <button type="submit" class="login-btn">Sign In</button>
+            </form>
+            <p class="login-hint">First run? Sign in with <code>admin@vayu.com</code> / <code>vayu-admin</code> — you'll be asked to change it.</p>
+        </div>
+    </div>
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const err = document.getElementById('err');
+            err.textContent = '';
+            try {
+                const res = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: document.getElementById('email').value,
+                        password: document.getElementById('password').value,
+                    }),
+                });
+                const data = await res.json();
+                if (!res.ok) { err.textContent = data.error || 'Sign in failed'; return; }
+                location.href = '/admin' + (data.mustChangePassword ? '#/settings' : '');
+            } catch {
+                err.textContent = 'Could not reach the server';
+            }
+        });
+    </script>
+</body>
+
+</html>

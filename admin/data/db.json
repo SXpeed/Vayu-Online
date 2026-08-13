@@ -1,0 +1,2750 @@
+{
+  "meta": {
+    "version": 1,
+    "seq": 72,
+    "seededAt": "2026-08-12T10:29:52.737Z"
+  },
+  "settings": {
+    "storeName": "Vayu",
+    "currency": "INR",
+    "freeShippingAbove": 5000,
+    "shippingFlat": 150,
+    "lowStockThreshold": 5,
+    "zones": [],
+    "payment": {
+      "provider": "cod",
+      "razorpayKeyId": "",
+      "razorpayKeySecret": ""
+    },
+    "storeAddress": "",
+    "storeEmail": "",
+    "storePhone": ""
+  },
+  "admins": [
+    {
+      "id": "adm_33",
+      "email": "admin@vayu.com",
+      "name": "Vayu Admin",
+      "salt": "26088f49d12d0745eec78e7affaf1f72",
+      "hash": "404df9de477512f0bfbbfc1012d48fab4209151e194da0b20040bb62b3cb86faeb428d83e5aefc314cadd469536e3e0dc50e227317b288247a9b1151a195e7d5",
+      "role": "owner",
+      "mustChangePassword": false,
+      "createdAt": "2026-08-12T10:29:52.737Z"
+    }
+  ],
+  "sessions": {
+    "3eabc0a56b96ab7d02f27c5661098ef6718b636f4932e0e14e42a2e29df839b8": {
+      "adminId": "adm_33",
+      "expires": 1787135408766
+    },
+    "e1956b09ccec88b0ce517d5eed03bb7da81635a1893ab99d1f7e84eab4e57174": {
+      "adminId": "adm_33",
+      "expires": 1787135497141
+    },
+    "732a64013c8f5b11916235f6be7f019b3a71bb2efa12d8474ba3ca8da1701dbd": {
+      "adminId": "adm_33",
+      "expires": 1787140889380
+    },
+    "2825a36fcd7ad3af7b5c5af6572a3caeb11a4ac358a577703b096b3d98bb96d3": {
+      "adminId": "adm_33",
+      "expires": 1787142610228
+    },
+    "4f76931facc25bb2ca2df3c56b58365c1502cedc6c46f7a4b4cd2a09ccfac448": {
+      "adminId": "adm_33",
+      "expires": 1787149704840
+    },
+    "d1b3195c02e06b02b30aa04f001758edffffbab6512af212ba6d2a34a8dd96b3": {
+      "adminId": "adm_33",
+      "expires": 1787208768836
+    }
+  },
+  "categories": {
+    "fashion": {
+      "title": "Fashion",
+      "curated": "/assets/images/curated_fashion.png",
+      "banner": "/assets/images/banner_fashion_32_9.png",
+      "subs": [
+        {
+          "label": "Men",
+          "thumb": "/assets/images/prod_linen_kurta.png"
+        },
+        {
+          "label": "Women",
+          "thumb": "/assets/images/prod_silk_stole.png"
+        },
+        {
+          "label": "Accessories",
+          "thumb": "/assets/images/cat_jewelry.png"
+        }
+      ],
+      "order": 0
+    },
+    "furniture": {
+      "title": "Furniture",
+      "curated": "/assets/images/curated_furniture.png",
+      "banner": "/assets/images/banner_furniture_21_9.png?v=2",
+      "subs": [
+        {
+          "label": "Seating",
+          "thumb": "/assets/images/prod_teak_chair.png"
+        },
+        {
+          "label": "Coffee Tables",
+          "thumb": "/assets/images/prod_stone_coffee_table.png"
+        },
+        {
+          "label": "Side Tables",
+          "thumb": "/assets/images/prod_cane_side_table.png"
+        },
+        {
+          "label": "Console Tables",
+          "thumb": "/assets/images/prod_console_table.png"
+        }
+      ],
+      "order": 1
+    },
+    "home": {
+      "title": "Home",
+      "curated": "/assets/images/curated_home.png",
+      "banner": "/assets/images/banner_home_21_9.png?v=2",
+      "subs": [
+        {
+          "label": "Tableware",
+          "thumb": "/assets/images/prod_ceramic_plate_set.png"
+        },
+        {
+          "label": "Drinkware",
+          "thumb": "/assets/images/prod_murano_glassware.png"
+        },
+        {
+          "label": "Serveware",
+          "thumb": "/assets/images/cat_tableware.png"
+        },
+        {
+          "label": "Home Linen",
+          "thumb": "/assets/images/cat_textiles.png"
+        },
+        {
+          "label": "Lighting",
+          "thumb": "/assets/images/prod_lotus_urli_lamp.png"
+        }
+      ],
+      "order": 2
+    },
+    "decor": {
+      "title": "Decor",
+      "curated": "/assets/images/curated_decor.png",
+      "banner": "/assets/images/banner_decor_21_9.png?v=2",
+      "subs": [
+        {
+          "label": "Artifacts",
+          "thumb": "/assets/images/cat_objects.png"
+        },
+        {
+          "label": "Wall Art",
+          "thumb": "/assets/images/cat_art.png"
+        },
+        {
+          "label": "Vases",
+          "thumb": "/assets/images/prod_terracotta_vase.png"
+        },
+        {
+          "label": "Bowls",
+          "thumb": "/assets/images/cat_tableware.png"
+        },
+        {
+          "label": "Candle Holders",
+          "thumb": "/assets/images/prod_lotus_urli_lamp.png"
+        }
+      ],
+      "order": 3
+    },
+    "materials": {
+      "title": "Materials",
+      "curated": "/assets/images/curated_materials.png",
+      "banner": "/assets/images/banner_materials_21_9.png?v=2",
+      "subs": [
+        {
+          "label": "Brass",
+          "thumb": "/assets/images/prod_brass_cuff.png"
+        },
+        {
+          "label": "Wood",
+          "thumb": "/assets/images/cat_furniture.png"
+        },
+        {
+          "label": "Marble",
+          "thumb": "/assets/images/prod_stone_coffee_table.png"
+        },
+        {
+          "label": "Murano Glass",
+          "thumb": "/assets/images/prod_murano_glassware.png"
+        },
+        {
+          "label": "Ceramic",
+          "thumb": "/assets/images/prod_ceramic_plate_set.png"
+        },
+        {
+          "label": "Textile",
+          "thumb": "/assets/images/prod_wool_shawl.png"
+        }
+      ],
+      "order": 4
+    },
+    "accents": {
+      "title": "Accents",
+      "curated": "/assets/images/cat_objects.png",
+      "banner": "/assets/images/cat_objects.png",
+      "subs": [
+        {
+          "label": "Cushions",
+          "thumb": "/assets/images/cat_textiles.png"
+        },
+        {
+          "label": "Trays",
+          "thumb": "/assets/images/cat_objects.png"
+        },
+        {
+          "label": "Mirrors",
+          "thumb": "/assets/images/cat_furniture.png"
+        }
+      ],
+      "order": 5
+    },
+    "souvenir": {
+      "title": "Souvenir",
+      "curated": "/assets/images/cat_art.png",
+      "banner": "/assets/images/cat_art.png",
+      "subs": [
+        {
+          "label": "Keepsakes",
+          "thumb": "/assets/images/prod_terracotta_vase.png"
+        },
+        {
+          "label": "Gift Sets",
+          "thumb": "/assets/images/prod_ceramic_plate_set.png"
+        },
+        {
+          "label": "Stationery",
+          "thumb": "/assets/images/cat_art.png"
+        }
+      ],
+      "order": 6
+    }
+  },
+  "products": [
+    {
+      "id": "prod_1",
+      "name": "Sanganer Silk Stole",
+      "description": "",
+      "price": 3200,
+      "compareAt": 63,
+      "sku": "",
+      "stock": 20,
+      "status": "active",
+      "isNew": true,
+      "img": "/assets/images/prod_silk_stole.png",
+      "gallery": [
+        "/assets/images/prod_silk_stole.png",
+        "/assets/images/cat_textiles.png",
+        "/assets/images/prod_wool_shawl.png"
+      ],
+      "categories": [
+        {
+          "cat": "fashion",
+          "sub": "women"
+        }
+      ],
+      "tags": [],
+      "views": 2,
+      "sold": 2,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-13T08:06:50.771Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_2",
+      "name": "Grey Patterned Linen Shirt",
+      "description": "",
+      "price": 4800,
+      "compareAt": null,
+      "sku": "",
+      "stock": 20,
+      "status": "active",
+      "isNew": true,
+      "img": "/assets/images/prod_grey_pattern_shirt.jpg",
+      "gallery": [
+        "/assets/images/prod_grey_pattern_shirt.jpg"
+      ],
+      "categories": [
+        {
+          "cat": "fashion",
+          "sub": "men"
+        }
+      ],
+      "tags": [],
+      "views": 8,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T16:21:55.289Z",
+      "variants": [
+        {
+          "label": "Small",
+          "price": 4600,
+          "stock": 1
+        },
+        {
+          "label": "Medium",
+          "price": 5000,
+          "stock": 2
+        }
+      ],
+      "publishAt": null
+    },
+    {
+      "id": "prod_3",
+      "name": "Indigo Striped Kimono Jacket",
+      "description": "",
+      "price": 6500,
+      "compareAt": null,
+      "sku": "",
+      "stock": 20,
+      "status": "active",
+      "isNew": true,
+      "img": "/assets/images/prod_striped_jacket.jpg",
+      "gallery": [
+        "/assets/images/prod_striped_jacket.jpg"
+      ],
+      "categories": [
+        {
+          "cat": "fashion",
+          "sub": "men"
+        }
+      ],
+      "tags": [],
+      "views": 7,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_4",
+      "name": "Heritage Linen Kurta",
+      "description": "",
+      "price": 5400,
+      "compareAt": null,
+      "sku": "",
+      "stock": 20,
+      "status": "active",
+      "isNew": false,
+      "img": "/assets/images/prod_linen_kurta.png",
+      "gallery": [
+        "/assets/images/prod_linen_kurta.png",
+        "/assets/images/cat_apparel.png",
+        "/assets/images/prod_silk_stole.png"
+      ],
+      "categories": [
+        {
+          "cat": "fashion",
+          "sub": "men"
+        }
+      ],
+      "tags": [],
+      "views": 1,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_5",
+      "name": "Handwoven Wool Shawl",
+      "description": "",
+      "price": 4100,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": false,
+      "img": "/assets/images/prod_wool_shawl.png",
+      "gallery": [
+        "/assets/images/prod_wool_shawl.png",
+        "/assets/images/cat_textiles.png",
+        "/assets/images/prod_silk_stole.png"
+      ],
+      "categories": [
+        {
+          "cat": "fashion",
+          "sub": "women"
+        }
+      ],
+      "tags": [],
+      "views": 0,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_6",
+      "name": "Brass Cuff Bracelet",
+      "description": "",
+      "price": 2800,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": true,
+      "img": "/assets/images/prod_brass_cuff.png",
+      "gallery": [
+        "/assets/images/prod_brass_cuff.png",
+        "/assets/images/cat_jewelry.png",
+        "/assets/images/cat_objects.png"
+      ],
+      "categories": [
+        {
+          "cat": "fashion",
+          "sub": "accessories"
+        }
+      ],
+      "tags": [],
+      "views": 0,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_8",
+      "name": "Teakwood Lounge Chair",
+      "description": "",
+      "price": 24500,
+      "compareAt": null,
+      "sku": "",
+      "stock": 8,
+      "status": "active",
+      "isNew": true,
+      "img": "/assets/images/prod_teak_chair.png",
+      "gallery": [
+        "/assets/images/prod_teak_chair.png",
+        "/assets/images/cat_furniture.png",
+        "/assets/images/prod_cane_side_table.png"
+      ],
+      "categories": [
+        {
+          "cat": "furniture",
+          "sub": "seating"
+        }
+      ],
+      "tags": [],
+      "views": 7,
+      "sold": 2,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_9",
+      "name": "Carved Console Table",
+      "description": "",
+      "price": 32000,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": false,
+      "img": "/assets/images/prod_console_table.png",
+      "gallery": [
+        "/assets/images/prod_console_table.png",
+        "/assets/images/cat_furniture.png",
+        "/assets/images/prod_stone_coffee_table.png"
+      ],
+      "categories": [
+        {
+          "cat": "furniture",
+          "sub": "console-tables"
+        }
+      ],
+      "tags": [],
+      "views": 1,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_10",
+      "name": "Stone-Top Coffee Table",
+      "description": "",
+      "price": 28400,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": false,
+      "img": "/assets/images/prod_stone_coffee_table.png",
+      "gallery": [
+        "/assets/images/prod_stone_coffee_table.png",
+        "/assets/images/prod_console_table.png",
+        "/assets/images/prod_cane_side_table.png"
+      ],
+      "categories": [
+        {
+          "cat": "furniture",
+          "sub": "coffee-tables"
+        }
+      ],
+      "tags": [],
+      "views": 1,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_11",
+      "name": "Cane Side Table",
+      "description": "",
+      "price": 12900,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": false,
+      "img": "/assets/images/prod_cane_side_table.png",
+      "gallery": [
+        "/assets/images/prod_cane_side_table.png",
+        "/assets/images/prod_teak_chair.png",
+        "/assets/images/cat_furniture.png"
+      ],
+      "categories": [
+        {
+          "cat": "furniture",
+          "sub": "side-tables"
+        }
+      ],
+      "tags": [],
+      "views": 0,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_12",
+      "name": "Ceramic Dinner Plate Set",
+      "description": "",
+      "price": 6200,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": false,
+      "img": "/assets/images/prod_ceramic_plate_set.png",
+      "gallery": [
+        "/assets/images/prod_ceramic_plate_set.png",
+        "/assets/images/cat_tableware.png",
+        "/assets/images/prod_murano_glassware.png"
+      ],
+      "categories": [
+        {
+          "cat": "home",
+          "sub": "tableware"
+        }
+      ],
+      "tags": [],
+      "views": 0,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_13",
+      "name": "Murano Glassware Pair",
+      "description": "",
+      "price": 7800,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": true,
+      "img": "/assets/images/prod_murano_glassware.png",
+      "gallery": [
+        "/assets/images/prod_murano_glassware.png",
+        "/assets/images/prod_ceramic_plate_set.png",
+        "/assets/images/cat_tableware.png"
+      ],
+      "categories": [
+        {
+          "cat": "home",
+          "sub": "drinkware"
+        }
+      ],
+      "tags": [],
+      "views": 1,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_14",
+      "name": "Lotus Urli Lamp",
+      "description": "",
+      "price": 6900,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": false,
+      "img": "/assets/images/prod_lotus_urli_lamp.png",
+      "gallery": [
+        "/assets/images/prod_lotus_urli_lamp.png",
+        "/assets/images/prod_crimson_floor_lamp.png",
+        "/assets/images/black_lamp.png"
+      ],
+      "categories": [
+        {
+          "cat": "home",
+          "sub": "lighting"
+        }
+      ],
+      "tags": [],
+      "views": 0,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_15",
+      "name": "Raga Crimson Floor Lamp",
+      "description": "",
+      "price": 38500,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": true,
+      "img": "/assets/images/prod_crimson_floor_lamp.png",
+      "gallery": [
+        "/assets/images/prod_crimson_floor_lamp.png",
+        "/assets/images/prod_lotus_urli_lamp.png",
+        "/assets/images/black_lamp.png"
+      ],
+      "categories": [
+        {
+          "cat": "home",
+          "sub": "lighting"
+        }
+      ],
+      "tags": [],
+      "views": 0,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_16",
+      "name": "Terracotta Ritual Vase",
+      "description": "",
+      "price": 4600,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": false,
+      "img": "/assets/images/prod_terracotta_vase.png",
+      "gallery": [
+        "/assets/images/prod_terracotta_vase.png",
+        "/assets/images/cat_objects.png",
+        "/assets/images/cat_art.png"
+      ],
+      "categories": [
+        {
+          "cat": "decor",
+          "sub": "vases"
+        }
+      ],
+      "tags": [],
+      "views": 0,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_17",
+      "name": "Bronze Sculpture Study",
+      "description": "",
+      "price": 15200,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": true,
+      "img": "/assets/images/cat_objects.png",
+      "gallery": [
+        "/assets/images/cat_objects.png",
+        "/assets/images/prod_terracotta_vase.png",
+        "/assets/images/cat_art.png"
+      ],
+      "categories": [
+        {
+          "cat": "decor",
+          "sub": "artifacts"
+        }
+      ],
+      "tags": [],
+      "views": 0,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_18",
+      "name": "Ritual Candle Stand",
+      "description": "",
+      "price": 3400,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": false,
+      "img": "/assets/images/cat_objects.png",
+      "gallery": [
+        "/assets/images/cat_objects.png",
+        "/assets/images/prod_lotus_urli_lamp.png",
+        "/assets/images/prod_terracotta_vase.png"
+      ],
+      "categories": [
+        {
+          "cat": "decor",
+          "sub": "candle-holders"
+        }
+      ],
+      "tags": [],
+      "views": 0,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_19",
+      "name": "Framed Miniature Art",
+      "description": "",
+      "price": 9800,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": false,
+      "img": "/assets/images/cat_art.png",
+      "gallery": [
+        "/assets/images/cat_art.png",
+        "/assets/images/prod_silk_stole.png",
+        "/assets/images/cat_textiles.png"
+      ],
+      "categories": [
+        {
+          "cat": "decor",
+          "sub": "wall-art"
+        }
+      ],
+      "tags": [],
+      "views": 0,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_20",
+      "name": "Vintage Brass Shiva Mukhalingam",
+      "description": "",
+      "price": 18500,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": true,
+      "img": "/assets/images/prod_brass_shiva_head.jpg",
+      "gallery": [
+        "/assets/images/prod_brass_shiva_head.jpg",
+        "/assets/images/cat_objects.png"
+      ],
+      "categories": [
+        {
+          "cat": "materials",
+          "sub": "brass"
+        }
+      ],
+      "tags": [],
+      "views": 1,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_21",
+      "name": "Hand-Beaten Brass Bowl",
+      "description": "",
+      "price": 3900,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": false,
+      "img": "/assets/images/cat_objects.png",
+      "gallery": [
+        "/assets/images/cat_objects.png",
+        "/assets/images/prod_brass_cuff.png",
+        "/assets/images/prod_lotus_urli_lamp.png"
+      ],
+      "categories": [
+        {
+          "cat": "materials",
+          "sub": "brass"
+        }
+      ],
+      "tags": [],
+      "views": 0,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_22",
+      "name": "Marble Serving Board",
+      "description": "",
+      "price": 5600,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": true,
+      "img": "/assets/images/prod_stone_coffee_table.png",
+      "gallery": [
+        "/assets/images/prod_stone_coffee_table.png",
+        "/assets/images/prod_ceramic_plate_set.png",
+        "/assets/images/cat_furniture.png"
+      ],
+      "categories": [
+        {
+          "cat": "materials",
+          "sub": "marble"
+        }
+      ],
+      "tags": [],
+      "views": 0,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_23",
+      "name": "Murano Glass Vessel",
+      "description": "",
+      "price": 8200,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": false,
+      "img": "/assets/images/prod_murano_glassware.png",
+      "gallery": [
+        "/assets/images/prod_murano_glassware.png",
+        "/assets/images/prod_ceramic_plate_set.png",
+        "/assets/images/prod_terracotta_vase.png"
+      ],
+      "categories": [
+        {
+          "cat": "materials",
+          "sub": "murano-glass"
+        }
+      ],
+      "tags": [],
+      "views": 0,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_24",
+      "name": "Block-Print Textile Panel",
+      "description": "",
+      "price": 2900,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": false,
+      "img": "/assets/images/prod_silk_stole.png",
+      "gallery": [
+        "/assets/images/prod_silk_stole.png",
+        "/assets/images/cat_textiles.png",
+        "/assets/images/prod_wool_shawl.png"
+      ],
+      "categories": [
+        {
+          "cat": "materials",
+          "sub": "textile"
+        }
+      ],
+      "tags": [],
+      "views": 0,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_25",
+      "name": "Handwoven Cotton Cushion Cover",
+      "description": "",
+      "price": 1900,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": true,
+      "img": "/assets/images/cat_textiles.png",
+      "gallery": [
+        "/assets/images/cat_textiles.png",
+        "/assets/images/prod_wool_shawl.png",
+        "/assets/images/prod_silk_stole.png"
+      ],
+      "categories": [
+        {
+          "cat": "accents",
+          "sub": "cushions"
+        }
+      ],
+      "tags": [],
+      "views": 0,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_26",
+      "name": "Block-Print Bolster Cushion",
+      "description": "",
+      "price": 2400,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": false,
+      "img": "/assets/images/prod_wool_shawl.png",
+      "gallery": [
+        "/assets/images/prod_wool_shawl.png",
+        "/assets/images/cat_textiles.png"
+      ],
+      "categories": [
+        {
+          "cat": "accents",
+          "sub": "cushions"
+        }
+      ],
+      "tags": [],
+      "views": 0,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_27",
+      "name": "Brass Inlay Serving Tray",
+      "description": "",
+      "price": 4300,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": true,
+      "img": "/assets/images/cat_objects.png",
+      "gallery": [
+        "/assets/images/cat_objects.png",
+        "/assets/images/prod_brass_cuff.png",
+        "/assets/images/cat_tableware.png"
+      ],
+      "categories": [
+        {
+          "cat": "accents",
+          "sub": "trays"
+        }
+      ],
+      "tags": [],
+      "views": 0,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_28",
+      "name": "Teak Frame Wall Mirror",
+      "description": "",
+      "price": 11800,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": false,
+      "img": "/assets/images/cat_furniture.png",
+      "gallery": [
+        "/assets/images/cat_furniture.png",
+        "/assets/images/prod_console_table.png"
+      ],
+      "categories": [
+        {
+          "cat": "accents",
+          "sub": "mirrors"
+        }
+      ],
+      "tags": [],
+      "views": 0,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_29",
+      "name": "Miniature Brass Urli",
+      "description": "",
+      "price": 1600,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": true,
+      "img": "/assets/images/prod_lotus_urli_lamp.png",
+      "gallery": [
+        "/assets/images/prod_lotus_urli_lamp.png",
+        "/assets/images/cat_objects.png"
+      ],
+      "categories": [
+        {
+          "cat": "souvenir",
+          "sub": "keepsakes"
+        }
+      ],
+      "tags": [],
+      "views": 0,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_30",
+      "name": "Terracotta Bell Keepsake",
+      "description": "",
+      "price": 950,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": false,
+      "img": "/assets/images/prod_terracotta_vase.png",
+      "gallery": [
+        "/assets/images/prod_terracotta_vase.png",
+        "/assets/images/cat_objects.png"
+      ],
+      "categories": [
+        {
+          "cat": "souvenir",
+          "sub": "keepsakes"
+        }
+      ],
+      "tags": [],
+      "views": 0,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_31",
+      "name": "Tea & Ceramic Gift Set",
+      "description": "",
+      "price": 3800,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": false,
+      "img": "/assets/images/prod_ceramic_plate_set.png",
+      "gallery": [
+        "/assets/images/prod_ceramic_plate_set.png",
+        "/assets/images/cat_tableware.png",
+        "/assets/images/prod_murano_glassware.png"
+      ],
+      "categories": [
+        {
+          "cat": "souvenir",
+          "sub": "gift-sets"
+        }
+      ],
+      "tags": [],
+      "views": 0,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    },
+    {
+      "id": "prod_32",
+      "name": "Hand-Bound Paper Journal",
+      "description": "",
+      "price": 1200,
+      "compareAt": null,
+      "sku": "",
+      "stock": 10,
+      "status": "active",
+      "isNew": false,
+      "img": "/assets/images/cat_art.png",
+      "gallery": [
+        "/assets/images/cat_art.png",
+        "/assets/images/journal_craft_heritage.png"
+      ],
+      "categories": [
+        {
+          "cat": "souvenir",
+          "sub": "stationery"
+        }
+      ],
+      "tags": [],
+      "views": 0,
+      "sold": 0,
+      "createdAt": "2026-08-12T10:29:52.737Z",
+      "updatedAt": "2026-08-12T10:29:52.737Z",
+      "variants": [],
+      "publishAt": null
+    }
+  ],
+  "orders": [
+    {
+      "id": "ord_69",
+      "number": "VAY-1003",
+      "items": [
+        {
+          "productId": "prod_8",
+          "name": "Teakwood Lounge Chair",
+          "price": 24500,
+          "qty": 1,
+          "img": "/assets/images/prod_teak_chair.png",
+          "variant": null
+        }
+      ],
+      "customer": {
+        "id": "cust_55",
+        "name": "Gulshan Prajapati",
+        "email": "gulshanprajapati1998@gmail.com",
+        "phone": "+919717418911",
+        "address": "3/2 Bagichi Hari Nagar Ashram , New Delhi-110014",
+        "city": "New Delhi",
+        "pin": "110014"
+      },
+      "subtotal": 24500,
+      "discount": 0,
+      "coupon": null,
+      "shipping": 0,
+      "total": 24500,
+      "payment": {
+        "method": "cod"
+      },
+      "status": "new",
+      "createdAt": "2026-08-13T05:53:24.445Z",
+      "timeline": [
+        {
+          "t": "2026-08-13T05:53:24.445Z",
+          "status": "new",
+          "note": "Order placed from storefront"
+        }
+      ]
+    },
+    {
+      "id": "ord_56",
+      "number": "VAY-1002",
+      "items": [
+        {
+          "productId": "prod_8",
+          "name": "Teakwood Lounge Chair",
+          "price": 24500,
+          "qty": 1,
+          "img": "/assets/images/prod_teak_chair.png",
+          "variant": null
+        }
+      ],
+      "customer": {
+        "id": "cust_55",
+        "name": "Gulshan Prajapati",
+        "email": "gulshanprajapati1998@gmail.com",
+        "phone": "+919717418911",
+        "address": "3/2 Bagichi Hari Nagar Ashram , New Delhi-110014",
+        "city": "New Delhi",
+        "pin": "110014"
+      },
+      "subtotal": 24500,
+      "discount": 0,
+      "coupon": null,
+      "shipping": 0,
+      "total": 24500,
+      "payment": {
+        "method": "cod"
+      },
+      "status": "new",
+      "createdAt": "2026-08-12T12:06:41.443Z",
+      "timeline": [
+        {
+          "t": "2026-08-12T12:06:41.443Z",
+          "status": "new",
+          "note": "Order placed from storefront"
+        }
+      ]
+    },
+    {
+      "id": "ord_35",
+      "number": "VAY-1001",
+      "items": [
+        {
+          "productId": "prod_1",
+          "name": "Sanganer Silk Stole",
+          "price": 3200,
+          "qty": 2,
+          "img": "/assets/images/prod_silk_stole.png",
+          "cat": "fashion"
+        }
+      ],
+      "customer": {
+        "id": "cust_34",
+        "name": "Test Buyer",
+        "email": "buyer@test.com",
+        "phone": "",
+        "address": "12 Lane",
+        "city": "Delhi",
+        "pin": "110001"
+      },
+      "subtotal": 6400,
+      "shipping": 0,
+      "total": 6400,
+      "status": "processing",
+      "createdAt": "2026-08-12T10:30:09.828Z",
+      "timeline": [
+        {
+          "t": "2026-08-12T10:30:09.828Z",
+          "status": "new",
+          "note": "Order placed from storefront"
+        },
+        {
+          "t": "2026-08-12T10:30:29.719Z",
+          "status": "shipped",
+          "note": "Marked shipped by Vayu Admin"
+        },
+        {
+          "t": "2026-08-12T10:45:40.110Z",
+          "status": "processing",
+          "note": "Marked processing by Vayu Admin"
+        },
+        {
+          "t": "2026-08-12T10:45:42.173Z",
+          "status": "new",
+          "note": "Marked new by Vayu Admin"
+        },
+        {
+          "t": "2026-08-12T10:45:44.556Z",
+          "status": "processing",
+          "note": "Marked processing by Vayu Admin"
+        }
+      ]
+    }
+  ],
+  "customers": [
+    {
+      "id": "cust_34",
+      "name": "Test Buyer",
+      "email": "buyer@test.com",
+      "phone": "",
+      "address": "12 Lane",
+      "ordersCount": 1,
+      "totalSpent": 6400,
+      "firstSeen": "2026-08-12T10:30:09.828Z",
+      "lastSeen": "2026-08-12T10:30:09.828Z",
+      "source": "checkout",
+      "notes": "",
+      "tags": [],
+      "salt": null,
+      "hash": null,
+      "addresses": []
+    },
+    {
+      "id": "cust_55",
+      "name": "Gulshan Prajapati",
+      "email": "gulshanprajapati1998@gmail.com",
+      "phone": "9717418911",
+      "address": "3/2 Bagichi Hari Nagar Ashram , New Delhi-110014",
+      "ordersCount": 2,
+      "totalSpent": 49000,
+      "firstSeen": "2026-08-12T12:06:41.444Z",
+      "lastSeen": "2026-08-13T07:14:10.297Z",
+      "source": "checkout",
+      "notes": "",
+      "tags": [],
+      "salt": "96373b954a45caae5455789142adb420",
+      "hash": "e86374c9b36c1da7197e22ef9d7b3a28204bed7367cfd363202a43d44dc7bbc8b4b2073f005faecd5e8a3201ca66dd26856957c80400fc8cbe4b43f6266ae6c2",
+      "addresses": [
+        {
+          "id": "addr_72",
+          "label": "Home",
+          "name": "",
+          "phone": "",
+          "address": "3/2 Bagichi Hari Nagar Ashram , New Delhi-110014",
+          "city": "New Delhi",
+          "pin": "110014",
+          "isDefault": true
+        }
+      ],
+      "accountCreatedAt": "2026-08-13T07:13:39.853Z"
+    }
+  ],
+  "subscribers": [],
+  "analytics": {
+    "days": {
+      "2026-08-12": {
+        "views": 86,
+        "paths": {
+          "/pages/product.html": 20,
+          "/": 8,
+          "/index.html": 17,
+          "/pages/collection.html": 7,
+          "/pages/collection-detail.html": 15,
+          "/pages/artist.html": 2,
+          "/pages/gallery.html": 1,
+          "/pages/journal.html": 2,
+          "/pages/about.html": 1,
+          "/pages/cart.html": 7,
+          "/pages/user-profile.html": 3,
+          "/pages/jenjum.html": 1,
+          "/pages/journal-post.html": 2
+        },
+        "products": {
+          "prod_1": 1,
+          "prod_8": 7,
+          "prod_3": 4,
+          "prod_2": 3,
+          "prod_4": 1,
+          "prod_20": 1,
+          "prod_13": 1,
+          "prod_10": 1,
+          "prod_9": 1
+        },
+        "sids": {
+          "t1": 1,
+          "vmspygc6oazbhvk": 1,
+          "vmsq15qdp6ufcdj": 1,
+          "vmsq1g0vd5ezuuz": 1,
+          "vmsq2bsskuurlrv": 1,
+          "vmsq3xud64mfb8i": 1,
+          "vmsq49spb0wh4ik": 1,
+          "vmsq6mtyf8odnhc": 1
+        },
+        "atc": 2,
+        "checkoutStart": 1
+      },
+      "2026-08-13": {
+        "views": 69,
+        "paths": {
+          "/pages/artist.html": 3,
+          "/": 4,
+          "/pages/product.html": 11,
+          "/pages/collection.html": 7,
+          "/pages/journal.html": 7,
+          "/pages/cart.html": 6,
+          "/pages/gallery.html": 4,
+          "/pages/about.html": 5,
+          "/pages/user-profile.html": 8,
+          "/pages/wishlist.html": 4,
+          "/index.html": 5,
+          "/pages/collection-detail.html": 5
+        },
+        "products": {
+          "prod_2": 5,
+          "prod_3": 3,
+          "prod_1": 1
+        },
+        "sids": {
+          "vmsq15qdp6ufcdj": 1,
+          "vmsr3d37ctpvpat": 1,
+          "vmsr3dgiu6kd2fg": 1,
+          "vmsr3dgo0kkanpo": 1,
+          "vmsr3dgo4fs9quq": 1,
+          "vmsr3dgwnvup27q": 1,
+          "vmsr3dgy6r4j70k": 1,
+          "vmsr3duwvblhl77": 1,
+          "vmsr3dwanevlcww": 1,
+          "vmsr3dxbb50qshb": 1,
+          "vmsr3dydkr3lj12": 1,
+          "vmsr3dzf7pcflrq": 1,
+          "vmsr3e190xipo7o": 1,
+          "vmsr3eqf8bfq4do": 1,
+          "vmspygc6oazbhvk": 1
+        },
+        "atc": 0,
+        "checkoutStart": 3
+      }
+    },
+    "recent": [
+      {
+        "t": "2026-08-13T08:07:03.557Z",
+        "path": "/pages/product.html?id=prod_1&cat=fashion&idx=0",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T08:07:02.453Z",
+        "path": "/pages/collection-detail.html?cat=fashion&sub=women",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T08:07:00.791Z",
+        "path": "/pages/collection.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T08:06:59.580Z",
+        "path": "/pages/user-profile.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:18:39.295Z",
+        "path": "/index.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:18:20.223Z",
+        "path": "/index.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:16:10.226Z",
+        "path": "/pages/user-profile.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:16:04.644Z",
+        "path": "/pages/about.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:15:42.849Z",
+        "path": "/pages/journal.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:15:29.841Z",
+        "path": "/pages/user-profile.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:15:25.526Z",
+        "path": "/pages/about.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:15:20.847Z",
+        "path": "/pages/journal.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:15:16.195Z",
+        "path": "/pages/artist.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:15:07.025Z",
+        "path": "/pages/about.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:15:05.231Z",
+        "path": "/pages/journal.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:15:03.829Z",
+        "path": "/pages/gallery.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:15:03.062Z",
+        "path": "/pages/journal.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:15:01.591Z",
+        "path": "/pages/about.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:14:59.998Z",
+        "path": "/pages/journal.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:14:58.922Z",
+        "path": "/pages/gallery.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:14:57.719Z",
+        "path": "/pages/artist.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:14:56.426Z",
+        "path": "/pages/collection.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:14:44.238Z",
+        "path": "/index.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:14:41.373Z",
+        "path": "/pages/wishlist.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:14:29.297Z",
+        "path": "/pages/user-profile.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:14:26.194Z",
+        "path": "/pages/wishlist.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:13:56.465Z",
+        "path": "/pages/user-profile.html?section=addresses",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:13:02.653Z",
+        "path": "/pages/user-profile.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:01:01.933Z",
+        "path": "/pages/product.html?id=prod_2&cat=fashion&idx=1",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:00:50.730Z",
+        "path": "/pages/collection-detail.html?cat=fashion",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:00:33.652Z",
+        "path": "/pages/collection.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:00:29.534Z",
+        "path": "/pages/collection-detail.html?cat=furniture",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T07:00:19.530Z",
+        "path": "/pages/product.html?id=prod_2&cat=fashion&idx=1",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T06:59:44.018Z",
+        "path": "/pages/product.html?id=prod_3&cat=fashion&idx=2",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T06:59:41.418Z",
+        "path": "/pages/collection-detail.html?cat=fashion",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T06:59:36.337Z",
+        "path": "/index.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T06:13:03.372Z",
+        "path": "/pages/product.html?id=prod_2&cat=fashion&idx=1",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T06:09:14.258Z",
+        "path": "/pages/product.html?id=prod_2&cat=fashion&idx=1",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T06:09:09.283Z",
+        "path": "/pages/product.html?id=prod_3&cat=fashion&idx=2",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T06:08:56.127Z",
+        "path": "/pages/product.html?id=prod_3&cat=fashion&idx=2",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T06:08:53.537Z",
+        "path": "/pages/product.html?id=prod_2&cat=fashion&idx=1",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T06:08:52.154Z",
+        "path": "/pages/collection-detail.html?cat=fashion",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T06:08:51.258Z",
+        "path": "/pages/collection.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T06:08:49.576Z",
+        "path": "/pages/gallery.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T06:05:42.217Z",
+        "path": "/index.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T05:53:52.750Z",
+        "path": "/pages/user-profile.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T05:53:26.384Z",
+        "path": "/pages/collection.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T05:53:18.928Z",
+        "path": "/pages/cart.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T05:53:12.337Z",
+        "path": "/pages/cart.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T05:53:01.721Z",
+        "path": "/pages/wishlist.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T05:52:36.007Z",
+        "path": "/pages/wishlist.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T05:52:16.720Z",
+        "path": "/pages/user-profile.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T05:52:14.143Z",
+        "path": "/pages/cart.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T05:51:51.146Z",
+        "path": "/pages/cart.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T05:51:27.467Z",
+        "path": "/",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T05:43:48.551Z",
+        "path": "/pages/about.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T05:43:15.926Z",
+        "path": "/pages/gallery.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T05:43:13.557Z",
+        "path": "/pages/collection.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T05:43:12.202Z",
+        "path": "/pages/journal.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T05:43:10.825Z",
+        "path": "/pages/cart.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T05:43:09.505Z",
+        "path": "/pages/product.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T05:43:07.721Z",
+        "path": "/",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T05:42:49.618Z",
+        "path": "/pages/cart.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T05:42:49.563Z",
+        "path": "/pages/journal.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T05:42:49.417Z",
+        "path": "/pages/collection.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T05:42:49.295Z",
+        "path": "/",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T05:42:49.066Z",
+        "path": "/pages/product.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T05:42:31.803Z",
+        "path": "/",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-13T05:05:45.020Z",
+        "path": "/pages/artist.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T16:22:17.972Z",
+        "path": "/pages/product.html?id=prod_2&cat=fashion&idx=1",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T16:22:15.146Z",
+        "path": "/pages/collection-detail.html?cat=fashion",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T16:22:11.537Z",
+        "path": "/index.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T16:18:14.736Z",
+        "path": "/pages/journal-post.html?id=designing-with-imperfection",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T16:17:52.975Z",
+        "path": "/pages/journal-post.html?id=conversations-with-the-makers",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T16:12:11.165Z",
+        "path": "/index.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T15:54:58.975Z",
+        "path": "/index.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T15:54:37.001Z",
+        "path": "/index.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T15:54:34.723Z",
+        "path": "/pages/product.html?id=prod_3&cat=fashion&idx=2",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T15:06:27.912Z",
+        "path": "/pages/product.html?id=prod_3&cat=fashion&idx=2",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T15:06:25.683Z",
+        "path": "/pages/collection-detail.html?cat=fashion",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T15:00:09.764Z",
+        "path": "/index.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T14:27:03.204Z",
+        "path": "/pages/journal.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T14:26:48.862Z",
+        "path": "/index.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T14:26:38.961Z",
+        "path": "/index.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T14:26:19.154Z",
+        "path": "/index.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T13:20:11.670Z",
+        "path": "/",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T13:11:36.215Z",
+        "path": "/pages/user-profile.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T13:11:34.242Z",
+        "path": "/pages/cart.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T13:11:21.386Z",
+        "path": "/pages/product.html?id=prod_8&cat=furniture&idx=0",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T13:11:17.495Z",
+        "path": "/pages/collection-detail.html?cat=furniture",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T13:11:13.500Z",
+        "path": "/pages/product.html?id=prod_8&cat=furniture&idx=0",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T13:11:11.147Z",
+        "path": "/pages/product.html?id=prod_9&cat=furniture&idx=1",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T13:11:09.318Z",
+        "path": "/pages/collection-detail.html?cat=furniture",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T13:11:06.951Z",
+        "path": "/pages/collection.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T13:10:58.187Z",
+        "path": "/index.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T13:10:56.606Z",
+        "path": "/pages/cart.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T13:10:53.921Z",
+        "path": "/pages/cart.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:34:59.068Z",
+        "path": "/pages/cart.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:34:55.925Z",
+        "path": "/pages/product.html?id=prod_8&cat=furniture&idx=0",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:34:50.877Z",
+        "path": "/pages/collection-detail.html?cat=furniture",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:32:12.297Z",
+        "path": "/",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:32:10.885Z",
+        "path": "/",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:29:39.054Z",
+        "path": "/index.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:26:41.135Z",
+        "path": "/pages/product.html?id=prod_8&cat=furniture&idx=0",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:26:38.749Z",
+        "path": "/pages/collection-detail.html?cat=furniture",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:26:34.340Z",
+        "path": "/index.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:25:45.867Z",
+        "path": "/",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:25:16.930Z",
+        "path": "/index.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:22:21.937Z",
+        "path": "/pages/cart.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:22:05.184Z",
+        "path": "/index.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:20:14.546Z",
+        "path": "/pages/jenjum.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:19:35.899Z",
+        "path": "/pages/product.html?id=prod_8&cat=furniture&idx=0",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:19:31.720Z",
+        "path": "/pages/product.html?id=prod_10&cat=furniture&idx=2",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:19:29.142Z",
+        "path": "/pages/collection-detail.html?cat=furniture",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:19:09.268Z",
+        "path": "/index.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:19:06.714Z",
+        "path": "/pages/user-profile.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:18:58.002Z",
+        "path": "/",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:18:35.195Z",
+        "path": "/index.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:17:24.238Z",
+        "path": "/pages/product.html?id=prod_13&cat=home&idx=1",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:17:22.054Z",
+        "path": "/pages/collection-detail.html?cat=home&sub=drinkware",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:17:16.211Z",
+        "path": "/pages/collection-detail.html?cat=home&sub=drinkware",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:16:02.527Z",
+        "path": "/pages/product.html?id=prod_20&cat=materials&idx=0",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:16:01.343Z",
+        "path": "/pages/collection-detail.html?cat=materials&sub=brass",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:15:52.561Z",
+        "path": "/pages/collection.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:15:18.250Z",
+        "path": "/pages/product.html?id=prod_3&cat=fashion&idx=2",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:15:12.718Z",
+        "path": "/pages/product.html?id=prod_2&cat=fashion&idx=1",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:14:59.933Z",
+        "path": "/pages/product.html?id=prod_4&cat=fashion&idx=3",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:14:57.410Z",
+        "path": "/pages/collection-detail.html?cat=fashion",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:08:32.133Z",
+        "path": "/pages/product.html?id=prod_2&cat=fashion&idx=1",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:08:20.717Z",
+        "path": "/pages/product.html?id=prod_3&cat=fashion&idx=2",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:07:52.823Z",
+        "path": "/pages/collection-detail.html?cat=fashion",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:07:09.907Z",
+        "path": "/pages/collection.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:06:57.967Z",
+        "path": "/pages/product.html?id=prod_8&cat=furniture&idx=0",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:06:56.690Z",
+        "path": "/pages/collection-detail.html?cat=furniture&sub=seating",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:06:49.339Z",
+        "path": "/pages/user-profile.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:06:45.522Z",
+        "path": "/pages/cart.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:06:43.548Z",
+        "path": "/pages/collection.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:06:25.672Z",
+        "path": "/pages/cart.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:06:23.250Z",
+        "path": "/pages/product.html?id=prod_8&cat=furniture&idx=0",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:06:20.793Z",
+        "path": "/pages/collection-detail.html?cat=furniture",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:06:11.793Z",
+        "path": "/index.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T12:01:03.415Z",
+        "path": "/",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T11:53:44.680Z",
+        "path": "/pages/about.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T11:53:43.394Z",
+        "path": "/pages/journal.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T11:53:42.314Z",
+        "path": "/pages/gallery.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T11:53:41.534Z",
+        "path": "/pages/artist.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T11:53:37.747Z",
+        "path": "/pages/artist.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T11:53:33.445Z",
+        "path": "/pages/collection.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T11:53:04.829Z",
+        "path": "/",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T10:40:50.468Z",
+        "path": "/pages/collection-detail.html?cat=home",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T10:40:35.247Z",
+        "path": "/pages/collection.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T10:38:50.102Z",
+        "path": "/pages/collection.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T10:38:48.149Z",
+        "path": "/index.html",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T10:37:19.154Z",
+        "path": "/",
+        "ref": ""
+      },
+      {
+        "t": "2026-08-12T10:30:09.564Z",
+        "path": "/pages/product.html?cat=fashion&idx=0",
+        "ref": ""
+      }
+    ]
+  },
+  "activity": [
+    {
+      "t": "2026-08-13T08:06:50.772Z",
+      "admin": "Vayu Admin",
+      "action": "product.update",
+      "detail": "Updated \"Sanganer Silk Stole\""
+    },
+    {
+      "t": "2026-08-13T07:13:39.944Z",
+      "admin": "system",
+      "action": "account.register",
+      "detail": "gulshanprajapati1998@gmail.com created a customer account"
+    },
+    {
+      "t": "2026-08-13T06:52:48.842Z",
+      "admin": "Vayu Admin",
+      "action": "auth.login",
+      "detail": "Signed in"
+    },
+    {
+      "t": "2026-08-12T16:21:55.290Z",
+      "admin": "Vayu Admin",
+      "action": "product.update",
+      "detail": "Updated \"Grey Patterned Linen Shirt\""
+    },
+    {
+      "t": "2026-08-12T16:20:00.750Z",
+      "admin": "Vayu Admin",
+      "action": "product.bulk",
+      "detail": "Bulk stock-set on 4 product(s)"
+    },
+    {
+      "t": "2026-08-12T15:54:56.241Z",
+      "admin": "Vayu Admin",
+      "action": "content.update",
+      "detail": "Updated site content"
+    },
+    {
+      "t": "2026-08-12T15:54:30.532Z",
+      "admin": "Vayu Admin",
+      "action": "content.update",
+      "detail": "Updated site content"
+    },
+    {
+      "t": "2026-08-12T14:28:24.845Z",
+      "admin": "Vayu Admin",
+      "action": "auth.login",
+      "detail": "Signed in"
+    },
+    {
+      "t": "2026-08-12T13:13:59.496Z",
+      "admin": "RF Mgr",
+      "action": "auth.login",
+      "detail": "Signed in"
+    },
+    {
+      "t": "2026-08-12T13:13:59.284Z",
+      "admin": "RF Staff",
+      "action": "auth.login",
+      "detail": "Signed in"
+    },
+    {
+      "t": "2026-08-12T13:13:37.688Z",
+      "admin": "Vayu Admin",
+      "action": "product.import",
+      "detail": "CSV import: 1 created, 1 updated"
+    },
+    {
+      "t": "2026-08-12T13:13:37.497Z",
+      "admin": "Vayu Admin",
+      "action": "product.bulk",
+      "detail": "Bulk status on 1 product(s)"
+    },
+    {
+      "t": "2026-08-12T12:30:10.230Z",
+      "admin": "Vayu Admin",
+      "action": "auth.login",
+      "detail": "Signed in"
+    },
+    {
+      "t": "2026-08-12T12:27:53.277Z",
+      "admin": "Vayu Admin",
+      "action": "content.update",
+      "detail": "Updated site content"
+    },
+    {
+      "t": "2026-08-12T12:27:09.383Z",
+      "admin": "Vayu Admin",
+      "action": "content.update",
+      "detail": "Updated site content"
+    },
+    {
+      "t": "2026-08-12T12:25:07.050Z",
+      "admin": "Vayu Admin",
+      "action": "content.update",
+      "detail": "Updated site content"
+    },
+    {
+      "t": "2026-08-12T12:24:55.894Z",
+      "admin": "Vayu Admin",
+      "action": "content.update",
+      "detail": "Updated site content"
+    },
+    {
+      "t": "2026-08-12T12:24:55.627Z",
+      "admin": "Vayu Admin",
+      "action": "content.update",
+      "detail": "Updated site content"
+    },
+    {
+      "t": "2026-08-12T12:06:05.281Z",
+      "admin": "Vayu Admin",
+      "action": "coupon.create",
+      "detail": "Created coupon RONAK75"
+    },
+    {
+      "t": "2026-08-12T12:01:29.383Z",
+      "admin": "Vayu Admin",
+      "action": "auth.login",
+      "detail": "Signed in"
+    },
+    {
+      "t": "2026-08-12T11:26:31.023Z",
+      "admin": "Store Staff",
+      "action": "auth.login",
+      "detail": "Signed in"
+    },
+    {
+      "t": "2026-08-12T11:26:06.122Z",
+      "admin": "Vayu Admin",
+      "action": "backup.create",
+      "detail": "Backup db-2026-08-12T11-26-06-120Z.json"
+    },
+    {
+      "t": "2026-08-12T11:26:05.275Z",
+      "admin": "Vayu Admin",
+      "action": "product.import",
+      "detail": "CSV import: 1 created, 1 updated"
+    },
+    {
+      "t": "2026-08-12T11:26:05.010Z",
+      "admin": "Vayu Admin",
+      "action": "product.bulk",
+      "detail": "Bulk status on 1 product(s)"
+    },
+    {
+      "t": "2026-08-12T11:24:45.141Z",
+      "admin": "Vayu Admin",
+      "action": "content.update",
+      "detail": "Updated site content"
+    },
+    {
+      "t": "2026-08-12T11:24:43.778Z",
+      "admin": "Vayu Admin",
+      "action": "settings.update",
+      "detail": "Updated store settings"
+    },
+    {
+      "t": "2026-08-12T10:45:44.556Z",
+      "admin": "Vayu Admin",
+      "action": "order.status",
+      "detail": "Order VAY-1001 → processing"
+    },
+    {
+      "t": "2026-08-12T10:45:42.173Z",
+      "admin": "Vayu Admin",
+      "action": "order.status",
+      "detail": "Order VAY-1001 → new"
+    },
+    {
+      "t": "2026-08-12T10:45:40.110Z",
+      "admin": "Vayu Admin",
+      "action": "order.status",
+      "detail": "Order VAY-1001 → processing"
+    },
+    {
+      "t": "2026-08-12T10:40:30.743Z",
+      "admin": "Vayu Admin",
+      "action": "product.delete",
+      "detail": "Deleted \"Black Obsidian Lamp\""
+    },
+    {
+      "t": "2026-08-12T10:39:24.852Z",
+      "admin": "Vayu Admin",
+      "action": "category.update",
+      "detail": "Updated category \"Decor\""
+    },
+    {
+      "t": "2026-08-12T10:38:19.236Z",
+      "admin": "Vayu Admin",
+      "action": "category.update",
+      "detail": "Updated category \"Home&Decor\""
+    },
+    {
+      "t": "2026-08-12T10:33:58.337Z",
+      "admin": "Vayu Admin",
+      "action": "product.delete",
+      "detail": "Deleted \"Test Multi-Cat Lamp\""
+    },
+    {
+      "t": "2026-08-12T10:32:20.621Z",
+      "admin": "Vayu Admin",
+      "action": "auth.password",
+      "detail": "Changed password"
+    },
+    {
+      "t": "2026-08-12T10:31:37.146Z",
+      "admin": "Vayu Admin",
+      "action": "auth.login",
+      "detail": "Signed in"
+    },
+    {
+      "t": "2026-08-12T10:30:29.719Z",
+      "admin": "Vayu Admin",
+      "action": "order.status",
+      "detail": "Order VAY-1001 → shipped"
+    },
+    {
+      "t": "2026-08-12T10:30:28.861Z",
+      "admin": "Vayu Admin",
+      "action": "product.create",
+      "detail": "Created \"Test Multi-Cat Lamp\""
+    },
+    {
+      "t": "2026-08-12T10:30:08.768Z",
+      "admin": "Vayu Admin",
+      "action": "auth.login",
+      "detail": "Signed in"
+    },
+    {
+      "t": "2026-08-12T10:29:52.737Z",
+      "admin": "system",
+      "action": "seed",
+      "detail": "Seeded 32 products and 7 categories from the static catalogue"
+    }
+  ],
+  "coupons": [
+    {
+      "id": "cpn_54",
+      "code": "RONAK75",
+      "type": "percent",
+      "value": 75,
+      "minOrder": 10000,
+      "expiresAt": null,
+      "usageLimit": 0,
+      "perCustomerLimit": 0,
+      "active": true,
+      "restrictTo": {
+        "emails": [],
+        "phones": []
+      },
+      "usedCount": 0,
+      "uses": [],
+      "createdAt": "2026-08-12T12:06:05.281Z"
+    }
+  ],
+  "reviews": [],
+  "stockAlerts": [],
+  "outbox": [
+    {
+      "id": "mail_71",
+      "to": "gulshanprajapati1998@gmail.com",
+      "subject": "Vayu — your account is ready",
+      "body": "Namaste Gulshan Prajapati,\n\nAn account was created for this email address at Vayu.\n\nIf that was not you, reply to this message and we will remove it.\n\n— Vayu",
+      "event": "account.created",
+      "status": "queued",
+      "t": "2026-08-13T07:13:39.944Z"
+    },
+    {
+      "id": "mail_70",
+      "to": "gulshanprajapati1998@gmail.com",
+      "subject": "Vayu — order VAY-1003 confirmed",
+      "body": "Namaste Gulshan Prajapati,\n\nThank you for your order VAY-1003.\n\n  Teakwood Lounge Chair × 1 — ₹ 24,500\n  Shipping: Free\n  Total: ₹ 24,500\n\nWe will write again when it ships.\n\n— Vayu",
+      "event": "order.placed",
+      "status": "queued",
+      "t": "2026-08-13T05:53:24.446Z"
+    },
+    {
+      "id": "mail_57",
+      "to": "gulshanprajapati1998@gmail.com",
+      "subject": "Vayu — order VAY-1002 confirmed",
+      "body": "Namaste Gulshan Prajapati,\n\nThank you for your order VAY-1002.\n\n  Teakwood Lounge Chair × 1 — ₹ 24,500\n  Shipping: Free\n  Total: ₹ 24,500\n\nWe will write again when it ships.\n\n— Vayu",
+      "event": "order.placed",
+      "status": "queued",
+      "t": "2026-08-12T12:06:41.444Z"
+    }
+  ],
+  "inventoryLog": [
+    {
+      "t": "2026-08-13T05:53:24.446Z",
+      "productId": "prod_8",
+      "name": "Teakwood Lounge Chair",
+      "delta": -1,
+      "reason": "sale",
+      "by": "storefront"
+    },
+    {
+      "t": "2026-08-12T16:21:55.290Z",
+      "productId": "prod_2",
+      "name": "Grey Patterned Linen Shirt",
+      "delta": -17,
+      "reason": "manual edit",
+      "by": "Vayu Admin"
+    },
+    {
+      "t": "2026-08-12T16:20:00.750Z",
+      "productId": "prod_4",
+      "name": "Heritage Linen Kurta",
+      "delta": 10,
+      "reason": "bulk set",
+      "by": "Vayu Admin"
+    },
+    {
+      "t": "2026-08-12T16:20:00.750Z",
+      "productId": "prod_3",
+      "name": "Indigo Striped Kimono Jacket",
+      "delta": 10,
+      "reason": "bulk set",
+      "by": "Vayu Admin"
+    },
+    {
+      "t": "2026-08-12T16:20:00.750Z",
+      "productId": "prod_2",
+      "name": "Grey Patterned Linen Shirt",
+      "delta": 10,
+      "reason": "bulk set",
+      "by": "Vayu Admin"
+    },
+    {
+      "t": "2026-08-12T16:20:00.748Z",
+      "productId": "prod_1",
+      "name": "Sanganer Silk Stole",
+      "delta": 12,
+      "reason": "bulk set",
+      "by": "Vayu Admin"
+    },
+    {
+      "t": "2026-08-12T12:06:41.444Z",
+      "productId": "prod_8",
+      "name": "Teakwood Lounge Chair",
+      "delta": -1,
+      "reason": "sale",
+      "by": "storefront"
+    },
+    {
+      "t": "2026-08-12T11:24:44.301Z",
+      "productId": "prod_30",
+      "name": "Terracotta Bell Keepsake",
+      "delta": -1,
+      "reason": "sale",
+      "by": "storefront"
+    },
+    {
+      "t": "2026-08-12T11:24:44.049Z",
+      "productId": "prod_3",
+      "name": "Indigo Striped Kimono Jacket",
+      "delta": -1,
+      "reason": "sale",
+      "by": "storefront"
+    },
+    {
+      "t": "2026-08-12T11:23:05.130Z",
+      "productId": "prod_2",
+      "name": "Grey Patterned Linen Shirt",
+      "delta": -1,
+      "reason": "sale",
+      "by": "storefront"
+    }
+  ],
+  "carts": {
+    "vmsq1g0vd5ezuuz": {
+      "items": [
+        {
+          "name": "Grey Patterned Linen Shirt",
+          "qty": 1,
+          "price": "₹ 4,800",
+          "img": "/assets/images/prod_grey_pattern_shirt.jpg"
+        },
+        {
+          "name": "Teakwood Lounge Chair",
+          "qty": 2,
+          "price": "₹ 24,500",
+          "img": "/assets/images/prod_teak_chair.png"
+        }
+      ],
+      "t": "2026-08-12T12:22:21.493Z"
+    }
+  },
+  "searches": [],
+  "journal": [
+    {
+      "id": "revival-of-indian-brass",
+      "featured": false,
+      "category": "craft",
+      "categoryLabel": "Craft & Heritage",
+      "title": "The Revival of Indian Brass — A Living Tradition",
+      "excerpt": "In the narrow lanes of Moradabad, fourth-generation artists keep alive a craft that stretches back centuries. We trace the journey of hand-beaten brass — from raw metal to objects of quiet beauty — and explore how contemporary designers are giving this ancient practice new meaning in modern homes.",
+      "date": "July 28, 2026",
+      "image": "/assets/images/journal_craft_heritage.png",
+      "alt": "The Revival of Indian Brass — A Living Tradition",
+      "readingTime": "6 min read",
+      "body": []
+    },
+    {
+      "id": "curating-a-mindful-space",
+      "category": "interiors",
+      "categoryLabel": "Interiors",
+      "title": "Curating a Mindful Space",
+      "excerpt": "Tips on selecting pieces that carry meaning and creating harmony between contemporary design and antique objects. The wabi-sabi philosophy applied to everyday living.",
+      "date": "July 14, 2026",
+      "image": "/assets/images/journal_mindful_spaces.png",
+      "alt": "Curating a Mindful Space",
+      "readingTime": "4 min read",
+      "body": [],
+      "featured": false
+    },
+    {
+      "id": "cane-weaving-in-jaipur",
+      "category": "craft",
+      "categoryLabel": "Craft & Heritage",
+      "title": "The Revival of Cane Weaving in Jaipur",
+      "excerpt": "Discover how third-generation artists are keeping traditional weaving techniques alive while adapting their craft to modern aesthetics and contemporary furniture design.",
+      "date": "June 22, 2026",
+      "image": "/assets/images/journal_weaving.png",
+      "alt": "The Revival of Cane Weaving in Jaipur",
+      "readingTime": "5 min read",
+      "body": [],
+      "featured": false
+    },
+    {
+      "id": "art-of-indian-ceramics",
+      "category": "materials",
+      "categoryLabel": "Materials",
+      "title": "Earth, Water, Fire — The Art of Indian Ceramics",
+      "excerpt": "From the potter's wheel in Khurja to the kilns of Andretta, ceramic traditions across India produce vessels of extraordinary character. An exploration of clay, glaze and the quiet patience of making.",
+      "date": "June 5, 2026",
+      "image": "/assets/images/journal_ceramics.png",
+      "alt": "Earth, Water, Fire — The Art of Indian Ceramics",
+      "readingTime": "7 min read",
+      "body": [],
+      "featured": false
+    },
+    {
+      "id": "language-of-natural-dyes",
+      "category": "materials",
+      "categoryLabel": "Materials",
+      "title": "The Language of Natural Dyes",
+      "excerpt": "Indigo, pomegranate, turmeric — the ancient palette of plant-based dyes tells a story older than civilisation. We visit the dyers of Rajasthan to witness colour being coaxed from the earth.",
+      "date": "May 18, 2026",
+      "image": "/assets/images/cat_textiles.jpg",
+      "alt": "The Language of Natural Dyes",
+      "readingTime": "5 min read",
+      "body": [],
+      "featured": false
+    },
+    {
+      "id": "designing-with-imperfection",
+      "category": "interiors",
+      "categoryLabel": "Interiors",
+      "title": "Designing with Imperfection",
+      "excerpt": "How the Japanese principle of wabi-sabi has found a home in Indian interiors — embracing asymmetry, raw texture and the beauty of objects shaped by time and use.",
+      "date": "April 30, 2026",
+      "image": "/assets/images/gallery_tile2.png",
+      "alt": "Designing with Imperfection",
+      "readingTime": "4 min read",
+      "body": [],
+      "featured": false
+    },
+    {
+      "id": "conversations-with-the-makers",
+      "category": "craft",
+      "categoryLabel": "Craft & Heritage",
+      "title": "Conversations with the Makers",
+      "excerpt": "A photographic series documenting the master artists behind the Vayu collection — their workshops, their rituals, and the quiet devotion that goes into every hand-finished object.",
+      "date": "April 12, 2026",
+      "image": "/assets/images/makers.jpg",
+      "alt": "Conversations with the Makers",
+      "readingTime": "3 min read",
+      "body": [],
+      "featured": false
+    }
+  ],
+  "content": {
+    "announcement": "",
+    "heroTitle": "",
+    "heroCtaText": "",
+    "heroCtaHref": "",
+    "heroSlides": [
+      {
+        "img": "/assets/images/hero.jpg",
+        "alt": "Vayu Autumn / Winter Campaign 2026",
+        "title": "ECHOES OF VAYU",
+        "ctaText": "DISCOVER THE CAMPAIGN",
+        "ctaHref": "/pages/collection.html"
+      },
+      {
+        "img": "/assets/images/personal_heirlooms.jpg",
+        "alt": "Personal Heirlooms � Sarees from the Collection of Malvika Singh, on view till 23 August 2026, Gallery Vayu",
+        "title": "",
+        "ctaText": "",
+        "ctaHref": "/pages/gallery.html"
+      },
+      {
+        "img": "/assets/images/banner_furniture_21_9.png?v=2",
+        "alt": "Crafted to last",
+        "title": "CRAFTED TO LAST",
+        "ctaText": "SEE FURNITURE",
+        "ctaHref": "/pages/collection-detail.html?cat=furniture"
+      }
+    ]
+  },
+  "customerSessions": {
+    "61f95d02033a92e744e44bde088bf759eaadfc03e73d0041a9e184516e1d01da": {
+      "customerId": "cust_55",
+      "expires": 1789197219945
+    },
+    "239983898591507b33224e2faa44424bb4a0fe65dd6cbc4caf0a0bf5a00aea0c": {
+      "customerId": "cust_55",
+      "expires": 1789197225317
+    },
+    "2927087c7e51cec0fbf323eff793a5bd7b2dc6278bcfd84290b684e95651c23d": {
+      "customerId": "cust_55",
+      "expires": 1789197228102
+    },
+    "74e138a5311324c8dd6232cecc5e94918c536d70751a7152da4087909b265054": {
+      "customerId": "cust_55",
+      "expires": 1789197229197
+    },
+    "abb6d41478f1a9d3b50f59389cc8bcc8d3021da15b1888c99ef3d2a6f5e95ca3": {
+      "customerId": "cust_55",
+      "expires": 1789197250297
+    }
+  }
+}

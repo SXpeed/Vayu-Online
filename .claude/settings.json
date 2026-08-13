@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"^function \\\\|^async function \\\\|^const \\\\|^let \\\\|^/\\\\* =\\\\+\\\\|^/\\\\* -\\\\+\" admin/ui/admin.js)",
+      "Bash(npx wrangler *)",
+      "Bash(node scripts/import-db.mjs --local)",
+      "Read(//tmp/**)",
+      "Bash(curl -s -o /dev/null -w '%{http_code} %{content_type} %{size_download}\\\\n' http://localhost:8788/api/catalogue)",
+      "Bash(pkill -f \"wrangler dev\")",
+      "Bash(rm -f /tmp/wdev.log)",
+      "Bash(mkdir -p /tmp/emptyassets)",
+      "Bash(echo hi *)",
+      "Bash(curl -s -o /dev/null -w 'catalogue: %{http_code}\\\\n' --max-time 15 http://localhost:8788/api/catalogue)",
+      "Read(//c/Users/ADMINI~1/AppData/Local/Temp/claude/d--Project-EXp-vayu-site/6e75e2a7-7fec-4a52-8b28-f30e965b675c/scratchpad/**)",
+      "Bash(sed -i \"s|http://localhost:3000|http://localhost:8788|g\" test-guest.js test-account.js test-signin.js)",
+      "Bash(node test-guest.js)",
+      "Bash(node test-account.js)",
+      "Bash(node test-signin.js)",
+      "Bash(node -e ' *)",
+      "Bash(cat /tmp/legacy.log | head -20)",
+      "Bash(awk '{print $1}')",
+      "Bash(curl -s -i --max-time 15 http://localhost:8788/admin)",
+      "Bash(curl -s --max-time 15 http://localhost:8788/admin/login)",
+      "Bash(node -e \"let s='';process.stdin.on\\('data',d=>s+=d\\).on\\('end',\\(\\)=>{const j=JSON.parse\\(s\\);console.log\\(JSON.stringify\\(j[0].results\\)\\)}\\)\")",
+      "Bash(curl -s -c /tmp/ck.txt -H 'Content-Type: application/json' -X POST -d '{\"email\":\"admin@vayu.com\",\"password\":\"vayu-admin-2026\"}' http://localhost:8788/api/admin/login)",
+      "Bash(curl -s -b /tmp/ck.txt -o /dev/null -w '/admin: %{http_code}\\\\n' http://localhost:8788/admin)",
+      "Bash(curl -s -b /tmp/ck.txt http://localhost:8788/api/admin/overview)",
+      "Bash(node -e \"let s='';process.stdin.on\\('data',d=>s+=d\\).on\\('end',\\(\\)=>console.log\\(JSON.stringify\\(JSON.parse\\(s\\)[0].results[0],null,1\\)\\)\\)\")"
+    ]
+  }
+}
