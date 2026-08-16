@@ -5,15 +5,35 @@
   "description": "Vayu storefront and admin panel on Cloudflare Workers + D1 + R2",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "build": "sh scripts/build.sh",
+    "dev": "npm run build && wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "verify": "node scripts/verify.mjs",
     "db:migrate": "wrangler d1 migrations apply vayu-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply vayu-db --remote",
     "db:import": "node scripts/import-db.mjs --local",
     "db:import:remote": "node scripts/import-db.mjs --remote",
+    "fonts": "node scripts/fetch-fonts.mjs",
     "legacy": "node server.cjs"
   },
   "devDependencies": {
+    "@sveltejs/adapter-cloudflare": "^8.0.0-next.6",
+    "@sveltejs/kit": "^3.0.0-next.23",
+    "@sveltejs/vite-plugin-svelte": "^7.3.0",
+    "esbuild": "^0.28.2",
+    "puppeteer-core": "^25.7.0",
+    "svelte": "^5.56.9",
+    "typescript": "^6.0.3",
+    "vite": "^8.2.1",
     "wrangler": "^4.60.0"
+  },
+  "dependencies": {
+    "better-auth": "^1.6.28",
+    "kysely-d1": "^0.4.0",
+    "zod": "^4.4.3"
+  },
+  "imports": {
+    "#lib": "./app/lib/index.js",
+    "#lib/*": "./app/lib/*"
   }
 }

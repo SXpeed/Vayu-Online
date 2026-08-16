@@ -16,3 +16,10 @@ admin/data/backups/
 
 # wrangler dev secrets
 .dev.vars
+
+# esbuild output — regenerate with `npm run build`
+public/assets/js/
+
+# SvelteKit's generated app and the adapter's worker bundle — both are build
+# output, rebuilt by `npm run build` on every deploy.
+.svelte-kit/

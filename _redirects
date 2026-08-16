@@ -1,0 +1,6 @@
+# The bare domain. Workers Assets runs with html_handling "none" -- every link
+# on this site is written out in full ("/pages/cart.html") and the default
+# would 307 each of them to an extensionless URL -- but that also means "/"
+# matches no file on its own. 200 is a rewrite, not a redirect: the visitor
+# keeps the "/" URL and gets the prerendered home page.
+/    /index.html    200

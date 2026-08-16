@@ -9,7 +9,8 @@
  *
  * What is left is routing:
  *
- *   /api/catalogue, /api/track, …   open storefront endpoints
+ *   /api/nav, /api/catalogue, …     open storefront endpoints
+ *   /api/track                      the analytics beacon
  *   /api/account/*                  customer accounts (own session)
  *   /api/admin/*                    the panel's API, behind the role gate
  *   /admin, /admin/*                the panel itself, behind a session
@@ -17,6 +18,7 @@
  */
 
 import { Store } from './db.js';
+import { cachedResponse, storeResponse, purgeCatalogueCache } from './cache.js';
 import { json, notFound, text, redirect, readJson, unauthorized } from './http.js';
 import {
   currentAdmin, roleError, adminLogin, adminLogout, adminMe, adminChangePassword,
@@ -34,6 +36,7 @@ import * as site from './admin-site.js';
 /** Open endpoints the storefront calls, keyed by "METHOD /path". */
 const PUBLIC_ROUTES = {
   'GET /api/catalogue': storefront.catalogue,
+  'GET /api/nav': storefront.nav,
   'POST /api/track': storefront.track,
   'GET /api/reviews': storefront.listReviews,
   'POST /api/reviews': storefront.postReview,
@@ -151,7 +154,14 @@ async function dispatchApi(ctx, url) {
   const denied = roleError(admin, route.role);
   if (denied) return json(denied.status, { error: denied.error });
 
-  return route.handler({ ...ctx, admin, parts });
+  const response = await route.handler({ ...ctx, admin, parts });
+
+  // Anything the panel *writes* can change what /api/nav and /api/catalogue
+  // answer, so the edge copy goes when it does. One hook here rather than a
+  // purge call sprinkled through every admin route.
+  if (ctx.method !== 'GET' && response.ok) purgeCatalogueCache(ctx.ctx, ctx.url);
+
+  return response;
 }
 
 /* ---------- entry ---------- */
@@ -190,7 +200,14 @@ export default {
         return await serveAdminUi(requestCtx, url);
       }
       if (url.pathname.startsWith('/api/')) {
-        return await dispatchApi(requestCtx, url);
+        // The public read endpoints are served from the colo where one is
+        // stored. A Worker response is not cached by the edge on its own —
+        // see src/cache.js.
+        const hit = await cachedResponse(request, url);
+        if (hit) return hit;
+
+        const response = await dispatchApi(requestCtx, url);
+        return storeResponse(ctx, request, url, response);
       }
       // Not ours: hand it back to the static assets. Directory URLs get
       // their index.html here, because html_handling is off — the site

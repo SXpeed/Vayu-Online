@@ -1,27 +1,33 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "vayu-site",
-  "main": "src/worker.js",
+
+  // Both of these point INSIDE .svelte-kit/, and that is load-bearing:
+  // @sveltejs/adapter-cloudflare does `rmSync(assets.directory)` and
+  // `rmSync(main)` at the start of every build. While they pointed at
+  // ./public and ./src/worker.js — which is what they were before the
+  // SvelteKit migration — a build would have deleted the whole site and the
+  // Worker source with it. Never point either at a hand-authored directory.
+  "main": ".svelte-kit/cloudflare/_worker.js",
   "compatibility_date": "2026-08-01",
   "compatibility_flags": ["nodejs_compat"],
 
-  // The site's own files are served straight from Cloudflare's edge; the
-  // Worker only sees the routes listed in run_worker_first.
-  //
-  // public/ holds nothing but the site: server code, SQL and the data file
-  // live outside it, so there is no way to reach them over HTTP even by
-  // accident. (Pointing this at the repo root also makes `wrangler dev`
-  // watch its own state directory and reload in a loop.)
   "assets": {
-    "directory": "./public",
+    "directory": ".svelte-kit/cloudflare",
     "binding": "ASSETS",
-    "not_found_handling": "none",
     // Every link on this site is written out in full ("/pages/cart.html").
-    // The default would redirect those to extensionless, trailing-slash
-    // URLs, so each navigation would cost a 307 and every existing link
-    // and bookmark would bounce. Serve the paths as they are written.
+    // The default would 307 those to extensionless URLs, so each navigation
+    // costs a redirect and every existing link and bookmark bounces. This
+    // was in the pre-SvelteKit config for the same reason.
     "html_handling": "none",
+    "not_found_handling": "none",
+    // Workers Assets serves a matching file BEFORE the Worker runs, so
+    // without this the panel's own files (/admin/ui/admin.js, views/*) are
+    // handed to anyone who asks for them by path and the session gate in
+    // routes/admin/[...path] never runs. _routes.json does not apply here:
+    // that is a Pages concept, and this is a Worker with assets.
     "run_worker_first": [
+      "/",
       "/api/*",
       "/admin",
       "/admin/*",

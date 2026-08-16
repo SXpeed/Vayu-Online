@@ -49,6 +49,64 @@ npm run dev            # http://localhost:8788
 `wrangler dev` runs the real Worker runtime against a local SQLite copy of
 D1 and a local R2, so what you see is what deploys.
 
+## The front end
+
+The storefront is static HTML served off the edge, but the HTML is built,
+not hand-maintained. `npm run build` does two things and both `npm run dev`
+and `npm run deploy` run it first:
+
+1. **Bundles `src/client` into `public/assets/js`** with esbuild.
+   `app.js` is the one script every page loads. Everything else — the page
+   modules in `src/client/pages`, plus search, Lenis, analytics and the
+   offline catalogue — is a separate self-contained bundle fetched on
+   demand from `/assets/js/pages/` and `/assets/js/lazy/`.
+2. **Rewrites the pages in `public/`**: splices `src/partials/header.html`
+   and `footer.html` into every document between `<!-- @vayu:header -->`
+   markers, stamps `<body data-page="…">`, points the stylesheet at a fresh
+   content hash, and splices the generated `@font-face` rules into
+   `public/css/styles.css`.
+
+The generated JS is gitignored; the rewritten HTML is committed, so a clone
+serves correctly without a build. Edit `src/partials/*` — never the copies
+inside a page — and re-run the build.
+
+### Why it is shaped this way
+
+The site used to load one 2 KB script that loaded nine more, one of which
+fetched the header and footer over HTTP and another of which blocked on
+`/api/catalogue` before anything could paint. Lighthouse measured a
+critical path about five levels deep. The tree it builds now is:
+
+```
+HTML
+├── /css/styles.css
+├── two preloaded .woff2 faces
+├── /assets/js/app.js
+└── /api/nav            (or /api/catalogue on the shop pages)
+```
+
+Two rules keep it that way, and both are easy to undo by accident:
+
+* **`app.js` must stay self-contained.** The bundles are built with code
+  splitting *off*. Turning it on makes esbuild hoist whatever `app.js`
+  shares with a page module into shared chunks that `app.js` then statically
+  imports — six more requests one level down, which is the old waterfall
+  again. The cost of keeping it off is a few duplicated kilobytes of
+  stateless helpers per page bundle.
+* **Nothing in `app.js`'s static graph may reach the store's data or the
+  Lenis vendor build.** `src/client/data/store.js` keeps its state on
+  `window` so the duplicated copies in each bundle agree; `core/scroll.js`
+  exists so `app.js` can scroll the page without pulling Lenis in.
+
+### Fonts
+
+Cormorant Garamond, Jost and Pinyon Script are self-hosted in
+`public/assets/fonts` (SIL Open Font License). `npm run fonts` re-downloads
+them from Google and regenerates `fonts.css`, which the build splices into
+`styles.css`. Only the latin and latin-ext subsets are kept — latin-ext is
+not optional, it carries the rupee sign every price is written with. Two
+faces are preloaded; the rest are discovered from the stylesheet.
+
 ## How requests are routed
 
 `wrangler.jsonc` gives the Worker only four route patterns; everything else
@@ -57,6 +115,7 @@ is served straight from the edge without waking it:
 | Route | Handled by |
 |---|---|
 | `/api/*` | `src/worker.js` → storefront, accounts, admin API |
+| `/assets/js/*` | Workers Assets — built output, do not edit |
 | `/admin`, `/admin/*` | the session gate, then the panel's files |
 | `/uploads/*` | R2 |
 | everything else | Workers Assets, straight from `public/` |
@@ -64,6 +123,27 @@ is served straight from the edge without waking it:
 `html_handling` is off, because every link on this site is written out in
 full (`/pages/cart.html`). The default would redirect those to
 extensionless URLs and cost a 307 on every navigation.
+
+### Caching the public endpoints
+
+`/api/nav` and `/api/catalogue` are the same for every visitor, so
+`src/cache.js` stores them at the edge through the Cache API. A
+`Cache-Control` header alone would not do it: a response a Worker
+*generates* is not put in Cloudflare's cache the way a static asset is, so
+the header only ever reached the browser and every cold visitor cost a
+round trip to D1.
+
+`/api/nav` is the small one — categories and the editable site copy, about
+3.5 KB against the catalogue's 18 KB — and is what a page with no products
+on it asks for.
+
+Invalidation is on write: any non-GET admin route that succeeds purges both
+entries (`purgeCatalogueCache` in `src/worker.js`). That purge is
+colo-local, which is why the responses also carry a bounded `s-maxage` —
+whoever made the edit sees it at once, and every other colo catches up
+within half an hour. Nothing personalised goes through this path: the
+helper refuses any request carrying a cookie, and `/api/account/*` and
+`/api/admin/*` are not in its allowlist.
 
 ## The database
 
