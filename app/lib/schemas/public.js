@@ -53,8 +53,21 @@ export const couponValidate = z.object({
 
 export const checkout = z.object({
     items: z.array(cartLine).min(1, 'Your cart is empty.').max(100),
-    coupon: shortText(40).optional(),
-    details: z.object({
+    // Nullable, not merely optional. "No coupon" is a value the cart holds
+    // and sends — `coupon: getCoupon?.() || null` — and zod's .optional()
+    // admits undefined but not null, so every guest checkout without a code
+    // was refused at the gate with "expected string, received null" before
+    // the handler, which already treats a falsy coupon as none, ever ran.
+    // Same reason cartLine.variant is nullable above.
+    coupon: shortText(40).nullable().optional(),
+    // `customer`, not `details`. The cart has always posted this under
+    // `customer` and server/checkout.js has always read `body.customer`, so
+    // the gate was declared over a key nobody sends: with .passthrough() on
+    // the object, the delivery details went through entirely unchecked while
+    // this looked like it was checking them. The handler validates them too
+    // — that is why nothing broke — but a gate that silently guards nothing
+    // is worse than no gate, because it is believed.
+    customer: z.object({
         name: shortText(120),
         email: email.optional().or(z.literal('')),
         phone: shortText(20),
