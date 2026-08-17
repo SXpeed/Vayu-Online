@@ -2072,16 +2072,27 @@ body.search-open .nav-search-panel:not(:empty) {
   background: rgba(255, 255, 255, 0.32);
 }
 
+/* The fill is scaled through `transform`, not through the individual
+   `scale` property, and the keyframes below must match it.
+
+   Mixing the two silently breaks the rail. `transform` and `scale` are
+   separate properties that both apply, and the CSS minifier folds a static
+   `scale` into the `transform` beside it — but leaves `scale` inside
+   @keyframes alone, because it cannot know what the base rule will become.
+   The built stylesheet then held `transform: translateY(-50%) scaleX(0)`
+   against keyframes animating `scale`, so the animation ran (computed scale
+   really did climb 0 -> 1) while the transform held scaleX at 0 and
+   multiplied it away. The rail measured 0px wide for its whole six seconds,
+   on every slide, with nothing in the CSS or the script looking wrong. */
 .hero-bar-fill {
   position: absolute;
   left: 0;
   top: 50%;
-  transform: translateY(-50%);
   transform-origin: left center;
+  transform: translateY(-50%) scaleX(0);
   height: 1.5px;
   width: 100%;
   background: #FFFFFF;
-  scale: 0 1;
 }
 
 .hero-bar.is-active .hero-bar-fill {
@@ -2094,13 +2105,16 @@ body.search-open .nav-search-panel:not(:empty) {
   animation-play-state: paused;
 }
 
+/* translateY is repeated in both stops on purpose: a keyframe replaces the
+   whole `transform`, so omitting it here would animate the rail's vertical
+   centring away as it filled. */
 @keyframes heroProgress {
   from {
-    scale: 0 1;
+    transform: translateY(-50%) scaleX(0);
   }
 
   to {
-    scale: 1 1;
+    transform: translateY(-50%) scaleX(1);
   }
 }
 
@@ -2139,7 +2153,7 @@ body.search-open .nav-search-panel:not(:empty) {
   /* no autoplay here, so the rail marks the current slide rather than time */
   .hero-bar.is-active .hero-bar-fill {
     animation: none;
-    scale: 1 1;
+    transform: translateY(-50%) scaleX(1);
   }
 }
 
