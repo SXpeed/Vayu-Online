@@ -7,7 +7,6 @@
    * partial had been fetched over HTTP; they are {#each} blocks now, so they
    * are part of the prerendered document and there is nothing to fill in.
    */
-  import { goto } from '$app/navigation';
   import { venues, eventsOf } from '#lib/data/events.js';
   import { categories, subsOf, catHref } from '#lib/taxonomy.js';
   import { onMount } from 'svelte';
@@ -247,7 +246,16 @@
           <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
         </svg>
       </button>
-      <button aria-label="Wishlist" onclick={() => goto('/pages/wishlist.html')} style="position:relative;">
+      <!-- Links, not buttons calling goto().
+
+           These three go to other pages, so a link is what they are. As
+           buttons they could not be middle-clicked or opened in a new tab,
+           the prefetcher in core/speculation.js could not see them (it only
+           considers a[href]), and goto() is client-side navigation, which
+           data-sveltekit-reload in app.html does not govern — so pressing
+           Cart while already on the cart re-ran the router against the same
+           route and did nothing at all. -->
+      <a href="/pages/wishlist.html" aria-label="Wishlist" style="position:relative;">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
           stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
           <path
@@ -255,17 +263,16 @@
           </path>
         </svg>
         <span class="icon-badge" style:display={counts.wish ? 'flex' : 'none'}>{counts.wish || ''}</span>
-      </button>
+      </a>
       <!-- desktop only: phones already reach this from the bottom nav's ACCOUNT tab -->
-      <button class="icon-account" aria-label="My Account"
-        onclick={() => goto('/pages/user-profile.html')}>
+      <a class="icon-account" href="/pages/user-profile.html" aria-label="My Account">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
           stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
           <circle cx="12" cy="8" r="3.6"></circle>
           <path d="M4.5 20a7.5 7.5 0 0 1 15 0"></path>
         </svg>
-      </button>
-      <button aria-label="Cart" onclick={() => goto('/pages/cart.html')} style="position:relative;">
+      </a>
+      <a href="/pages/cart.html" aria-label="Cart" style="position:relative;">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
           stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
           <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
@@ -273,7 +280,7 @@
           <path d="M16 10a4 4 0 0 1-8 0"></path>
         </svg>
         <span class="icon-badge" style:display={counts.cart ? 'flex' : 'none'}>{counts.cart || ''}</span>
-      </button>
+      </a>
     </div>
   </nav>
   <section class="nav-search-panel" id="navSearchResults" aria-live="polite" aria-label="Search results"></section>

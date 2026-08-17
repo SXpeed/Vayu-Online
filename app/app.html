@@ -8,7 +8,28 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     %sveltekit.head%
   </head>
-  <body data-sveltekit-preload-data="hover">
+  <!--
+    Every link navigates the document, rather than being taken over by
+    SvelteKit's client-side router.
+
+    This is not a preference, it is what the pages require. Each page is a
+    prerendered document whose behaviour comes from an imperative module
+    (#lib/pages/*.js) that the layout imports once, on mount. A client-side
+    navigation between two URLs of the *same* route — ?id= to ?id= on a
+    product, ?sub= to ?sub= on a collection — reuses the mounted component,
+    so onMount never fires again and the module is already cached. The URL
+    changed, the content did not, and the router scrolled to the top: the
+    "you may also like" tiles, the sub-category pills and the category pills
+    all appeared to do nothing but jump the page upwards.
+
+    Nothing is lost by turning it off. The documents are prerendered, and
+    core/speculation.js already prerenders or prefetches the next one on
+    hover, so the switch is a swap of an painted frame rather than a load —
+    which is also what the cross-document view transition in styles.css is
+    written against. data-sveltekit-preload-data is gone with it: it warmed
+    a router that no longer handles these clicks.
+  -->
+  <body data-sveltekit-reload>
     <div style="display:contents">%sveltekit.body%</div>
   </body>
 </html>
