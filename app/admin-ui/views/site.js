@@ -55,9 +55,42 @@ function slideCard(s, i, total) {
         </div>`;
 }
 
+/**
+ * The shop-wide fallback for the product page's detail accordion.
+ *
+ * A product that has been given its own Dimensions, Materials, Care or
+ * Description in the product editor overrides this section by section;
+ * everything else shows what is set here. Without it, a catalogue that has
+ * not been written up yet renders product pages with a single section on
+ * them, which is what this shop had.
+ */
+const defaultsCard = (d) => `
+    <div class="card" style="max-width:760px;margin-bottom:16px">
+        <h2>Default product details</h2>
+        <p class="sub">Shown on any product that has not been given its own. Fill these in per
+            product from Products → Edit → Product details, and that product stops using the
+            defaults for that section.</p>
+        <div class="field"><label>Description</label>
+            <textarea id="pd-desc">${esc(d.description || '')}</textarea></div>
+        <div class="field" style="margin-top:12px"><label>Care instructions</label>
+            <textarea id="pd-care">${esc(d.care || '')}</textarea></div>
+        <div class="field" style="margin-top:12px"><label>Dimensions</label>
+            <div class="det-rows" id="pd-dimensions"></div>
+            <button type="button" class="btn small" data-add="dimensions" style="margin-top:8px">+ Row</button>
+            <div class="help">These apply to every unmeasured piece in the shop. Worth clearing
+                once products carry their own.</div></div>
+        <div class="field" style="margin-top:12px"><label>Materials &amp; Origin</label>
+            <div class="det-rows" id="pd-materials"></div>
+            <button type="button" class="btn small" data-add="materials" style="margin-top:8px">+ Row</button></div>
+    </div>`;
+
 export async function renderContent() {
     const { content } = await api('content');
     let slides = structuredClone(content.heroSlides || []);
+    const defaults = {
+        description: '', care: '', dimensions: [], materials: [],
+        ...structuredClone(content.productDefaults || {}),
+    };
 
     viewEl.innerHTML = `
         <div class="card" style="max-width:760px;margin-bottom:16px">
@@ -67,6 +100,7 @@ export async function renderContent() {
                 <input id="ct-ann" value="${esc(content.announcement)}" placeholder="e.g. Free shipping above ₹5,000 · Diwali dispatch till 18 Oct">
             </div>
         </div>
+        ${defaultsCard(defaults)}
         <div class="card" style="max-width:760px">
             <h2>Home hero carousel</h2>
             <p class="sub">The full-width slideshow at the top of the home page. Each slide has its own
@@ -79,6 +113,40 @@ export async function renderContent() {
                 <button class="btn primary" id="ct-save">Save content</button>
             </div>
         </div>`;
+
+    /* ---- default detail rows ---- */
+
+    const drawDefaults = (key) => {
+        $(`#pd-${key}`).innerHTML = defaults[key].length
+            ? defaults[key].map((r, i) => `
+                <div class="det-row" data-key="${key}" data-i="${i}">
+                    <input data-f="label" value="${esc(r.label)}" placeholder="Label">
+                    <input data-f="value" value="${esc(r.value)}" placeholder="Value">
+                    <button type="button" class="btn small danger" data-act="rm-row">✕</button>
+                </div>`).join('')
+            : '<div class="help">None — this section is hidden unless a product supplies its own.</div>';
+    };
+    for (const key of ['dimensions', 'materials']) drawDefaults(key);
+
+    // Delegated from the view so it survives each redraw of the rows.
+    viewEl.addEventListener('input', (e) => {
+        const row = e.target.closest('.det-row[data-key]');
+        if (row && e.target.dataset.f) defaults[row.dataset.key][Number(row.dataset.i)][e.target.dataset.f] = e.target.value;
+    });
+    viewEl.addEventListener('click', (e) => {
+        const add = e.target.closest('button[data-add]');
+        if (add) {
+            defaults[add.dataset.add].push({ label: '', value: '' });
+            drawDefaults(add.dataset.add);
+            return;
+        }
+        const rm = e.target.closest('button[data-act="rm-row"]');
+        if (rm) {
+            const row = rm.closest('.det-row');
+            defaults[row.dataset.key].splice(Number(row.dataset.i), 1);
+            drawDefaults(row.dataset.key);
+        }
+    });
 
     const slidesEl = $('#ct-slides');
     const draw = () => {
@@ -129,6 +197,15 @@ export async function renderContent() {
             const r = await api('content', 'PUT', {
                 announcement: $('#ct-ann').value,
                 heroSlides: slides,
+                productDefaults: {
+                    description: $('#pd-desc').value.trim(),
+                    care: $('#pd-care').value.trim(),
+                    // Rows with no label are dropped here as well as on the
+                    // server, so an empty pair left behind by "+ Row" does
+                    // not come back as a blank line on every product page.
+                    dimensions: defaults.dimensions.filter(r_ => r_.label.trim()),
+                    materials: defaults.materials.filter(r_ => r_.label.trim()),
+                },
             });
             slides = structuredClone(r.content.heroSlides || []);
             draw();

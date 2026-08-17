@@ -13,6 +13,7 @@ import { categoryTitle } from '../taxonomy.js';
 import { productCardHTML, bindProductTiles } from '../product-card.js';
 import { hydrateCatalogue } from '#lib/stores/site.svelte.js';
 import { findVariant, openingVariant, parseCombo, availableValues } from '#lib/options.js';
+import { detailSections } from '#lib/product-details.js';
 
 /** Option names and labels are shopkeeper-entered, and go into attributes. */
 const escapeHtml = (s) => String(s ?? '')
@@ -78,46 +79,27 @@ const accordionItem = (id, title, bodyHtml) => `
 
 /** Label/value rows — Dimensions, Materials & Origin. */
 const metaRows = (rows) => rows
-    .filter(r => r && r.label && r.value)
     .map(r => `<div class="prod-meta-row">
         <span class="prod-meta-label">${escapeHtml(r.label)}</span>
         <span class="prod-meta-val">${escapeHtml(r.value)}</span>
     </div>`)
     .join('');
 
-/** Free text, with blank-line-separated paragraphs preserved. */
-const paragraphs = (text) => String(text)
-    .split(/\n\s*\n/)
-    .map(p => p.trim())
-    .filter(Boolean)
-    .map(p => `<p>${escapeHtml(p)}</p>`)
-    .join('');
-
-/**
- * The Shipping & Returns copy this product shows: the profile it was given,
- * or the shop's default when it has none — which is every product that
- * predates the feature. Mirrors shippingTextFor() on the server.
- */
-function shippingText(p) {
-    const presets = site.shippingPresets || [];
-    if (!presets.length) return '';
-    const chosen = p.shippingPreset && presets.find(x => x.id === p.shippingPreset);
-    return (chosen || presets[0]).body || '';
-}
+const paragraphsHTML = (list) => list.map(p => `<p>${escapeHtml(p)}</p>`).join('');
 
 function renderAccordion(p) {
     const host = document.getElementById('prodAccordion');
     if (!host) return;
 
-    const sections = [
-        ['acc-desc', 'Description', p.description ? paragraphs(p.description) : ''],
-        ['acc-dimensions', 'Dimensions', metaRows(p.dimensions || [])],
-        ['acc-materials', 'Materials & Origin', metaRows(p.materials || [])],
-        ['acc-care', 'Care Instructions', p.care ? paragraphs(p.care) : ''],
-        ['acc-shipping', 'Shipping & Returns', paragraphs(shippingText(p))],
-    ].filter(([, , body]) => body);
+    // Which sections survive, and what each falls back to, is decided in
+    // lib/product-details.js — see the rule there. This function only
+    // turns the answer into markup.
+    const sections = detailSections(p, site.content?.productDefaults || {}, site.shippingPresets || []);
 
-    host.innerHTML = sections.map(([id, title, body]) => accordionItem(id, title, body)).join('');
+    host.innerHTML = sections
+        .map(s => accordionItem(s.id, s.title,
+            s.kind === 'rows' ? metaRows(s.rows) : paragraphsHTML(s.text)))
+        .join('');
 }
 
 const crumbCategory = document.getElementById('crumbCategory');

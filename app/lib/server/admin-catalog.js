@@ -87,7 +87,7 @@ function sanitizeProduct(body, existing, knownCategories) {
  * (product_id, section, label) is the primary key: two "Length" rows would
  * not merely look odd, they would abort the save batch on a constraint.
  */
-function sanitizeSpecs(list) {
+export function sanitizeSpecs(list) {
   if (!Array.isArray(list)) return [];
   const seen = new Set();
 

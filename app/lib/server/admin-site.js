@@ -17,6 +17,7 @@
 import { json, ok, csv, badRequest, notFound, methodNotAllowed, resource } from './http.js';
 import { now, hashPassword } from './db.js';
 import { loadProducts } from './catalogue.js';
+import { sanitizeSpecs } from './admin-catalog.js';
 
 const ROLES = ['owner', 'manager', 'staff'];
 const EMAIL_RE = /^[^@\s]+@[^@\s.]+(\.[^@\s.]+)+$/;
@@ -48,6 +49,14 @@ export async function content({ store, method, admin, body }) {
   }
   if (Array.isArray(body.heroSlides)) {
     writes.push(store.putConfig('content', 'heroSlides', sanitizeSlides(body.heroSlides)));
+  }
+  if (body.productDefaults && typeof body.productDefaults === 'object') {
+    writes.push(store.putConfig('content', 'productDefaults', {
+      description: String(body.productDefaults.description || '').slice(0, 2000),
+      care: String(body.productDefaults.care || '').slice(0, 2000),
+      dimensions: sanitizeSpecs(body.productDefaults.dimensions),
+      materials: sanitizeSpecs(body.productDefaults.materials),
+    }));
   }
   await Promise.all(writes);
   await store.logActivity(admin.name, 'content.update', 'Updated site content');

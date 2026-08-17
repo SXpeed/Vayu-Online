@@ -126,9 +126,23 @@ export const coupon = z.object({
     active: z.boolean().optional(),
 }).passthrough();
 
-/** Announcement bar and the home hero carousel. */
+/** One label/value row in a product detail section. */
+const specRow = z.object({
+    label: text(60),
+    value: text(200).optional(),
+});
+
+/** Announcement bar, the home hero carousel, and product-page fallbacks. */
 export const siteContent = z.object({
     announcement: text(300).optional(),
+    // Shown on any product that has not been given its own copy, so a page
+    // is never bare while the catalogue is still being written up.
+    productDefaults: z.object({
+        description: text(2000).optional(),
+        care: text(2000).optional(),
+        dimensions: z.array(specRow).max(20).optional(),
+        materials: z.array(specRow).max(20).optional(),
+    }).partial().optional(),
     heroSlides: z.array(z.object({
         img: text(400),
         alt: text(300).optional(),
