@@ -113,17 +113,35 @@ export const journalStory = z.object({
     alt: text(300).optional(),
     readingTime: text(40).optional(),
     featured: z.boolean().optional(),
-    body: z.array(text(8000)).max(200).optional(),
+    // The story editor is one textarea, so it posts a string and the handler
+    // splits it on blank lines. An array is accepted too, because that is
+    // what the API hands back and what a scripted caller would send.
+    body: z.union([text(200_000), z.array(text(8000)).max(200)]).optional(),
 }).passthrough();
 
+/**
+ * A coupon, as the coupon editor posts it.
+ *
+ * The field names here are the panel's and the handler's — `type`, not
+ * `kind`; `minOrder`, not `minSpend`; `usageLimit`, not `maxUses`. The
+ * previous three names appear nowhere else in the codebase, so with
+ * .passthrough() on the object every real field went through unchecked
+ * while this looked like it was checking them, and `expiresAt: null` —
+ * which is what an empty date field posts — was rejected outright.
+ */
 export const coupon = z.object({
     code: text(40).min(1, 'A coupon needs a code.'),
-    kind: z.enum(['percent', 'flat']).optional(),
+    type: z.enum(['percent', 'flat']).optional(),
     value: z.number().min(0).max(1_000_000).optional(),
-    minSpend: z.number().min(0).max(10_000_000).optional(),
-    maxUses: z.number().int().min(0).max(1_000_000).optional(),
-    expiresAt: text(40).optional(),
+    minOrder: z.number().min(0).max(10_000_000).optional(),
+    usageLimit: z.number().int().min(0).max(1_000_000).optional(),
+    perCustomerLimit: z.number().int().min(0).max(1_000_000).optional(),
+    expiresAt: text(40).nullable().optional(),
     active: z.boolean().optional(),
+    restrictTo: z.object({
+        emails: z.array(text(254)).max(500).optional(),
+        phones: z.array(text(20)).max(500).optional(),
+    }).partial().optional(),
 }).passthrough();
 
 /** One label/value row in a product detail section. */

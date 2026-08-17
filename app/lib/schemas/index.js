@@ -57,7 +57,23 @@ const SECTION = {
     'POST /api/admin/settings': admin.settings,
 };
 
-/** Longest section prefix wins, so /api/admin/products/3 finds `products`. */
+/**
+ * Resolve the schema for a request, if it has one.
+ *
+ * A section schema describes the *resource*, so it applies to exactly two
+ * shapes: creating one (POST to the collection) and updating one (PUT to an
+ * item). It must not apply to anything else that happens to share the
+ * prefix.
+ *
+ * That distinction was missing, and it broke three working features. The
+ * rule was `path.startsWith(prefix + '/')`, which is true of
+ * /api/admin/products/bulk, /api/admin/products/import and
+ * /api/admin/products/prod_3/duplicate — none of which post a product. They
+ * post {ids, action}, {csv} and {} respectively, so the product schema
+ * rejected all three with "name: expected string, received undefined"
+ * before their handlers ran. Duplicate, every bulk action and CSV import
+ * were dead in the panel.
+ */
 function findSchema(method, path) {
     const exact = EXACT[`${method} ${path}`];
     if (exact) return exact;
@@ -65,7 +81,18 @@ function findSchema(method, path) {
     for (const key of Object.keys(SECTION)) {
         const [m, prefix] = key.split(' ');
         if (m !== method) continue;
-        if (path === prefix || path.startsWith(prefix + '/')) return SECTION[key];
+
+        // The collection itself: POST creates, PUT replaces a singleton
+        // document like /api/admin/content.
+        if (path === prefix) return SECTION[key];
+
+        // One item below it: PUT /api/admin/products/prod_3. Never POST —
+        // a POST below the collection is an action, not a create — and
+        // never deeper than one segment, which is also an action.
+        if (method !== 'POST' && path.startsWith(prefix + '/')) {
+            const rest = path.slice(prefix.length + 1);
+            if (rest && !rest.includes('/')) return SECTION[key];
+        }
     }
     return null;
 }
