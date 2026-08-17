@@ -246,7 +246,7 @@ function confirmationEmail(prep, number) {
  * coupon use, the order and its lines — goes in one batch, which D1 runs
  * inside a transaction.
  */
-export async function commitOrder(store, prep, paymentInfo) {
+export async function commitOrder(store, prep, paymentInfo, { shortfalls = [] } = {}) {
   const stamp = now();
   const customer = await upsertCustomer(store, prep);
 
@@ -314,6 +314,17 @@ export async function commitOrder(store, prep, paymentInfo) {
     );
   }
 
+  // Sold out between pricing and payment. The order is still committed —
+  // see confirm() for why — so the timeline is where it has to be said, in
+  // the one place someone packing this order will actually look.
+  for (const s of shortfalls) {
+    statements.push(store.stmt(
+      'INSERT INTO order_timeline (order_id, t, status, note) VALUES (?, ?, ?, ?)',
+      orderId, stamp, 'new',
+      `Oversold: ${s.label} — ${s.wanted} ordered, ${s.available} in stock at payment. Contact the customer.`,
+    ));
+  }
+
   // Converted, so no longer an abandoned cart.
   if (prep.sid) statements.push(store.stmt('DELETE FROM carts WHERE sid = ?', prep.sid));
 
@@ -327,7 +338,23 @@ export async function commitOrder(store, prep, paymentInfo) {
   await store.queueEmail(customer.email, `Vayu — order ${number} confirmed`,
     confirmationEmail(prep, number), 'order.placed');
 
-  return { id: orderId, number, total: prep.total, discount: prep.discount };
+  // The shop is told separately. A timeline note is only found by someone
+  // already looking at the order, and the whole point of this case is that
+  // nobody knows to look yet.
+  if (shortfalls.length) {
+    const settings = await store.settings();
+    const to = settings.storeEmail;
+    if (to) {
+      await store.queueEmail(to, `Vayu — order ${number} was paid for stock we do not have`,
+        `Order ${number} completed payment, but these lines were short by the time it confirmed:\n\n`
+        + shortfalls.map(s => `  ${s.label}: ${s.wanted} ordered, ${s.available} in stock`).join('\n')
+        + `\n\nThe payment has been captured and the order stands. Contact ${customer.email} to `
+        + 'arrange a restock, a substitution or a refund.\n\n— Vayu',
+        'order.oversold');
+    }
+  }
+
+  return { id: orderId, number, total: prep.total, discount: prep.discount, shortfalls };
 }
 
 /* ---------- payment ---------- */
@@ -409,6 +436,39 @@ export async function checkout({ store, request, body, env }) {
   return json(201, { ok: true, number: order.number, total: order.total, discount: order.discount });
 }
 
+/**
+ * What each line of a priced-but-not-yet-committed order can still be filled
+ * from, read fresh at confirm time.
+ *
+ * resolveLine checked stock when the cart was priced. For card payments that
+ * can be up to an hour earlier (PENDING_TTL_MS), and in that window another
+ * shopper can take the last one. Returns only the lines that no longer add
+ * up.
+ */
+async function stockShortfalls(store, lines) {
+  const short = [];
+
+  for (const l of lines) {
+    const product = await productById(store, l.productId);
+    if (!product) {
+      short.push({ label: l.name, wanted: l.qty, available: 0 });
+      continue;
+    }
+    const available = l.variantId
+      ? (Number(product.variants?.find(v => v.id === l.variantId)?.stock) || 0)
+      : totalStock(product);
+
+    if (available < l.qty) {
+      short.push({
+        label: l.name + (l.variant ? ` — ${l.variant}` : ''),
+        wanted: l.qty,
+        available,
+      });
+    }
+  }
+  return short;
+}
+
 export async function confirm({ store, body }) {
   const prep = await takePending(store, body.rzpOrderId);
   if (!prep) return badRequest('Payment session expired — please try again');
@@ -419,10 +479,28 @@ export async function confirm({ store, body }) {
     .update(`${body.rzpOrderId}|${body.rzpPaymentId}`).digest('hex');
   if (expected !== body.rzpSignature) return badRequest('Payment verification failed');
 
+  // Stock is re-read here, but a shortfall does not reject the order.
+  //
+  // By this point Razorpay has captured the money. Refusing would leave the
+  // shopper paid-up with no order and no refund — the worst of the three
+  // outcomes, and the one they can do least about. The stock write is
+  // floored at zero either way, so the sale is recorded honestly; what was
+  // missing was anyone being told. The order is committed, its timeline
+  // says what was short, and the shop gets an email naming the customer to
+  // contact. A human then decides between restocking, substituting and
+  // refunding, which is a judgement this code should not be making at 3am.
+  const shortfalls = await stockShortfalls(store, prep.lines);
+
   const order = await commitOrder(store, prep, {
     method: 'razorpay', paymentId: body.rzpPaymentId, orderId: body.rzpOrderId,
+  }, { shortfalls });
+
+  return json(201, {
+    ok: true, number: order.number, total: order.total, discount: order.discount,
+    // The confirmation page can say so rather than promising a dispatch date
+    // the shop may not be able to meet.
+    ...(shortfalls.length ? { delayed: shortfalls.map(s => s.label) } : {}),
   });
-  return json(201, { ok: true, number: order.number, total: order.total, discount: order.discount });
 }
 
 /** Quote a coupon against a live cart, before the customer commits to it. */

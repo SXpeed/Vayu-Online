@@ -220,7 +220,21 @@ await step('shipping profiles: create, edit, delete', async () => {
   return 'round-trip';
 });
 
-await step('content save', async () => {
+/*
+ * Content and settings are singleton documents: there is one of each, and
+ * it is the live one. Everything above this point creates a row, checks it
+ * and deletes it; these two have nothing to create, so they are snapshotted
+ * first and put back afterwards.
+ *
+ * Written the hard way because the easy way did real damage. An earlier
+ * version of this file simply PUT its test values, which replaced the shop's
+ * hero carousel with one placeholder slide and blanked the product detail
+ * defaults. A smoke test that leaves the shop different from how it found it
+ * is not a test, it is an edit.
+ */
+await step('content save (snapshot and restore)', async () => {
+  const before = (await req('content')).data.content;
+
   const r = await req('content', 'PUT', {
     announcement: 'E2E announcement',
     heroSlides: [{ img: '/assets/images/cat_objects.png', alt: 'a', title: 't', ctaText: 'Go', ctaHref: '/x' }],
@@ -228,17 +242,31 @@ await step('content save', async () => {
   });
   must(r.status === 200, `status ${r.status} ${JSON.stringify(r.data)}`);
   must(r.data.content.productDefaults.description === 'dd', 'defaults not saved');
-  return 'announcement + slide + product defaults';
+  must(r.data.content.heroSlides.length === 1, 'slides not saved');
+
+  const restored = await req('content', 'PUT', {
+    announcement: before.announcement ?? '',
+    heroSlides: before.heroSlides ?? [],
+    productDefaults: before.productDefaults ?? {},
+  });
+  must(restored.status === 200, 'restore failed');
+  const now = restored.data.content;
+  must((now.heroSlides ?? []).length === (before.heroSlides ?? []).length, 'slides not restored');
+  must(JSON.stringify(now.productDefaults ?? {}) === JSON.stringify(before.productDefaults ?? {}),
+    'product defaults not restored');
+  return `saved, then put back ${(before.heroSlides ?? []).length} slide(s)`;
 });
 
-await step('settings save', async () => {
-  const r = await req('settings', 'PUT', {
-    storeName: 'Vayu', freeShippingAbove: 5000, shippingFlat: 150, lowStockThreshold: 5,
-    storeEmail: 'hello@vayu.com', storePhone: '123', storeAddress: 'x', zones: [],
-    payment: { provider: 'cod', razorpayKeyId: '', razorpayKeySecret: '' },
-  });
+await step('settings save (snapshot and restore)', async () => {
+  const before = (await req('settings')).data.settings;
+
+  const r = await req('settings', 'PUT', { ...before, storeName: 'E2E Store Name' });
   must(r.status === 200, `status ${r.status} ${JSON.stringify(r.data)}`);
-  return 'saved';
+  must(r.data.settings.storeName === 'E2E Store Name', 'not saved');
+
+  const restored = await req('settings', 'PUT', before);
+  must(restored.status === 200 && restored.data.settings.storeName === before.storeName, 'restore failed');
+  return `saved, then put back "${before.storeName}"`;
 });
 
 for (const name of [

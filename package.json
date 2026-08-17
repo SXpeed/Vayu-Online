@@ -10,6 +10,7 @@
     "deploy": "npm run build && wrangler deploy",
     "verify": "node scripts/verify.mjs",
     "smoke:admin": "node scripts/admin-smoke.mjs",
+    "smoke:checkout": "node scripts/checkout-oversell-test.mjs",
     "db:migrate": "wrangler d1 migrations apply vayu-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply vayu-db --remote",
     "db:import": "node scripts/import-db.mjs --local",
