@@ -16,6 +16,7 @@
 
 import { site } from '#lib/stores/site.svelte.js';
 import { addToCart, toggleWishlist, isInWishlist } from './shop.js';
+import { hasOptions } from './options.js';
 
 const HEART_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>';
 
@@ -101,6 +102,18 @@ export function bindProductTiles(root, onToast) {
         const payload = { id: p.id, cat, idx, name: p.name, price: p.price, img: p.img };
 
         if (btn.dataset.act === 'cart') {
+            // A piece sold by colour and size cannot be added from a tile:
+            // there is nothing here to choose with, and a line with no
+            // variant is one the checkout refuses — it would price at the
+            // base rate against stock nobody tracks. So the button opens the
+            // product instead, which is where the choice lives. The card is
+            // itself the link to that page, so its own href is the target.
+            if (hasOptions(p)) {
+                const href = card.getAttribute('href');
+                onToast?.(`Choose an option for ${p.name}`);
+                if (href) globalThis.location.assign(href);
+                return;
+            }
             addToCart(payload);
             onToast?.(`${p.name} added to cart`);
             return;

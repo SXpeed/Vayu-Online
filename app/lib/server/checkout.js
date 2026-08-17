@@ -286,9 +286,18 @@ export async function commitOrder(store, prep, paymentInfo) {
       ),
       // Stock comes off the variant when there is one, off the product when
       // there is not — the same rule totalStock() reads by.
+      //
+      // Floored at zero. resolveLine checks stock, but the check and this
+      // write are not one transaction: two carts can both pass it, and an
+      // online payment may confirm up to an hour after it was priced. A bare
+      // `stock - qty` then leaves a negative count, which is not a fact about
+      // anything — it silently absorbs the next restock (a product at -3
+      // given 5 more shows 2) and reads as a shortfall nobody recorded. The
+      // inventory_log line below still records the full -qty, so the
+      // discrepancy stays visible where stock movements are actually read.
       l.variantId
-        ? store.stmt('UPDATE product_variants SET stock = stock - ? WHERE id = ?', l.qty, l.variantId)
-        : store.stmt('UPDATE products SET stock = stock - ? WHERE id = ?', l.qty, l.productId),
+        ? store.stmt('UPDATE product_variants SET stock = MAX(0, stock - ?) WHERE id = ?', l.qty, l.variantId)
+        : store.stmt('UPDATE products SET stock = MAX(0, stock - ?) WHERE id = ?', l.qty, l.productId),
       store.stmt('UPDATE products SET sold = sold + ? WHERE id = ?', l.qty, l.productId),
       store.stmt(
         'INSERT INTO inventory_log (t, product_id, name, delta, reason, by) VALUES (?, ?, ?, ?, ?, ?)',
