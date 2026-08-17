@@ -73,7 +73,14 @@
             </div>
             <div class="mdrop-side">
               <div class="mdrop-shop">
-                <span class="mdrop-label">Shop by category</span>
+                <!-- Built like a house's head — eyebrow over serif name over
+                     a hairline — so the list below starts level with the
+                     plates beside it. The wording is unchanged, just set on
+                     the two lines the houses use. -->
+                <span class="mdrop-shop-head">
+                  <span class="mdrop-label">Shop by</span>
+                  <span class="mdrop-shop-name">Category</span>
+                </span>
                 <!-- from the taxonomy, like every other category list -->
                 <ul>
                   {#each entries as [slug, cat] (slug)}
@@ -82,19 +89,6 @@
                 </ul>
                 <a class="mdrop-all" href="/pages/collection.html">View all collections →</a>
               </div>
-              <div class="mdrop-utility">
-                <span class="mdrop-label">Your Vayu</span>
-                <a href="/pages/user-profile.html">Account <em>Orders &amp; addresses</em></a>
-                <a href="/pages/wishlist.html">Wishlist</a>
-                <a href="/pages/cart.html">Cart</a>
-                <a href="/pages/help.html">Help &amp; shipping</a>
-              </div>
-              <!-- the route, not the address: both houses print the full
-                   address, hours and directions on their own pages -->
-              <a class="mdrop-visit" href="/pages/gallery.html#visit">
-                <span class="mdrop-visit-label">Visit</span>
-                <span class="mdrop-visit-line">Directions &amp; hours →</span>
-              </a>
             </div>
           </div>
         </div>

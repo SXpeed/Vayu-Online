@@ -1,10 +1,17 @@
 <script>
-  import CuratedGrid from '#lib/components/CuratedGrid.svelte';
   // Vayu — /index.html, ported from public/index.html.
+  import { onMount } from 'svelte';
+  import CuratedGrid from '#lib/components/CuratedGrid.svelte';
+  import { initHero } from '#lib/core/hero.js';
+
+  // Starts the carousel over the two slides in the markup below. If the
+  // admin panel has its own, core/site-content.js rebuilds the section once
+  // /api/nav answers and starts it again over those.
+  onMount(initHero);
 </script>
 
 <svelte:head>
-  <title>Vayu — High Fashion Atelier & Living</title>
+  <title>Vayu — Design for Living</title>
 </svelte:head>
 
 <!-- FULL-BLEED DESKTOP HERO CAMPAIGN

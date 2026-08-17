@@ -1041,6 +1041,11 @@ body.search-open .nav-search-panel:not(:empty) {
     align-items: stretch;
   }
 
+  /* The eyebrow over a head, in a house or in the shop rail. These were two
+     rules with identical declarations and different bottom margins, which
+     is precisely what left the rail's list sitting a line higher than the
+     plates it stands beside. */
+  .mdrop-venue-kind,
   .mdrop-label {
     display: block;
     font-size: 9.5px;
@@ -1048,7 +1053,7 @@ body.search-open .nav-search-panel:not(:empty) {
     text-transform: uppercase;
     color: var(--gold);
     font-weight: 500;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
   }
 
   /* ---- 1. the two houses ----
@@ -1078,24 +1083,20 @@ body.search-open .nav-search-panel:not(:empty) {
     border-left: 1px solid rgba(22, 25, 23, 0.07);
   }
 
-  .mdrop-venue-head {
+  /* One head, whether it tops a house or the shop rail. Sharing the rule is
+     what keeps the three columns level: the list and the two plates all
+     begin under a head of the same height, so neither can drift when the
+     type or the spacing here is next adjusted. */
+  .mdrop-venue-head,
+  .mdrop-shop-head {
     display: block;
     padding-bottom: 12px;
     margin-bottom: 16px;
     border-bottom: 1px solid rgba(22, 25, 23, 0.07);
   }
 
-  .mdrop-venue-kind {
-    display: block;
-    font-size: 9.5px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--gold);
-    font-weight: 500;
-    margin-bottom: 5px;
-  }
-
-  .mdrop-venue-name {
+  .mdrop-venue-name,
+  .mdrop-shop-name {
     display: block;
     font-family: 'Cormorant Garamond', serif;
     font-size: 23px;
@@ -1194,28 +1195,26 @@ body.search-open .nav-search-panel:not(:empty) {
     opacity: 0.65;
   }
 
-  /* ---- 4. the utility column ----
-     The only place in the bar where account, wishlist, cart and help are
-     named rather than drawn as icons.
+  /* ---- 4. the shop rail ----
+     The category list beside the two houses.
 
-     Its three blocks are spread over the full height of the panel rather
-     than stacked at the top: the plates beside it are tall, and the column
-     used to run out a third of the way down and leave the rest of its
-     space empty. Each block is separated by its own hairline, so the
-     distribution reads as three parts of one column and not as three
-     things that happen to have drifted apart. */
+     It carried two more blocks once — a named account/wishlist/cart list
+     and a link to directions — which is why it was a flex column spread
+     over the panel's full height with a hairline between each. Those are
+     gone: the icons in the bar already reach account, wishlist and cart,
+     and both houses print their own address and hours. With one block left
+     the distribution has nothing to distribute, so it stacks from the top
+     and the rule that drew the separators has gone with it.
+
+     The left border stays. It is the seam between the plates and the rail,
+     not a divider between blocks, and it runs the panel's full height
+     because .mdrop-inner stretches its tracks. */
   .mdrop-side {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
     gap: 20px;
     padding-left: 26px;
     border-left: 1px solid rgba(22, 25, 23, 0.07);
-  }
-
-  .mdrop-side>*+* {
-    padding-top: 20px;
-    border-top: 1px solid rgba(22, 25, 23, 0.07);
   }
 
   /* One column, not two: the rail has the height to spend now, and a
@@ -1252,58 +1251,6 @@ body.search-open .nav-search-panel:not(:empty) {
 
   .mdrop-all:hover {
     opacity: 0.65;
-  }
-
-  .mdrop-utility a {
-    display: block;
-    padding: 6px 0;
-    font-size: 13.5px;
-    color: var(--ink);
-    border-bottom: 1px solid rgba(22, 25, 23, 0.06);
-    transition: color 0.18s ease, transform 0.18s ease;
-  }
-
-  .mdrop-utility a:hover {
-    color: var(--accent);
-    transform: translateX(3px);
-  }
-
-  .mdrop-utility a em {
-    display: block;
-    font-style: normal;
-    font-size: 10px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--body);
-    opacity: 0.55;
-    margin-top: 2px;
-  }
-
-  .mdrop-visit {
-    display: block;
-    font-size: 12.5px;
-    line-height: 1.55;
-    color: var(--body);
-    transition: color 0.18s ease;
-  }
-
-  .mdrop-visit:hover {
-    color: var(--accent);
-  }
-
-  .mdrop-visit-label {
-    display: block;
-    font-size: 9.5px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--gold);
-    font-weight: 500;
-    margin-bottom: 5px;
-  }
-
-  .mdrop-visit-line {
-    display: block;
-    font-size: 12.5px;
   }
 
   /* ---- panel choreography ----
