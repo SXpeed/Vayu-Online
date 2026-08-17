@@ -6,6 +6,7 @@ import { $, viewEl, esc, money, timeFmt, toast, guard, openModal, closeModal, mo
 import { api, state, loadCategories, catTitle, slugToLabel } from '../lib/api.js';
 import { pickImage, pickTextFile } from '../lib/media.js';
 import { mountOptionsEditor } from './product-options.js';
+import { mountDetailsEditor } from './product-details.js';
 
 const STATUSES = ['active', 'draft', 'archived'];
 
@@ -80,7 +81,7 @@ function bulkPayload(choice, ids) {
 }
 
 export async function renderProducts() {
-    const [{ products, settings }] = await Promise.all([api('products'), loadCategories()]);
+    const [{ products, settings, shippingPresets }] = await Promise.all([api('products'), loadCategories()]);
     const filters = { q: '', cat: '', status: '' };
     const selected = new Set();
 
@@ -145,7 +146,7 @@ export async function renderProducts() {
     $('#f-q').addEventListener('input', (e) => { filters.q = e.target.value; draw(); });
     $('#f-cat').addEventListener('change', (e) => { filters.cat = e.target.value; draw(); });
     $('#f-status').addEventListener('change', (e) => { filters.status = e.target.value; draw(); });
-    $('#new-prod').addEventListener('click', () => productEditor(null));
+    $('#new-prod').addEventListener('click', () => productEditor(null, shippingPresets));
 
     $('#import-csv').addEventListener('click', async () => {
         const csv = await pickTextFile();
@@ -190,7 +191,7 @@ export async function renderProducts() {
         const id = btn.closest('tr').dataset.id;
         const prod = products.find(p => p.id === id);
 
-        if (btn.dataset.act === 'edit') return productEditor(prod);
+        if (btn.dataset.act === 'edit') return productEditor(prod, shippingPresets);
         if (btn.dataset.act === 'dup') {
             if (await guard(() => api(`products/${id}/duplicate`, 'POST', {}), 'Duplicated as draft')) renderProducts();
             return;
@@ -206,6 +207,7 @@ const BLANK_PRODUCT = {
     name: '', description: '', price: '', compareAt: '', sku: '', stock: 10,
     status: 'active', isNew: true, img: '', gallery: [], categories: [],
     tags: [], variants: [], options: [], publishAt: null,
+    care: '', dimensions: [], materials: [], shippingPreset: '',
 };
 
 /** One row per category, with its sub-categories in a select beside it. */
@@ -223,7 +225,7 @@ function categoryPicker(chosen) {
     }).join('');
 }
 
-export function productEditor(prod) {
+export function productEditor(prod, shippingPresets = []) {
     const p = prod || BLANK_PRODUCT;
     let gallery = [...(p.gallery || [])];
     if (!gallery.length && p.img) gallery = [p.img];
@@ -232,7 +234,8 @@ export function productEditor(prod) {
         <h2>${prod ? 'Edit product' : 'New product'}</h2>
         <div class="form-grid">
             <div class="field full"><label>Name</label><input id="p-name" value="${esc(p.name)}"></div>
-            <div class="field full"><label>Description</label><textarea id="p-desc">${esc(p.description)}</textarea></div>
+            <div class="field full"><label>Description</label><textarea id="p-desc">${esc(p.description)}</textarea>
+                <div class="help">The first section of the product page's accordion. Empty hides it.</div></div>
             <div class="field"><label>Price (₹)</label><input id="p-price" type="number" min="0" value="${p.price}"></div>
             <div class="field"><label>Compare-at price (₹)</label><input id="p-compare" type="number" min="0" value="${p.compareAt ?? ''}" placeholder="optional"></div>
             <div class="field"><label>SKU</label><input id="p-sku" value="${esc(p.sku)}"></div>
@@ -250,6 +253,8 @@ export function productEditor(prod) {
             <div class="field full"><label>Options <span style="text-transform:none;letter-spacing:0">(colour, size, finish — the pickers shown on the product page)</span></label>
                 <div id="p-options"></div>
                 <div class="help">With options, stock is tracked per combination and the base stock field is ignored.</div></div>
+            <div class="field full"><label>Product details <span style="text-transform:none;letter-spacing:0">(the rest of the accordion a shopper opens)</span></label>
+                <div class="det-editor" id="p-details"></div></div>
             <div class="field full"><label>Schedule publish <span style="text-transform:none;letter-spacing:0">(a draft goes live automatically at this time)</span></label>
                 <input id="p-publish" type="datetime-local" value="${p.publishAt ? new Date(p.publishAt).toISOString().slice(0, 16) : ''}"></div>
         </div>
@@ -261,6 +266,9 @@ export function productEditor(prod) {
 
     /* ---- options and the combination grid ---- */
     const optionsEditor = mountOptionsEditor($('#p-options', modal), p);
+
+    /* ---- dimensions, materials, care, shipping ---- */
+    const detailsEditor = mountDetailsEditor($('#p-details', modal), p, shippingPresets);
 
     /* ---- gallery: first image is the cover ---- */
     const galEl = $('#p-gallery', modal);
@@ -315,6 +323,7 @@ export function productEditor(prod) {
             categories: cats,
             tags: $('#p-tags', modal).value.split(',').map(t => t.trim()).filter(Boolean),
             ...optionsEditor.read(),
+            ...detailsEditor.read(),
             publishAt: $('#p-publish', modal).value || null,
         };
 

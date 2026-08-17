@@ -23,7 +23,7 @@ export async function loadProducts(store, { status = null } = {}) {
   const where = status ? 'WHERE status = ?' : '';
   const binds = status ? [status] : [];
 
-  const [products, categories, gallery, variants, tags, options, optionValues] = await Promise.all([
+  const [products, categories, gallery, variants, tags, options, optionValues, specs] = await Promise.all([
     store.all(`SELECT * FROM products ${where} ORDER BY sort_order, rowid`, ...binds),
     store.all('SELECT * FROM product_categories'),
     store.all('SELECT * FROM product_gallery ORDER BY sort_order, rowid'),
@@ -31,6 +31,7 @@ export async function loadProducts(store, { status = null } = {}) {
     store.all('SELECT * FROM product_tags'),
     store.all('SELECT * FROM product_options ORDER BY sort_order, rowid'),
     store.all('SELECT * FROM product_option_values ORDER BY sort_order, rowid'),
+    store.all('SELECT * FROM product_specs ORDER BY sort_order, rowid'),
   ]);
 
   const group = (rows, key = 'product_id') => {
@@ -48,6 +49,7 @@ export async function loadProducts(store, { status = null } = {}) {
   const byTag = group(tags);
   const byOption = group(options);
   const byValue = group(optionValues, 'option_id');
+  const bySpec = group(specs);
 
   return products.map(p => hydrate(p, {
     categories: byCat.get(p.id) || [],
@@ -55,6 +57,7 @@ export async function loadProducts(store, { status = null } = {}) {
     variants: byVariant.get(p.id) || [],
     tags: byTag.get(p.id) || [],
     options: byOption.get(p.id) || [],
+    specs: bySpec.get(p.id) || [],
     valuesFor: (optionId) => byValue.get(optionId) || [],
   }));
 }
@@ -63,12 +66,13 @@ export async function loadProducts(store, { status = null } = {}) {
 export async function loadProduct(store, id) {
   const p = await store.one('SELECT * FROM products WHERE id = ?', id);
   if (!p) return null;
-  const [categories, gallery, variants, tags, options] = await Promise.all([
+  const [categories, gallery, variants, tags, options, specs] = await Promise.all([
     store.all('SELECT * FROM product_categories WHERE product_id = ?', id),
     store.all('SELECT * FROM product_gallery WHERE product_id = ? ORDER BY sort_order, rowid', id),
     store.all('SELECT * FROM product_variants WHERE product_id = ? ORDER BY sort_order, rowid', id),
     store.all('SELECT * FROM product_tags WHERE product_id = ?', id),
     store.all('SELECT * FROM product_options WHERE product_id = ? ORDER BY sort_order, rowid', id),
+    store.all('SELECT * FROM product_specs WHERE product_id = ? ORDER BY sort_order, rowid', id),
   ]);
   // One query for all of this product's values rather than one per option:
   // a product with a colour rail and a size rail is still a single round trip.
@@ -79,9 +83,40 @@ export async function loadProduct(store, id) {
         WHERE o.product_id = ? ORDER BY v.sort_order, v.rowid`, id)
     : [];
   return hydrate(p, {
-    categories, gallery, variants, tags, options,
+    categories, gallery, variants, tags, options, specs,
     valuesFor: (optionId) => values.filter(v => v.option_id === optionId),
   });
+}
+
+/**
+ * The sections of the product page's detail accordion that are label/value
+ * rows. Declared once: the migration, the admin panel's editor and the
+ * storefront's renderer all key off these names, and a fourth section is a
+ * matter of adding a name here rather than another column.
+ */
+export const SPEC_SECTIONS = ['dimensions', 'materials'];
+
+/** Rows for one section, in saved order. */
+const specsOf = (rows, section) => rows
+  .filter(s => s.section === section)
+  .map(s => ({ label: s.label, value: s.value || '' }));
+
+/**
+ * The Shipping & Returns profiles, shop-wide. Ordered, because "the first
+ * one" is what a product with no profile of its own falls back to.
+ */
+export const loadShippingPresets = (store) =>
+  store.all('SELECT id, name, body FROM shipping_presets ORDER BY sort_order, rowid');
+
+/**
+ * The profile a product actually shows: its own, or the shop's default when
+ * it never chose one (or chose one that has since been deleted). Returns ''
+ * when the shop has no profiles at all, which hides the section.
+ */
+export function shippingTextFor(product, presets) {
+  if (!presets.length) return '';
+  const chosen = product.shippingPreset && presets.find(x => x.id === product.shippingPreset);
+  return (chosen || presets[0]).body || '';
 }
 
 /** A row set from D1 back into the object shape the app's logic expects. */
@@ -97,6 +132,10 @@ function hydrate(p, children) {
     status: p.status,
     isNew: !!p.is_new,
     img: p.img || '',
+    care: p.care || '',
+    shippingPreset: p.shipping_preset || '',
+    dimensions: specsOf(children.specs || [], 'dimensions'),
+    materials: specsOf(children.specs || [], 'materials'),
     publishAt: p.publish_at ?? null,
     views: p.views || 0,
     sold: p.sold || 0,
@@ -180,6 +219,13 @@ export function toLegacyCatalogue(products, categories) {
         gallery: p.gallery.length ? p.gallery : [p.img],
         stock: totalStock(p),
         description: p.description || '',
+        // The detail accordion. Each of these is empty until someone fills
+        // it in through the panel, and an empty one hides its section rather
+        // than printing the invented placeholder copy the page used to ship.
+        care: p.care || '',
+        dimensions: p.dimensions || [],
+        materials: p.materials || [],
+        shippingPreset: p.shippingPreset || '',
         tags: p.tags || [],
         // Options drive the pickers on the product page; variants are what
         // those pickers resolve to. A product the panel gave no options

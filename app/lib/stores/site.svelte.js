@@ -22,6 +22,8 @@ export const site = $state({
     allProducts: [],
     content: null,
     journal: null,
+    /** Shipping & Returns profiles; a product points at one by id. */
+    shippingPresets: [],
 });
 
 const getJson = async (url) => {
@@ -67,6 +69,7 @@ export function hydrateCatalogue() {
         if (data.categories) site.categories = data.categories;
         site.content = data.content ?? site.content;
         site.journal = data.journal?.length ? data.journal : null;
+        site.shippingPresets = data.shippingPresets ?? [];
         return true;
     });
     return catalogueDone;

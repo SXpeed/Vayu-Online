@@ -63,11 +63,19 @@ export const navResponse = z.looseObject({
     content: content.nullish(),
 });
 
+/** A saved Shipping & Returns profile, shared across products. */
+const shippingPreset = z.looseObject({
+    id: z.string(),
+    name: z.string().nullish(),
+    body: z.string().nullish(),
+});
+
 export const catalogueResponse = z.looseObject({
     products: z.record(z.string(), z.array(product)),
     categories: z.record(z.string(), category),
     journal: z.array(story).nullish(),
     content: content.nullish(),
+    shippingPresets: z.array(shippingPreset).nullish(),
 });
 
 /**

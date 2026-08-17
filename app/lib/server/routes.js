@@ -50,6 +50,7 @@ export const ADMIN_ROUTES = {
   products: { handler: catalog.products, role: 'manager' },
   categories: { handler: catalog.categories, role: 'manager' },
   journal: { handler: catalog.journal, role: 'manager' },
+  'shipping-presets': { handler: catalog.shippingPresets, role: 'manager' },
   coupons: { handler: sales.coupons, role: 'manager' },
   reviews: { handler: sales.reviews, role: 'manager' },
   inventory: { handler: insights.inventory, role: 'manager' },

@@ -16,6 +16,7 @@ import { json, ok, badRequest, methodNotAllowed, resource } from './http.js';
 import { now } from './db.js';
 import {
   loadProducts, loadProduct, loadCategories, totalStock, fireStockAlerts, sweepScheduled,
+  loadShippingPresets, SPEC_SECTIONS,
 } from './catalogue.js';
 import { storyRow } from './storefront.js';
 
@@ -40,6 +41,14 @@ function sanitizeProduct(body, existing, knownCategories) {
   return {
     name: String(body.name ?? p.name ?? '').trim(),
     description: String(body.description ?? p.description ?? ''),
+    care: String(body.care ?? p.care ?? '').slice(0, 2000),
+    // '' is a real choice — it means "use the shop's default profile" — so
+    // this is `!== undefined` rather than a truthiness test, or clearing the
+    // selection would silently keep the old one.
+    shippingPreset: body.shippingPreset === undefined
+      ? String(p.shippingPreset ?? '') : String(body.shippingPreset ?? '').slice(0, 64),
+    dimensions: body.dimensions === undefined ? (p.dimensions || []) : sanitizeSpecs(body.dimensions),
+    materials: body.materials === undefined ? (p.materials || []) : sanitizeSpecs(body.materials),
     price: Math.max(0, Number(body.price ?? p.price) || 0),
     compareAt: body.compareAt != null && body.compareAt !== ''
       ? Math.max(0, Number(body.compareAt) || 0) : null,
@@ -68,6 +77,29 @@ function sanitizeProduct(body, existing, knownCategories) {
       ? (body.publishAt ? new Date(body.publishAt).toISOString() : null)
       : (p.publishAt || null),
   };
+}
+
+/**
+ * Coerce a list of label/value rows for one accordion section.
+ *
+ * A row with no label is dropped rather than stored blank — it would render
+ * as an empty column on the product page. Labels are deduplicated because
+ * (product_id, section, label) is the primary key: two "Length" rows would
+ * not merely look odd, they would abort the save batch on a constraint.
+ */
+function sanitizeSpecs(list) {
+  if (!Array.isArray(list)) return [];
+  const seen = new Set();
+
+  return list
+    .map(s => {
+      const label = String(s?.label || '').trim().slice(0, 60);
+      if (!label || seen.has(label.toLowerCase())) return null;
+      seen.add(label.toLowerCase());
+      return { label, value: String(s.value || '').trim().slice(0, 200) };
+    })
+    .filter(Boolean)
+    .slice(0, 20);
 }
 
 /**
@@ -137,20 +169,24 @@ async function writeProduct(store, id, data, { created = false } = {}) {
       ? store.stmt(
         `INSERT INTO products
           (id, name, description, price, compare_at, sku, stock, status, is_new, img,
-           publish_at, views, sold, sort_order, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0,
+           publish_at, care, shipping_preset, views, sold, sort_order, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0,
                  (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM products), ?, ?)`,
         id, data.name, data.description, data.price, data.compareAt, data.sku,
-        data.stock, data.status, data.isNew ? 1 : 0, data.img, data.publishAt, stamp, stamp,
+        data.stock, data.status, data.isNew ? 1 : 0, data.img, data.publishAt,
+        data.care, data.shippingPreset || null, stamp, stamp,
       )
       : store.stmt(
         `UPDATE products SET name = ?, description = ?, price = ?, compare_at = ?, sku = ?,
-                stock = ?, status = ?, is_new = ?, img = ?, publish_at = ?, updated_at = ?
+                stock = ?, status = ?, is_new = ?, img = ?, publish_at = ?,
+                care = ?, shipping_preset = ?, updated_at = ?
           WHERE id = ?`,
         data.name, data.description, data.price, data.compareAt, data.sku,
-        data.stock, data.status, data.isNew ? 1 : 0, data.img, data.publishAt, stamp, id,
+        data.stock, data.status, data.isNew ? 1 : 0, data.img, data.publishAt,
+        data.care, data.shippingPreset || null, stamp, id,
       ),
     store.stmt('DELETE FROM product_categories WHERE product_id = ?', id),
+    store.stmt('DELETE FROM product_specs WHERE product_id = ?', id),
     store.stmt('DELETE FROM product_gallery WHERE product_id = ?', id),
     store.stmt('DELETE FROM product_variants WHERE product_id = ?', id),
     store.stmt('DELETE FROM product_tags WHERE product_id = ?', id),
@@ -170,6 +206,12 @@ async function writeProduct(store, id, data, { created = false } = {}) {
     'INSERT INTO product_gallery (product_id, url, sort_order) VALUES (?, ?, ?)', id, url, i)));
   data.tags.forEach(tag => statements.push(store.stmt(
     'INSERT INTO product_tags (product_id, tag) VALUES (?, ?)', id, tag)));
+
+  for (const section of SPEC_SECTIONS) {
+    (data[section] || []).forEach((s, i) => statements.push(store.stmt(
+      'INSERT INTO product_specs (product_id, section, label, value, sort_order) VALUES (?, ?, ?, ?, ?)',
+      id, section, s.label, s.value, i)));
+  }
 
   // Ids are minted here rather than inside the loops, because nextId is a
   // query and a batch must be fully built before it is sent.
@@ -378,6 +420,13 @@ async function importProducts({ store, method, admin, body }) {
       tags: [],
       variants: [],
       options: [],
+      // The CSV carries none of the accordion detail; an imported product
+      // shows only the sections it is later given in the panel, and falls
+      // back to the default shipping profile until told otherwise.
+      care: '',
+      shippingPreset: '',
+      dimensions: [],
+      materials: [],
       publishAt: null,
     }, { created: true });
     created++;
@@ -399,8 +448,13 @@ export function products(ctx) {
 
     async list() {
       await sweepScheduled(store);
-      const [products, settings] = await Promise.all([loadProducts(store), store.settings()]);
-      return json(200, { products, settings });
+      // The shipping profiles ride along with the listing rather than sitting
+      // behind a second request: the product editor needs them to draw its
+      // dropdown, and it opens from this screen.
+      const [products, settings, shippingPresets] = await Promise.all([
+        loadProducts(store), store.settings(), loadShippingPresets(store),
+      ]);
+      return json(200, { products, settings, shippingPresets });
     },
 
     async create({ admin, body }) {
@@ -447,6 +501,78 @@ export function products(ctx) {
         await store.logActivity(admin.name, 'product.duplicate', `Duplicated "${product.name}"`);
         return json(201, { product: copy });
       },
+    },
+  });
+}
+
+/* ================= shipping & returns profiles ================= */
+
+/**
+ * The saved Shipping & Returns copy, shared by every product that points at
+ * it. The shop starts with three (see migration 0005) and can add more.
+ *
+ * The first profile by sort order is the shop default: it is what a product
+ * shows when it has never chosen one, which is every product that existed
+ * before this feature. That is why the last profile cannot be deleted.
+ */
+export function shippingPresets(ctx) {
+  const { store } = ctx;
+
+  const clean = (body, existing = {}) => ({
+    name: String(body.name ?? existing.name ?? '').trim().slice(0, 60),
+    body: String(body.body ?? existing.body ?? '').trim().slice(0, 2000),
+  });
+
+  return resource(ctx, {
+    notFound: 'Shipping profile not found',
+    find: (id) => store.row('shipping_presets', 'id', id),
+
+    async list() {
+      return json(200, { shippingPresets: await loadShippingPresets(store) });
+    },
+
+    async create({ admin, body }) {
+      const data = clean(body);
+      if (!data.name) return badRequest('A profile needs a name');
+      if (!data.body) return badRequest('A profile needs some text');
+
+      const id = await store.nextId('ship');
+      const count = await store.value('SELECT COUNT(*) FROM shipping_presets');
+      await store.run(
+        'INSERT INTO shipping_presets (id, name, body, sort_order) VALUES (?, ?, ?, ?)',
+        id, data.name, data.body, count,
+      );
+      await store.logActivity(admin.name, 'shipping.create', `Added shipping profile "${data.name}"`);
+      return json(201, { preset: await store.row('shipping_presets', 'id', id) });
+    },
+
+    async update({ admin, body }, preset) {
+      const data = clean(body, preset);
+      if (!data.name) return badRequest('A profile needs a name');
+      if (!data.body) return badRequest('A profile needs some text');
+
+      await store.update('shipping_presets', 'id', preset.id, data);
+      await store.logActivity(admin.name, 'shipping.update', `Updated shipping profile "${data.name}"`);
+      return json(200, { preset: await store.row('shipping_presets', 'id', preset.id) });
+    },
+
+    async remove({ admin }, preset) {
+      const inUse = await store.value(
+        'SELECT COUNT(*) FROM products WHERE shipping_preset = ?', preset.id);
+      if (inUse) {
+        return json(409, {
+          error: `${inUse} product(s) still use "${preset.name}". Point them at another profile first.`,
+        });
+      }
+      // Removing the last one would leave every product with nothing to fall
+      // back to, and the section would vanish from the whole storefront at
+      // once — a surprising amount of damage for one ✕.
+      const total = await store.value('SELECT COUNT(*) FROM shipping_presets');
+      if (total <= 1) return badRequest('The last shipping profile cannot be deleted');
+
+      await store.remove('shipping_presets', 'id', preset.id);
+      await store.logActivity(admin.name, 'shipping.delete', `Deleted shipping profile "${preset.name}"`);
+      return ok();
     },
   });
 }

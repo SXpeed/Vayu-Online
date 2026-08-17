@@ -14,7 +14,7 @@ import { json, ok, badRequest, notFound } from './http.js';
 import { now, today } from './db.js';
 import {
   loadProducts, loadCategories, toLegacyCatalogue, toLegacyTaxonomy,
-  productById, productByCatIdx, sweepScheduled,
+  productById, productByCatIdx, sweepScheduled, loadShippingPresets,
 } from './catalogue.js';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s.]+(\.[^@\s.]+)+$/;
@@ -56,11 +56,12 @@ export async function nav({ store }) {
 export async function catalogue({ store }) {
   await sweepScheduled(store);
 
-  const [products, categories, journal, content] = await Promise.all([
+  const [products, categories, journal, content, shippingPresets] = await Promise.all([
     loadProducts(store),
     loadCategories(store),
     store.all('SELECT * FROM journal ORDER BY sort_order, rowid'),
     store.config('content'),
+    loadShippingPresets(store),
   ]);
 
   return json(200, {
@@ -68,6 +69,11 @@ export async function catalogue({ store }) {
     categories: toLegacyTaxonomy(categories),
     journal: journal.map(storyRow),
     content,
+    // Sent as a list rather than resolved onto each product: there are a
+    // handful of these and a product only points at one, so inlining the
+    // text would repeat the same four sentences once per product per
+    // category it appears in.
+    shippingPresets,
   }, { 'Cache-Control': CATALOGUE_CACHE });
 }
 

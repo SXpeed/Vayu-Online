@@ -483,6 +483,44 @@ table.grid td.num, table.grid th.num { text-align: right; font-variant-numeric: 
 .opt-combo { display: grid; grid-template-columns: minmax(0, 2fr) 100px 90px auto; gap: 8px; align-items: center; }
 .opt-combo-label { font-size: 13px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* ---- product detail accordion editor ---- */
+
+.det-editor { display: grid; gap: 10px; }
+.det-section {
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--surface);
+  display: grid;
+  gap: 8px;
+}
+.det-head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+/* The hint takes the slack so the buttons stay together on the right. */
+.det-head .help { flex: 1; margin: 0; font-size: 11.5px; color: var(--muted); }
+.det-rows { display: grid; gap: 6px; }
+.det-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) auto; gap: 8px; align-items: center; }
+.det-section input, .det-section textarea, .det-section select {
+  padding: 6px 8px;
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  background: var(--card);
+  font: inherit;
+  font-size: 13px;
+  min-width: 0;
+}
+.det-section textarea { min-height: 70px; resize: vertical; }
+
+/* What the shopper will actually read, including when the choice is "shop
+   default" and the words come from a profile further down the list. */
+.det-preview {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--body);
+  background: var(--paper);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
 .form-error { color: var(--critical); font-size: 13px; min-height: 17px; flex: 1; align-self: center; }
 

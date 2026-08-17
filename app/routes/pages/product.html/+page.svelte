@@ -194,100 +194,14 @@
                     </button>
                 </div>
 
-                <div class="prod-accordion" id="prodAccordion">
-                    <div class="prod-acc-item">
-                        <button class="prod-acc-header" data-target="acc-desc">
-                            <span>Description</span>
-                            <svg class="prod-acc-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="1.5">
-                                <polyline points="6 9 12 15 18 9"></polyline>
-                            </svg>
-                        </button>
-                        <div class="prod-acc-body" id="acc-desc">
-                            <p id="prodDesc">
-                                A singular piece from the Vayu atelier — crafted by hand using time-honoured techniques
-                                and natural materials. Each object carries the quiet imperfection of the artist's
-                                touch, making it uniquely yours.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="prod-acc-item">
-                        <button class="prod-acc-header" data-target="acc-dimensions">
-                            <span>Dimensions</span>
-                            <svg class="prod-acc-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="1.5">
-                                <polyline points="6 9 12 15 18 9"></polyline>
-                            </svg>
-                        </button>
-                        <div class="prod-acc-body" id="acc-dimensions">
-                            <div class="prod-meta-row">
-                                <span class="prod-meta-label">Length</span>
-                                <span class="prod-meta-val">32 cm</span>
-                            </div>
-                            <div class="prod-meta-row">
-                                <span class="prod-meta-label">Width</span>
-                                <span class="prod-meta-val">32 cm</span>
-                            </div>
-                            <div class="prod-meta-row">
-                                <span class="prod-meta-label">Height</span>
-                                <span class="prod-meta-val">45 cm</span>
-                            </div>
-                            <div class="prod-meta-row">
-                                <span class="prod-meta-label">Weight</span>
-                                <span class="prod-meta-val">2.4 kg</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="prod-acc-item">
-                        <button class="prod-acc-header" data-target="acc-materials">
-                            <span>Materials & Origin</span>
-                            <svg class="prod-acc-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="1.5">
-                                <polyline points="6 9 12 15 18 9"></polyline>
-                            </svg>
-                        </button>
-                        <div class="prod-acc-body" id="acc-materials">
-                            <div class="prod-meta-row">
-                                <span class="prod-meta-label">Material</span>
-                                <span class="prod-meta-val">Handcrafted</span>
-                            </div>
-                            <div class="prod-meta-row">
-                                <span class="prod-meta-label">Origin</span>
-                                <span class="prod-meta-val">Made in India</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="prod-acc-item">
-                        <button class="prod-acc-header" data-target="acc-care">
-                            <span>Care Instructions</span>
-                            <svg class="prod-acc-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="1.5">
-                                <polyline points="6 9 12 15 18 9"></polyline>
-                            </svg>
-                        </button>
-                        <div class="prod-acc-body" id="acc-care">
-                            <p>Wipe with a soft dry cloth. Avoid abrasive cleaners and prolonged exposure to direct
-                                sunlight to preserve the natural finish.</p>
-                        </div>
-                    </div>
-
-                    <div class="prod-acc-item">
-                        <button class="prod-acc-header" data-target="acc-shipping">
-                            <span>Shipping & Returns</span>
-                            <svg class="prod-acc-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="1.5">
-                                <polyline points="6 9 12 15 18 9"></polyline>
-                            </svg>
-                        </button>
-                        <div class="prod-acc-body" id="acc-shipping">
-                            <p>Ships within 3–5 business days. Free shipping on orders above ₹ 5,000. Returns accepted
-                                within 7 days of delivery — items must be unused and in original packaging.</p>
-                        </div>
-                    </div>
-                </div>
+                <!-- Description, Dimensions, Materials & Origin, Care and
+                     Shipping & Returns, built by lib/pages/product.js from
+                     what the panel was given for this piece. It used to be
+                     five blocks of fixed markup here, which meant every
+                     object in the shop measured 32 x 32 x 45 cm and weighed
+                     2.4 kg. A section with nothing behind it is not
+                     rendered at all. -->
+                <div class="prod-accordion" id="prodAccordion"></div>
             </div>
         </section>
 

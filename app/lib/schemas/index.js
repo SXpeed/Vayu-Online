@@ -45,6 +45,8 @@ const SECTION = {
     'PUT /api/admin/categories': admin.category,
     'POST /api/admin/journal': admin.journalStory,
     'PUT /api/admin/journal': admin.journalStory,
+    'POST /api/admin/shipping-presets': admin.shippingPreset,
+    'PUT /api/admin/shipping-presets': admin.shippingPreset,
     'POST /api/admin/coupons': admin.coupon,
     'PUT /api/admin/coupons': admin.coupon,
     'PUT /api/admin/content': admin.siteContent,

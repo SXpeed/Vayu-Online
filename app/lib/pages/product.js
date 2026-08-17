@@ -54,6 +54,72 @@ if (!product) {
     product = allProducts.find(p => p.name === name);
 }
 
+/* ---------- the detail accordion ----------
+ *
+ * Five sections, all of them optional, all of them written in the admin
+ * panel. This used to be fixed markup in the page, so every piece in the
+ * shop claimed the same dimensions and the same materials whatever it
+ * actually was. A section with nothing behind it is now left out entirely
+ * rather than shown with placeholder copy — an empty row reads as a broken
+ * page, and inventing a measurement is worse than admitting there isn't one.
+ */
+
+const CHEVRON = `<svg class="prod-acc-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" stroke-width="1.5"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+
+const accordionItem = (id, title, bodyHtml) => `
+    <div class="prod-acc-item">
+        <button class="prod-acc-header" data-target="${id}" aria-expanded="false" aria-controls="${id}">
+            <span>${escapeHtml(title)}</span>
+            ${CHEVRON}
+        </button>
+        <div class="prod-acc-body" id="${id}">${bodyHtml}</div>
+    </div>`;
+
+/** Label/value rows — Dimensions, Materials & Origin. */
+const metaRows = (rows) => rows
+    .filter(r => r && r.label && r.value)
+    .map(r => `<div class="prod-meta-row">
+        <span class="prod-meta-label">${escapeHtml(r.label)}</span>
+        <span class="prod-meta-val">${escapeHtml(r.value)}</span>
+    </div>`)
+    .join('');
+
+/** Free text, with blank-line-separated paragraphs preserved. */
+const paragraphs = (text) => String(text)
+    .split(/\n\s*\n/)
+    .map(p => p.trim())
+    .filter(Boolean)
+    .map(p => `<p>${escapeHtml(p)}</p>`)
+    .join('');
+
+/**
+ * The Shipping & Returns copy this product shows: the profile it was given,
+ * or the shop's default when it has none — which is every product that
+ * predates the feature. Mirrors shippingTextFor() on the server.
+ */
+function shippingText(p) {
+    const presets = site.shippingPresets || [];
+    if (!presets.length) return '';
+    const chosen = p.shippingPreset && presets.find(x => x.id === p.shippingPreset);
+    return (chosen || presets[0]).body || '';
+}
+
+function renderAccordion(p) {
+    const host = document.getElementById('prodAccordion');
+    if (!host) return;
+
+    const sections = [
+        ['acc-desc', 'Description', p.description ? paragraphs(p.description) : ''],
+        ['acc-dimensions', 'Dimensions', metaRows(p.dimensions || [])],
+        ['acc-materials', 'Materials & Origin', metaRows(p.materials || [])],
+        ['acc-care', 'Care Instructions', p.care ? paragraphs(p.care) : ''],
+        ['acc-shipping', 'Shipping & Returns', paragraphs(shippingText(p))],
+    ].filter(([, , body]) => body);
+
+    host.innerHTML = sections.map(([id, title, body]) => accordionItem(id, title, body)).join('');
+}
+
 const crumbCategory = document.getElementById('crumbCategory');
 const crumbProduct = document.getElementById('crumbProduct');
 
@@ -71,10 +137,9 @@ if (product) {
             : price;
     };
     renderPrice(product.price, product.compareAt);
-    if (product.description) {
-        const descEl = document.getElementById('prodDesc');
-        if (descEl) descEl.textContent = product.description;
-    }
+    // Before the accordion is bound further down, so the toggles it wires up
+    // are the ones this just wrote.
+    renderAccordion(product);
     if (crumbProduct) crumbProduct.textContent = product.name;
     if (product.isNew) document.getElementById('prodBadge').style.display = 'inline-block';
     document.title = `${product.name} — Vayu`;
@@ -337,17 +402,24 @@ if (product) {
         qty++; qtyVal.textContent = qty;
     });
 
-    // Accordion dropdowns
-    document.querySelectorAll('.prod-acc-header').forEach(header => {
-        header.addEventListener('click', () => {
-            const item = header.parentElement;
-            item.classList.toggle('open');
-        });
+    // Accordion dropdowns. Delegated from the container rather than bound
+    // per header: the sections are rendered from data now, so binding each
+    // one would tie this to the order they happen to be built in.
+    const accordion = document.getElementById('prodAccordion');
+    accordion?.addEventListener('click', (e) => {
+        const header = e.target.closest('.prod-acc-header');
+        if (!header || !accordion.contains(header)) return;
+        const open = header.parentElement.classList.toggle('open');
+        header.setAttribute('aria-expanded', String(open));
     });
 
-    // Open first accordion by default
-    const firstAcc = document.querySelector('.prod-acc-item');
-    if (firstAcc) firstAcc.classList.add('open');
+    // Open the first section by default — whichever one that now is, since a
+    // product with no description leads with its dimensions instead.
+    const firstAcc = accordion?.querySelector('.prod-acc-item');
+    if (firstAcc) {
+        firstAcc.classList.add('open');
+        firstAcc.querySelector('.prod-acc-header')?.setAttribute('aria-expanded', 'true');
+    }
 
     // ---- Toast helper ----
     function showToast(msg) {
@@ -517,8 +589,14 @@ if (product) {
     }
 } else {
     const prodName = document.getElementById('prodName');
-    if (prodName) {
-        prodName.textContent = 'Product Not Found';
-        document.getElementById('prodDesc').textContent = 'This piece may have sold out or moved. Please browse our collections.';
+    if (prodName) prodName.textContent = 'Product Not Found';
+
+    // The accordion is empty markup until a product fills it, so the
+    // apology goes in as its own paragraph rather than into a #prodDesc
+    // that no longer exists on the page.
+    const host = document.getElementById('prodAccordion');
+    if (host) {
+        host.innerHTML = '<p id="prodDesc" style="padding:16px 0;color:var(--body)">'
+            + 'This piece may have sold out or moved. Please browse our collections.</p>';
     }
 }
