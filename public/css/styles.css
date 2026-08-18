@@ -1217,6 +1217,18 @@ body.search-open .nav-search-panel:not(:empty) {
     border-left: 1px solid rgba(22, 25, 23, 0.07);
   }
 
+  /* The rail stretches to the houses' height (align-items: stretch on
+     .mdrop-inner), but its content — a head and seven short links — is far
+     shorter than the two 16:9 plates beside it. Letting .mdrop-shop fill the
+     track and pinning the "View all" CTA to its foot keeps the rail's bottom
+     level with the bottom of the houses, so the three columns read as one
+     panel instead of two full columns and a stranded half-column. */
+  .mdrop-shop {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+  }
+
   /* One column, not two: the rail has the height to spend now, and a
      single list of seven keeps every category on its own line at a
      readable size instead of wrapping the longer ones. */
@@ -1240,7 +1252,9 @@ body.search-open .nav-search-panel:not(:empty) {
 
   .mdrop-all {
     display: inline-block;
-    margin-top: 12px;
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid rgba(22, 25, 23, 0.07);
     font-size: 10px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
@@ -4578,4 +4592,398 @@ a {
   font-size: 14px;
   color: var(--body);
   letter-spacing: 0.02em;
+}
+/* ============================================================
+   VENUE PAGES — Design for Living, Gallery Vayu, Curated Spaces
+   ------------------------------------------------------------
+   One show at one address, written three times over: an editorial
+   head, a 16:9 hero, an italic statement, a grid of plates, and a
+   rail of the site's own product tiles.
+
+   These rules used to live inside each page as an inline <style>
+   emitted through {@html}, which meant two near-copies of the same
+   300 lines — already drifting, since only one of them carried the
+   .g-pair layout — and a third copy the moment another such page
+   was added. They are prefixed .g-* and used by nothing else, so
+   they sit here once instead.
+
+   Separators are pseudo-element backgrounds rather than borders,
+   because the global layer above forces border-color: transparent.
+   ============================================================ */
+
+/* No horizontal padding is declared: the element is both .wrap and
+   .gallery-page, so even `padding: 0` would wipe out the page gutter
+   rather than leave it alone. The bottom clearance is for the phone
+   nav bar, which only exists at that width. */
+@media (max-width: 768px) {
+  .gallery-page {
+    padding-bottom: 72px;
+  }
+}
+
+/* ---------- editorial header ---------- */
+.g-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px;
+  position: relative;
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+}
+
+.g-head::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: #EFEAE1;
+}
+
+.g-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(26px, 3vw, 40px);
+  font-weight: 400;
+  line-height: 1.05;
+  color: var(--ink);
+  margin: 0;
+}
+
+.g-meta {
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #8A8681;
+  white-space: nowrap;
+  padding-bottom: 3px;
+}
+
+/* ---------- hero ----------
+   16:9, matching the plate each page is reached from in the MENU
+   panel, so the crop takes nothing off a poster's printed type. */
+.g-hero {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  background: #FAF8F5;
+  aspect-ratio: 16 / 9;
+  margin-bottom: 4px;
+}
+
+.g-hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.7s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.g-hero:hover img {
+  transform: scale(1.03);
+}
+
+/* ---------- statement ---------- */
+.g-statement {
+  max-width: 620px;
+  margin: 26px auto 30px;
+  text-align: center;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(16px, 1.6vw, 20px);
+  font-weight: 300;
+  font-style: italic;
+  line-height: 1.55;
+  color: var(--body);
+}
+
+/* ---------- section heads (matches .sec-head language) ---------- */
+.g-sec-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.g-sec-title {
+  font-family: 'Jost', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.g-sec-note {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8A8681;
+}
+
+/* ---------- image grids ----------
+   4px between plates at every size, matching the Inside Vayu tiles on
+   the home page. The 34px below each block is the section rhythm. */
+.g-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 34px;
+}
+
+/* asymmetric pair: one wide plate beside a narrow one. The wide card's
+   3/2 ratio sets the row height and the narrow card stretches to match,
+   so the two captions sit on a shared baseline. */
+.g-pair {
+  display: grid;
+  grid-template-columns: 1.55fr 1fr;
+  align-items: stretch;
+  gap: 4px;
+  margin-bottom: 34px;
+}
+
+.g-pair .g-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.g-card {
+  display: block;
+  margin: 0;
+}
+
+/* A <button>, not a <span>: the tiles carried two hover affordances
+   (image zoom + caption colour) while being inert <figure>s, so every
+   tile invited a click and did nothing. They open the lightbox. */
+.g-card-media {
+  display: block;
+  overflow: hidden;
+  background: #FAF8F5;
+  aspect-ratio: 4 / 5;
+  width: 100%;
+  padding: 0;
+  border: none;
+  cursor: zoom-in;
+  font: inherit;
+  color: inherit;
+}
+
+.g-grid .g-card-media {
+  aspect-ratio: 4 / 5;
+}
+
+.g-pair .g-card:first-child .g-card-media {
+  aspect-ratio: 3 / 2;
+}
+
+/* no intrinsic ratio — it fills whatever height the wide card sets */
+.g-pair .g-card:last-child .g-card-media {
+  aspect-ratio: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.g-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.g-card:hover img {
+  transform: scale(1.04);
+}
+
+/* caption under the image, never over it — light plates stay readable */
+.g-card figcaption {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+}
+
+.g-card-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.2;
+  transition: color 0.2s ease;
+}
+
+.g-card:hover .g-card-name {
+  color: var(--accent);
+}
+
+.g-card-tag {
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ---------- lightbox ----------
+   A native <dialog> opened with showModal(), so Escape-to-close, the
+   focus trap and the inert backdrop all come from the platform. */
+.g-lightbox {
+  padding: 0;
+  border: none;
+  background: transparent;
+  max-width: 100vw;
+  max-height: 100vh;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.g-lightbox::backdrop {
+  background: rgba(16, 14, 12, 0.92);
+}
+
+.g-lightbox-inner {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  place-items: center;
+  padding: 40px 56px 24px;
+  gap: 14px;
+}
+
+.g-lightbox img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.g-lightbox-caption {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  color: #F4F1EC;
+  font-family: 'Jost', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.g-lightbox-caption .g-lb-count {
+  color: #BDB7AE;
+}
+
+/* opaque dark chip rather than translucent white: the control has to
+   stay legible when a light-plated photograph sits behind it */
+.g-lb-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: #1C1A17;
+  color: #FFFFFF;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  transition: background 0.2s ease;
+}
+
+.g-lb-btn:hover {
+  background: #3A3630;
+}
+
+.g-lb-prev {
+  left: 8px;
+}
+
+.g-lb-next {
+  right: 8px;
+}
+
+.g-lb-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: #1C1A17;
+  color: #FFFFFF;
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+  line-height: 1;
+  transition: background 0.2s ease;
+}
+
+.g-lb-close:hover {
+  background: #3A3630;
+}
+
+/* ---------- responsive ---------- */
+@media (min-width: 1024px) {
+
+  .g-grid,
+  .g-pair {
+    gap: 4px;
+  }
+}
+
+@media (max-width: 768px) {
+  .g-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .g-hero {
+    aspect-ratio: 16 / 9;
+  }
+
+  .g-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+  }
+
+  /* the third plate runs full width so the row never leaves a hole */
+  .g-grid .g-card:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .g-grid .g-card:last-child .g-card-media {
+    aspect-ratio: 16 / 10;
+  }
+
+  .g-pair {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  /* stacked: both plates take the same ratio again. The :last-child
+     selector has to be repeated or the desktop `aspect-ratio: auto`
+     out-specifies this rule and the image keeps its intrinsic height. */
+  .g-pair .g-card:first-child .g-card-media,
+  .g-pair .g-card:last-child .g-card-media {
+    aspect-ratio: 3 / 2;
+    flex: 0 0 auto;
+  }
+
+  .g-lightbox-inner {
+    padding: 56px 12px 20px;
+  }
+
+  .g-lb-prev {
+    left: 2px;
+  }
+
+  .g-lb-next {
+    right: 2px;
+  }
 }

@@ -206,7 +206,13 @@
                   <span class="gdrop-tile-tag">Profiles</span>
                 </span>
               </a>
-              <a class="gdrop-tile" href="/pages/gallery.html#visit">
+              <!-- Directions rather than /pages/gallery.html#visit. That
+                   anchor was the gallery page's Visit strip, which is gone —
+                   the footer carries the same address, hours and enquiries on
+                   every page, so the page was keeping a second copy in step
+                   and had stopped doing so. This is what the tile was for. -->
+              <a class="gdrop-tile" href="https://maps.app.goo.gl/GdmtApHnAYBem1Cr8"
+                target="_blank" rel="noopener noreferrer">
                 <span class="gdrop-tile-media"><img src="/assets/images/gallery_tile3.png" alt="" loading="lazy"></span>
                 <span class="gdrop-tile-body">
                   <span class="gdrop-tile-name">Visit Us</span>

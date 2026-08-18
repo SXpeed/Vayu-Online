@@ -117,7 +117,7 @@
           </div>
         </a>
 
-        <a class="trio-item" href="/pages/gallery.html">
+        <a class="trio-item" href="/pages/curated-spaces.html">
           <div class="trio-img-box">
             <img src="/assets/images/cat_furniture.jpg" alt="Curated Spaces">
           </div>
