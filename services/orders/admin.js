@@ -35,8 +35,14 @@ const STATUS_MAIL = {
   cancelled: 'has been cancelled. If this is unexpected, please write to us',
 };
 
-/** Put a cancelled order's stock back, on the variant it came from. */
-async function restock(store, order, admin) {
+/**
+ * Put an order's stock back, on the variant it came from.
+ *
+ * `why` reaches the inventory ledger, and it matters that it is honest:
+ * cancelling and deleting both return the units, but only one of them leaves
+ * an order behind to explain the movement later.
+ */
+async function restock(store, order, admin, why = 'cancelled') {
   for (const l of order.items) {
     const product = await loadProduct(store, l.productId);
     if (!product) continue;
@@ -53,7 +59,7 @@ async function restock(store, order, admin) {
 
     await store.logInventory(
       product.id, product.name + (l.variant ? ` — ${l.variant}` : ''), l.qty,
-      `order ${order.number} cancelled`, admin.name,
+      `order ${order.number} ${why}`, admin.name,
     );
     if (wasOut) await fireStockAlerts(store, await loadProduct(store, product.id));
   }
@@ -71,19 +77,55 @@ export function orders(ctx) {
     },
 
     async update({ admin, body }, row) {
-      const status = String(body.status || '');
+      // Two edits share this route: moving the status on, and correcting
+      // where the parcel is going. Either may arrive alone — a typo in a
+      // postcode is not a reason to restate the status — so status is only
+      // required when it is the thing being changed.
+      const status = body.status === undefined ? row.status : String(body.status);
       if (!ORDER_STATUSES.includes(status)) return badRequest('Invalid status');
+
+      // Deliberately not editable: subtotal, discount, shipping, total,
+      // coupon, payment_method, payment_id. Those are what the customer was
+      // charged and what the processor recorded, and a panel that can quietly
+      // rewrite them is a panel whose figures cannot be trusted afterwards.
+      // A wrong amount is a refund, not an edit.
+      const DELIVERY = ['name', 'email', 'phone', 'address', 'city', 'pin'];
+      const details = {};
+      for (const key of DELIVERY) {
+        if (body[key] !== undefined) details[key] = String(body[key]).trim().slice(0, 300);
+      }
 
       const [order] = await withItems(store, [row], { timeline: true });
       if (status === 'cancelled' && row.status !== 'cancelled') await restock(store, order, admin);
 
       const previous = row.status;
       const stamp = now();
-      await store.batch([
-        store.stmt('UPDATE orders SET status = ? WHERE id = ?', status, row.id),
-        store.stmt('INSERT INTO order_timeline (order_id, t, status, note) VALUES (?, ?, ?, ?)',
-          row.id, stamp, status, body.note || `Marked ${status} by ${admin.name}`),
-      ]);
+      const writes = [];
+
+      if (Object.keys(details).length) {
+        const sets = Object.keys(details).map(k => `${k} = ?`).join(', ');
+        writes.push(store.stmt(
+          `UPDATE orders SET ${sets} WHERE id = ?`, ...Object.values(details), row.id,
+        ));
+        // On the order's own timeline, not only the activity log: whoever
+        // opens this order next needs to see that the address changed after
+        // it was placed, without going and reading a separate audit screen.
+        writes.push(store.stmt(
+          'INSERT INTO order_timeline (order_id, t, status, note) VALUES (?, ?, ?, ?)',
+          row.id, stamp, status,
+          `Details edited by ${admin.name}: ${Object.keys(details).join(', ')}`,
+        ));
+      }
+
+      if (status !== previous) {
+        writes.push(store.stmt('UPDATE orders SET status = ? WHERE id = ?', status, row.id));
+        writes.push(store.stmt(
+          'INSERT INTO order_timeline (order_id, t, status, note) VALUES (?, ?, ?, ?)',
+          row.id, stamp, status, body.note || `Marked ${status} by ${admin.name}`,
+        ));
+      }
+
+      if (writes.length) await store.batch(writes);
 
       if (status !== previous && STATUS_MAIL[status]) {
         await store.queueEmail(
@@ -93,10 +135,55 @@ export function orders(ctx) {
           'order.' + status,
         );
       }
-      await store.logActivity(admin.name, 'order.status', `Order ${row.number} → ${status}`);
+      if (status !== previous) {
+        await store.logActivity(admin.name, 'order.status', `Order ${row.number} → ${status}`);
+      }
+      if (Object.keys(details).length) {
+        await store.logActivity(
+          admin.name, 'order.edit',
+          `Order ${row.number} details edited (${Object.keys(details).join(', ')})`,
+        );
+      }
 
       const [fresh] = await withItems(store, [await store.row('orders', 'id', row.id)], { timeline: true });
       return json(200, { order: fresh });
+    },
+
+    /**
+     * Delete an order outright.
+     *
+     * Stock first. An order that is not already cancelled still has its units
+     * held against it, and deleting the row without returning them loses that
+     * stock silently — the shop would go on believing it had sold pieces it
+     * still has on the shelf.
+     *
+     * The children go explicitly rather than on ON DELETE CASCADE. The
+     * constraints do declare it, but foreign key enforcement is a per-
+     * connection pragma in SQLite, and leaving orphaned line items behind on
+     * a connection that has it off is not a failure that would announce
+     * itself.
+     *
+     * This is the one destructive action in the panel with no undo: the
+     * timeline, the line items and what the customer was charged all go with
+     * it. The typed confirmation lives in the UI (confirmDelete in lib/dom.js)
+     * rather than here, because an API that asks a caller to prove it means it
+     * is an API that can be scripted past.
+     */
+    async remove({ admin }, row) {
+      const [order] = await withItems(store, [row], { timeline: true });
+      if (row.status !== 'cancelled') await restock(store, order, admin, 'deleted');
+
+      await store.batch([
+        store.stmt('DELETE FROM order_items WHERE order_id = ?', row.id),
+        store.stmt('DELETE FROM order_timeline WHERE order_id = ?', row.id),
+        store.stmt('DELETE FROM orders WHERE id = ?', row.id),
+      ]);
+
+      await store.logActivity(
+        admin.name, 'order.delete',
+        `Deleted order ${row.number} (${order.items.length} line(s), ${row.status})`,
+      );
+      return ok();
     },
 
     actions: {

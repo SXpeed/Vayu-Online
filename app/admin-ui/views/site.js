@@ -3,7 +3,10 @@
  * store settings (including backups and the account password).
  */
 
-import { $, viewEl, esc, dateFmt, toast, guard, openModal, closeModal, modalChrome } from '../lib/dom.js';
+import {
+    $, viewEl, esc, dateFmt, toast, guard,
+    openModal, closeModal, modalChrome, confirmDelete,
+} from '../lib/dom.js';
 import { api, state, catTitle } from '../lib/api.js';
 import { pickImage } from '../lib/media.js';
 // ../shared/curated-spaces.js is shared/content/curated-spaces.js, re-served
@@ -859,8 +862,13 @@ export async function renderTeam() {
     rowsEl.addEventListener('click', async (e) => {
         const btn = e.target.closest('button[data-act=del]');
         if (!btn) return;
-        if (!confirm('Remove this member? Their sessions end immediately.')) return;
         const id = btn.closest('tr').dataset.id;
+        const member = members.find(m => m.id === id);
+        if (!await confirmDelete({
+            title: `Remove ${esc(member.email)}?`,
+            body: `<p>They are signed out immediately and lose access to the panel. If they sign in
+                   with Google again they will land back in the approval queue.</p>`,
+        })) return;
         if (await guard(() => api(`team/${id}`, 'DELETE'), 'Member removed')) renderTeam();
     });
 }

@@ -327,6 +327,33 @@ export const siteContent = z.object({
     }).partial().optional(),
 }).passthrough();
 
+/**
+ * Editing an order: the status, or where the parcel is going, or both.
+ *
+ * Every field optional because the two edits arrive separately — correcting
+ * a postcode should not oblige the panel to restate the status.
+ *
+ * Note what is ABSENT, and that this object does not passthrough: subtotal,
+ * discount, shipping, total, coupon and the payment ids are stripped here
+ * before the handler ever sees them. Those record what the customer was
+ * charged and what the processor confirmed. A panel that can quietly rewrite
+ * them is a panel whose figures cannot be relied on afterwards, and the
+ * handler whitelists the same six fields again on the other side of this.
+ */
+export const orderUpdate = z.object({
+    status: z.enum(['new', 'processing', 'shipped', 'delivered', 'cancelled']).optional(),
+    name: text(120).optional(),
+    // Not .email(): an admin fixing a bad address should not be refused by
+    // the panel for the shape of what is already stored. The handler trims
+    // and caps it, and nothing here is used as an identity.
+    email: text(254).optional(),
+    phone: text(40).optional(),
+    address: text(300).optional(),
+    city: text(120).optional(),
+    pin: text(20).optional(),
+    note: text(300).optional(),
+});
+
 export const teamMember = z.object({
     email: z.string().trim().email().max(254),
     name: text(120).optional(),

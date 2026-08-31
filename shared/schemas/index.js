@@ -71,6 +71,7 @@ const SECTION = {
     'POST /api/admin/content': admin.siteContent,
     'POST /api/admin/team': admin.teamMember,
     'PUT /api/admin/team': admin.teamMember,
+    'PUT /api/admin/orders': admin.orderUpdate,
     'PUT /api/admin/settings': admin.settings,
     'POST /api/admin/settings': admin.settings,
 };

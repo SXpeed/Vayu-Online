@@ -2,7 +2,10 @@
  * Vayu Admin — the things you publish: products, categories, press, events.
  */
 
-import { $, viewEl, esc, money, timeFmt, toast, guard, openModal, closeModal, modalChrome } from '../lib/dom.js';
+import {
+    $, viewEl, esc, money, timeFmt, toast, guard,
+    openModal, closeModal, modalChrome, confirmDelete,
+} from '../lib/dom.js';
 import { api, state, loadCategories, catTitle, slugToLabel } from '../lib/api.js';
 import { pickImage, pickTextFile } from '../lib/media.js';
 import { mountOptionsEditor } from './product-options.js';
@@ -59,7 +62,7 @@ function productRow(p, lowStockAt, selected) {
  * Turn the bulk-action dropdown into a request body, prompting for the
  * extra input each action needs. Returns null when the user backs out.
  */
-function bulkPayload(choice, ids) {
+async function bulkPayload(choice, ids) {
     if (choice.startsWith('status:')) return { ids, action: 'status', status: choice.split(':')[1] };
 
     if (choice === 'price-adjust') {
@@ -80,7 +83,11 @@ function bulkPayload(choice, ids) {
     if (choice === 'move-top' || choice === 'move-bottom') return { ids, action: choice };
 
     if (choice === 'delete') {
-        return confirm(`Delete ${ids.length} product(s)? This cannot be undone.`) ? { ids, action: 'delete' } : null;
+        const yes = await confirmDelete({
+            title: `Delete ${ids.length} product(s)?`,
+            body: `<p>Every selected piece is removed from the catalogue, along with its images, options and stock. <b>This cannot be undone.</b></p>`,
+        });
+        return yes ? { ids, action: 'delete' } : null;
     }
     return null;
 }
@@ -181,7 +188,7 @@ export async function renderProducts() {
     $('#bulk-go').addEventListener('click', async () => {
         const choice = $('#bulk-action').value;
         if (!choice || !selected.size) return;
-        const payload = bulkPayload(choice, [...selected]);
+        const payload = await bulkPayload(choice, [...selected]);
         if (!payload) return;
         try {
             const r = await api('products/bulk', 'POST', payload);
@@ -203,7 +210,10 @@ export async function renderProducts() {
             if (await guard(() => api(`products/${id}/duplicate`, 'POST', {}), 'Duplicated as draft')) renderProducts();
             return;
         }
-        if (!confirm(`Delete "${prod.name}"? This cannot be undone.`)) return;
+        if (!await confirmDelete({
+            title: `Delete ${esc(prod.name)}?`,
+            body: `<p>The product, its images, options and stock all go. Orders that already contain it keep their own copy of the line. <b>This cannot be undone.</b></p>`,
+        })) return;
         if (await guard(() => api(`products/${id}`, 'DELETE'), 'Product deleted')) renderProducts();
     });
 }
@@ -506,7 +516,10 @@ export async function renderCategories() {
         if (act === 'edit') return categoryEditor(slug);
         if (act === 'up' || act === 'down') return moveCategory(ordered, slug, act === 'up' ? -1 : 1);
 
-        if (!confirm(`Delete category "${categories[slug].title}"?`)) return;
+        if (!await confirmDelete({
+            title: `Delete the ${esc(categories[slug].title)} category?`,
+            body: `<p>Products in it are not deleted, but they stop appearing under this heading and any link to it will 404.</p>`,
+        })) return;
         if (await guard(() => api(`categories/${slug}`, 'DELETE'), 'Category deleted')) {
             state.categories = null;
             renderCategories();
@@ -629,7 +642,10 @@ export async function renderPress() {
         const entry = press.find(x => x.id === btn.closest('[data-id]').dataset.id);
 
         if (btn.dataset.act === 'edit') return pressEditor(entry);
-        if (!confirm(`Remove the ${entry.source} piece?`)) return;
+        if (!await confirmDelete({
+            title: `Remove the ${esc(entry.source)} piece?`,
+            body: `<p>It disappears from the press page. You can list it again, but the write-up here is not kept.</p>`,
+        })) return;
         if (await guard(() => api(`press/${entry.id}`, 'DELETE'), 'Entry removed')) renderPress();
     });
 }
@@ -798,7 +814,10 @@ export async function renderEvents() {
         const event = events.find(x => x.id === btn.closest('[data-id]').dataset.id);
 
         if (btn.dataset.act === 'edit') return eventEditor(event, event.venue);
-        if (!confirm(`Delete "${event.title}"? Its page goes with it.`)) return;
+        if (!await confirmDelete({
+            title: `Delete ${esc(event.title)}?`,
+            body: `<p>The exhibition page goes with it, along with its plates and the pieces curated into it. <b>This cannot be undone.</b></p>`,
+        })) return;
         if (await guard(() => api(`events/${event.id}`, 'DELETE'), 'Show deleted')) renderEvents();
     });
 }

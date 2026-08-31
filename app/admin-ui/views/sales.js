@@ -3,7 +3,10 @@
  * coupons.
  */
 
-import { $, viewEl, esc, money, dateFmt, timeFmt, toast, guard, openModal, closeModal, modalChrome } from '../lib/dom.js';
+import {
+    $, viewEl, esc, money, dateFmt, timeFmt, toast, guard,
+    openModal, closeModal, modalChrome, confirmDelete,
+} from '../lib/dom.js';
 import { api } from '../lib/api.js';
 
 /** Toggle the expandable detail row beneath a clicked row. */
@@ -48,7 +51,66 @@ function orderDetail(o) {
             <div style="font-size:13px;color:var(--body)"><b>Ship to:</b> ${shipTo}</div>
             <div class="timeline">${o.timeline.map(t =>
                 `<div><b>${esc(t.status)}</b> · ${timeFmt(t.t)} — ${esc(t.note)}</div>`).join('')}</div>
+            <div class="modal-actions" style="margin-top:14px">
+                <button class="btn small" data-act="edit-order" data-id="${o.id}">Edit details</button>
+                <button class="btn small danger" data-act="del-order" data-id="${o.id}">Delete order</button>
+            </div>
         </td></tr>`;
+}
+
+/**
+ * Correct where an order is going.
+ *
+ * Only the delivery details. The money and the payment ids are not on this
+ * form and are stripped server-side too: they record what the customer was
+ * charged and what the processor confirmed, and a wrong amount is a refund
+ * rather than an edit.
+ */
+function editOrderModal(order, onSaved) {
+    const c = order.customer;
+    const field = (id, label, value, attrs = '') => `
+        <div class="field"><label>${label}</label>
+            <input id="eo-${id}" value="${esc(value || '')}" ${attrs}></div>`;
+
+    const modal = openModal(`
+        <h3>Edit order ${esc(order.number)}</h3>
+        <div class="modal-body">
+            <div class="form-grid">
+                ${field('name', 'Name', c.name)}
+                ${field('email', 'Email', c.email, 'type="email"')}
+                ${field('phone', 'Phone', c.phone)}
+                ${field('city', 'City', c.city)}
+                <div class="field full">
+                    <label>Address</label>
+                    <input id="eo-address" value="${esc(c.address || '')}"></div>
+                ${field('pin', 'PIN', c.pin)}
+            </div>
+            <div class="help">The change is written to this order's own timeline, so whoever
+                opens it next can see the address moved after it was placed.</div>
+        </div>
+        <div class="modal-actions">
+            <div class="form-error" id="eo-err"></div>
+            <button class="btn" id="eo-cancel">Cancel</button>
+            <button class="btn primary" id="eo-save">Save</button>
+        </div>`);
+
+    const err = modalChrome(modal, '#eo-cancel', '#eo-err');
+
+    $('#eo-save', modal).addEventListener('click', async () => {
+        err.textContent = '';
+        const patch = {};
+        for (const key of ['name', 'email', 'phone', 'address', 'city', 'pin']) {
+            patch[key] = $(`#eo-${key}`, modal).value.trim();
+        }
+        try {
+            const { order: fresh } = await api(`orders/${order.id}`, 'PUT', patch);
+            closeModal();
+            toast('Order updated');
+            onSaved(fresh);
+        } catch (e) {
+            err.textContent = e.message;
+        }
+    });
 }
 
 /**
@@ -223,6 +285,45 @@ export async function renderOrders() {
                 // show what Razorpay just said, without a full reload.
                 const i = orders.findIndex(o => o.id === verify.dataset.id);
                 if (i > -1) orders[i] = result.order;
+                draw();
+            }
+            return;
+        }
+
+        // Edit and delete live inside the expanded panel, so both stop the
+        // click reaching the row toggle that would collapse it underneath.
+        const edit = e.target.closest('[data-act=edit-order]');
+        if (edit) {
+            e.stopPropagation();
+            const order = orders.find(o => o.id === edit.dataset.id);
+            editOrderModal(order, (fresh) => {
+                const i = orders.findIndex(o => o.id === fresh.id);
+                if (i > -1) orders[i] = fresh;
+                draw();
+            });
+            return;
+        }
+
+        const del = e.target.closest('[data-act=del-order]');
+        if (del) {
+            e.stopPropagation();
+            const order = orders.find(o => o.id === del.dataset.id);
+            const willRestock = order.status !== 'cancelled';
+            const confirmed = await confirmDelete({
+                title: `Delete order ${esc(order.number)}?`,
+                body: `
+                    <p>This removes the order, its ${order.items.length} line(s) and its
+                       timeline. <b>It cannot be undone</b>, and the record of what
+                       ${esc(order.customer.name || 'this customer')} was charged goes with it.</p>
+                    <p style="color:var(--muted);font-size:13px">${willRestock
+                        ? 'The stock it holds will be returned to the shelf.'
+                        : 'This order is already cancelled, so its stock is already back.'}</p>`,
+            });
+            if (!confirmed) return;
+
+            if (await guard(() => api(`orders/${order.id}`, 'DELETE'), 'Order deleted')) {
+                const i = orders.findIndex(o => o.id === order.id);
+                if (i > -1) orders.splice(i, 1);
                 draw();
             }
             return;
@@ -410,7 +511,10 @@ export async function renderCoupons() {
         const coupon = coupons.find(c => c.id === btn.closest('tr').dataset.id);
 
         if (btn.dataset.act === 'edit') return couponEditor(coupon);
-        if (!confirm(`Delete coupon ${coupon.code}?`)) return;
+        if (!await confirmDelete({
+            title: `Delete coupon ${esc(coupon.code)}?`,
+            body: `<p>Anyone still holding the code will find it no longer works. Orders that already used it keep their discount.</p>`,
+        })) return;
         if (await guard(() => api(`coupons/${coupon.id}`, 'DELETE'), 'Coupon deleted')) renderCoupons();
     });
 }

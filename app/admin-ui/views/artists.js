@@ -14,7 +14,7 @@
  * animated under the cursor and led nowhere.
  */
 
-import { $, viewEl, esc, toast, guard, openModal, closeModal, modalChrome } from '../lib/dom.js';
+import { $, viewEl, esc, toast, guard, openModal, closeModal, modalChrome, confirmDelete } from '../lib/dom.js';
 import { api } from '../lib/api.js';
 import { pickImage } from '../lib/media.js';
 // ../shared/artist-page.js is shared/content/artist-page.js, re-served
@@ -181,7 +181,10 @@ export async function renderArtists() {
         if (act === 'edit') return artistEditor(artist);
         if (act === 'up' || act === 'down') return moveArtist(ordered, id, act === 'up' ? -1 : 1);
 
-        if (!confirm(`Remove "${artist.name}"? Their page goes with them.`)) return;
+        if (!await confirmDelete({
+            title: `Remove ${esc(artist.name)}?`,
+            body: `<p>Their profile page goes with them, and any link to it will 404. <b>This cannot be undone.</b></p>`,
+        })) return;
         if (await guard(() => api(`artists/${id}`, 'DELETE'), 'Artist removed')) renderArtists();
     });
 }

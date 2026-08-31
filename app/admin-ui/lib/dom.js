@@ -71,6 +71,77 @@ export function closeModal() {
     $('#modal-root').innerHTML = '';
 }
 
+/**
+ * Confirm something irreversible by making the reader type DELETE.
+ *
+ * window.confirm() is one keystroke from "yes" and reads identically whether
+ * it is about to hide a row or destroy an order and its line items. The
+ * typing is the point: it cannot be dismissed by reflex, and copying the word
+ * out of the prompt is deliberate in a way that pressing Enter is not.
+ *
+ * Resolves true only if DELETE was typed and Delete pressed; false on cancel,
+ * on the veil, and on Escape. Never throws, so callers can `await` it in an
+ * event handler without a try.
+ *
+ *   if (!await confirmDelete({ title: 'Delete order', body: '…' })) return;
+ *
+ * @param {{title: string, body: string, verb?: string}} opts
+ *   body is INSERTED AS MARKUP, so callers escape anything from the database
+ *   with esc() before passing it — the same rule every other template here
+ *   follows.
+ */
+export function confirmDelete({ title, body, verb = 'Delete' }) {
+    return new Promise((resolve) => {
+        const modal = openModal(`
+            <h3>${title}</h3>
+            <div class="modal-body">
+                ${body}
+                <div class="field" style="margin-top:14px">
+                    <label>Type <b>DELETE</b> to confirm</label>
+                    <input id="cd-word" autocomplete="off" spellcheck="false" placeholder="DELETE">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn" id="cd-cancel">Cancel</button>
+                <button class="btn danger" id="cd-go" disabled>${verb}</button>
+            </div>`, true);
+
+        const word = $('#cd-word', modal);
+        const go = $('#cd-go', modal);
+        let settled = false;
+
+        // One resolve, whichever way this ends. Without the flag the veil
+        // handler in openModal() would resolve again after a confirm.
+        const finish = (value) => {
+            if (settled) return;
+            settled = true;
+            document.removeEventListener('keydown', onKey);
+            closeModal();
+            resolve(value);
+        };
+
+        // Exact match, not a case-insensitive compare: the whole value of
+        // this is that it cannot be satisfied by accident.
+        word.addEventListener('input', () => { go.disabled = word.value !== 'DELETE'; });
+        word.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !go.disabled) finish(true);
+        });
+        go.addEventListener('click', () => finish(true));
+        $('#cd-cancel', modal).addEventListener('click', () => finish(false));
+
+        const onKey = (e) => { if (e.key === 'Escape') finish(false); };
+        document.addEventListener('keydown', onKey);
+
+        // Clicking the veil closes the modal without going through finish(),
+        // so watch for the node leaving the document and settle as a cancel.
+        new MutationObserver((_, obs) => {
+            if (!modal.isConnected) { obs.disconnect(); finish(false); }
+        }).observe($('#modal-root'), { childList: true });
+
+        word.focus();
+    });
+}
+
 /** Wire a modal's Cancel button and return its error slot. */
 export function modalChrome(modal, cancelSel, errSel) {
     $(cancelSel, modal).addEventListener('click', closeModal);
