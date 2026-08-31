@@ -61,7 +61,7 @@ function d1(sql) {
     try {
         const out = execFileSync(
             process.execPath,
-            [wrangler, 'd1', 'execute', 'vayu-db', remote ? '--remote' : '--local', '--file', sqlPath],
+            [wrangler, 'd1', 'execute', 'vayuindia-db', remote ? '--remote' : '--local', '--file', sqlPath],
             { encoding: 'utf8' },
         );
         const json = out.slice(out.indexOf('['));

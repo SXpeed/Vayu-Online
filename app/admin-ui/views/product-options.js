@@ -47,7 +47,7 @@ const PRESETS = {
  * @param product   the product being edited (or the blank template)
  * @returns {{ read: () => ({ options, variants }) }}
  */
-export function mountOptionsEditor(host, product) {
+export function mountOptionsEditor(host, product, { onChange } = {}) {
     const options = structuredClone(product.options || []);
 
     /**
@@ -224,7 +224,26 @@ export function mountOptionsEditor(host, product) {
         .map(o => ({ ...o, values: o.values.filter(v => v.label.trim()) }))
         .filter(o => o.values.length);
 
+    /**
+     * The sellable total this editor currently describes.
+     *
+     * The product's own Stock field is ignored by the shop as soon as a
+     * variant exists — totalStock() in services/products/catalogue.js sums
+     * the variant rows instead — so the editor beside it has to be able to
+     * say what the real number is.
+     */
+    const sellableStock = () => variants
+        .filter(v => String(v.label || '').trim())
+        .reduce((n, v) => n + (Math.max(0, Number(v.stock) || 0)), 0);
+
+    /** Tell the host form that the option/variant picture changed. */
+    const announce = () => onChange?.({
+        hasVariants: variants.some(v => String(v.label || '').trim()),
+        stock: sellableStock(),
+    });
+
     function drawCombos() {
+        announce();
         const live = usableOptions();
         if (!live.length) {
             // No options: fall back to the flat list this editor replaced, so
@@ -337,6 +356,9 @@ export function mountOptionsEditor(host, product) {
          * from the DOM, so a half-typed row that was never blurred is still
          * included — and empties are dropped here, not on the server.
          */
+        /** The sellable total, for a host that shows it. */
+        stock: sellableStock,
+
         read() {
             const live = usableOptions();
             return {

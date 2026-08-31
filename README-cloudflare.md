@@ -5,45 +5,141 @@ The site runs as a single Worker with three bindings: **D1** for the data,
 static site.
 
 ```
-public/          the site itself — the only directory served publicly
-src/             the Worker: routing, D1 access, every API route
+app/             the SvelteKit app: routes/, lib/ (storefront + server), admin-ui/
+public/          static assets served off the edge (images, css, fonts)
 migrations/      the D1 schema
-scripts/         the db.json → D1 importer
-admin/data/      the old JSON store, kept as the import source
-admin/server/    the old Node server, superseded by src/ (see "Legacy")
+scripts/         build, migrate, smoke/verify tests, admin utilities
 ```
 
-## First deploy
+## Going live
 
-You need a Cloudflare account and `npx wrangler login` once.
+Two things happen once, by hand, and then every push to `main` deploys itself.
+
+### Once: the account
 
 ```bash
 npm install
+npx wrangler login
+```
 
-# 1. Create the database, then paste the printed id into wrangler.jsonc
-#    (d1_databases[0].database_id, replacing REPLACE_WITH_DATABASE_ID).
-npx wrangler d1 create vayu-db
+**1. Name the resources.** The configs must name the D1 database and R2
+bucket that actually exist on the account. Check what you have:
 
-# 2. Create the bucket for uploads and backups.
-npx wrangler r2 bucket create vayuindia
+```bash
+npx wrangler d1 list
+npx wrangler r2 bucket list
+```
 
-# 3. Build the schema.
+Create them if they are missing, or edit the configs to match what is there.
+`database_name` and `bucket_name` appear in more than one config and every
+copy has to agree:
+
+```bash
+npx wrangler d1 create vayuindia-db
+npx wrangler r2 bucket create vayuindia-storage
+```
+
+| file | what to set |
+| --- | --- |
+| `wrangler.jsonc` | `database_id`, `database_name`, `bucket_name` |
+| `wrangler.api.jsonc` | `database_id`, `database_name`, `bucket_name` |
+| `wrangler.admin.jsonc` | `database_id`, `database_name` |
+
+`database_id` ships as `REPLACE_WITH_YOUR_DATABASE_ID` on purpose — a real id
+in the repo is an invitation to deploy someone else's data.
+
+**2. Build the schema.** Nothing works against an empty database, and the
+deploy refuses to run while the remote schema is behind — that guard is
+`scripts/check-migrations.mjs` and it is deliberate.
+
+```bash
 npm run db:migrate:remote
+```
 
-# 4. Move the existing data in. Safe to re-run; passwords come across
-#    untouched, so every admin and customer sign-in keeps working.
-npm run db:import:remote
+**3. Set the secrets, per Worker.** They are not shared between Workers, and
+`.dev.vars` is local only — `wrangler deploy` does not upload it. Copy
+`.dev.vars.example` for the full list and which Worker needs which.
 
-# 5. Ship it.
+```bash
+npx wrangler secret put BETTER_AUTH_SECRET
+npx wrangler secret put INTERNAL_SECRET
+npx wrangler secret put GOOGLE_CLIENT_ID          # optional
+npx wrangler secret put GOOGLE_CLIENT_SECRET      # optional
+
+npx wrangler secret put BETTER_AUTH_SECRET -c wrangler.api.jsonc
+npx wrangler secret put INTERNAL_SECRET    -c wrangler.api.jsonc
+
+npx wrangler secret put RAZORPAY_KEY_SECRET     -c wrangler.payments.jsonc
+npx wrangler secret put RAZORPAY_WEBHOOK_SECRET -c wrangler.payments.jsonc
+```
+
+`INTERNAL_SECRET` must be byte-identical everywhere it is set. A mismatch is
+not a loud failure — internal calls simply start being rejected.
+
+**4. Make an admin.** The database starts with no accounts, so `/admin` is
+unreachable until one exists.
+
+```bash
+node scripts/create-admin.mjs --url=https://<worker>.<subdomain>.workers.dev
+```
+
+**5. Attach the domain.** Uncomment the `routes` block in `wrangler.jsonc`
+and use `custom_domain: true`, not a bare pattern — a pattern without it
+needs a DNS record you have not made, and the deploy fails with a routing
+error that does not say so.
+
+### Once: GitHub
+
+Add two repository secrets under **Settings → Secrets and variables →
+Actions**:
+
+| secret | where it comes from |
+| --- | --- |
+| `CLOUDFLARE_API_TOKEN` | dash.cloudflare.com/profile/api-tokens — "Edit Cloudflare Workers" template, plus D1:Edit and R2:Edit |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare dashboard → Workers → Account ID |
+
+The OAuth token `wrangler login` writes locally is **not** usable in CI; the
+workflow needs an API token created explicitly.
+
+The application's own secrets are not set in CI. They live on the Workers
+and survive every deploy — putting them in GitHub would mean a second copy
+to keep in step.
+
+### After that: every push
+
+`.github/workflows/deploy.yml` runs on push to `main`, and from the Actions
+tab via *Run workflow*. It checks migrations, builds, then deploys in
+dependency order — **payments → api → admin → storefront** — because the
+Workers reach each other through service bindings and a binding to a Worker
+that does not exist yet fails the deploy. The storefront goes last, so a
+failure earlier leaves the live site on its previous build.
+
+To deploy by hand instead:
+
+```bash
+npm run deploy:payments
+npm run deploy:api
+npm run deploy:admin
 npm run deploy
 ```
+
+### Check it
+
+```bash
+curl -sSI https://vayuindia.com | head -1
+curl -sS  https://vayuindia.com/api/catalogue | head -c 200
+```
+
+The second call is the one that matters. It is the request that reaches D1,
+and it is the failure this project has actually shipped: the prerendered
+shell keeps serving while every `/api/catalogue` read 500s, so the shop looks
+fine, falls back to the static catalogue and sells nothing.
 
 ## Working locally
 
 ```bash
 npm run db:migrate     # schema into the local D1
-npm run db:import      # data into the local D1
-npm run dev            # http://localhost:8788
+npm run dev            # http://127.0.0.1:8787 (or --port 8791)
 ```
 
 `wrangler dev` runs the real Worker runtime against a local SQLite copy of
@@ -51,24 +147,19 @@ D1 and a local R2, so what you see is what deploys.
 
 ## The front end
 
-The storefront is static HTML served off the edge, but the HTML is built,
-not hand-maintained. `npm run build` does two things and both `npm run dev`
-and `npm run deploy` run it first:
+The storefront is a SvelteKit app (under `app/`) prerendered to static HTML and
+served off the edge; the admin panel is a small vanilla-JS UI bundled into the
+Worker from `app/admin-ui/` and gated behind a session (see
+`app/routes/admin/[...path]/+server.js`). `npm run build` runs `vite build` —
+the SvelteKit build — which prerenders the pages and emits the Cloudflare Worker
+bundle at `.svelte-kit/cloudflare/_worker.js`. Both `npm run dev` and
+`npm run deploy` run it first.
 
-1. **Bundles `src/client` into `public/assets/js`** with esbuild.
-   `app.js` is the one script every page loads. Everything else — the page
-   modules in `src/client/pages`, plus search, Lenis, analytics and the
-   offline catalogue — is a separate self-contained bundle fetched on
-   demand from `/assets/js/pages/` and `/assets/js/lazy/`.
-2. **Rewrites the pages in `public/`**: splices `src/partials/header.html`
-   and `footer.html` into every document between `<!-- @vayu:header -->`
-   markers, stamps `<body data-page="…">`, points the stylesheet at a fresh
-   content hash, and splices the generated `@font-face` rules into
-   `public/css/styles.css`.
-
-The generated JS is gitignored; the rewritten HTML is committed, so a clone
-serves correctly without a build. Edit `src/partials/*` — never the copies
-inside a page — and re-run the build.
+Routes live in `app/routes/` (one `+page.svelte` per storefront page under
+`pages/*.html/`, plus the `api/[...path]` and `admin/[...path]` endpoints);
+shared storefront logic in `app/lib/`; server-only handlers in `app/lib/server/`;
+request schemas in `app/lib/schemas/`. Edit those — the build output under
+`.svelte-kit/` is regenerated on every build.
 
 ### Why it is shaped this way
 
@@ -179,7 +270,7 @@ Two properties worth keeping in mind if you extend it:
 Add a new numbered file in `migrations/` (never edit an applied one):
 
 ```bash
-npx wrangler d1 migrations create vayu-db add-something
+npx wrangler d1 migrations create vayuindia-db add-something
 npm run db:migrate            # local
 npm run db:migrate:remote     # production
 ```
@@ -190,9 +281,9 @@ D1 keeps 30 days of point-in-time recovery (Time Travel) on paid plans,
 which is the real safety net:
 
 ```bash
-npx wrangler d1 time-travel info vayu-db
-npx wrangler d1 time-travel restore vayu-db --timestamp <iso>
-npx wrangler d1 export vayu-db --remote --output vayu-backup.sql
+npx wrangler d1 time-travel info vayuindia-db
+npx wrangler d1 time-travel restore vayuindia-db --timestamp <iso>
+npx wrangler d1 export vayuindia-db --remote --output vayu-backup.sql
 ```
 
 The panel's **Back up now** also writes a full JSON dump to R2 under
@@ -213,11 +304,14 @@ review is needed).
 Add these **Authorised redirect URIs** — they must match to the character:
 
 ```
-https://vayu-site.vayuxdesign.workers.dev/api/account/google/callback
-http://localhost:8788/api/account/google/callback
+https://<your-worker>.<your-subdomain>.workers.dev/api/account/google/callback
+http://127.0.0.1:8791/api/account/google/callback
 ```
 
-Add your custom domain's callback too, the day you point one at the Worker.
+The first is printed by `npm run deploy`. Add your custom domain's callback
+too, the day you point one at the Worker — and note the local one must match
+the port you actually browse and the PUBLIC_ORIGIN in `.dev.vars`, since that
+value is what Better Auth checks the callback against.
 
 **2. Give the Worker the credentials.** The id is public, the secret is not:
 
@@ -271,24 +365,161 @@ and read `env.RAZORPAY_KEY_SECRET` in `src/checkout.js` instead of
 
 ## Rate limiting
 
-`src/sessions.js` throttles failed sign-ins per IP, but a Worker runs in
+`app/lib/server/sessions.js` throttles failed sign-ins per IP, but a Worker runs in
 many isolates at once, so that counter is per-isolate and only slows an
 attacker down. For a hard cap, add a WAF rate-limiting rule on
 `/api/admin/login` and `/api/account/login` in the dashboard.
 
+## Security headers
+
+`_headers` at the project root sets them for everything Workers Assets
+serves; the adapter appends its own caching block to it at build time. It
+must live at the root — adapter-cloudflare throws if it finds one in
+`public/`.
+
+What is set: `X-Frame-Options: DENY` and `frame-ancestors 'none'`
+(clickjacking), `X-Content-Type-Options: nosniff`, `Referrer-Policy`,
+`Strict-Transport-Security` (a year, subdomains, no `preload`),
+`Permissions-Policy` and `Cross-Origin-Opener-Policy:
+same-origin-allow-popups`. Every one was chosen because it cannot break a
+page that already works.
+
+**The one deliberately left off is a full Content-Security-Policy** naming
+`script-src`/`style-src`/`img-src`/`connect-src`. It is the biggest remaining
+hardening step and also the one that breaks a live shop if it is guessed at:
+Razorpay's checkout, Google Fonts and any analytics tag each need naming, and
+a missed source fails as a blank page at the moment somebody is paying. Do it
+properly when there is time to:
+
+1. Add `Content-Security-Policy-Report-Only` with the intended policy.
+2. Watch real traffic for violations for a week.
+3. Promote it to the enforcing header once the report is quiet.
+
+Uploaded files are a separate case and are already handled in code:
+`services/media/uploads.js` serves every `/uploads/*` response with
+`default-src 'none'; sandbox` and `nosniff`, because the panel accepts SVG
+and an SVG served from the shop's own origin is a script unless something
+stops it.
+
+## Zero Trust: Cloudflare Access in front of the panel
+
+Optional, off by default, and worth turning on. Without it the admin panel is
+a login form on the open internet: the only thing between a stranger and the
+shop is one password and the soft throttle above. With it, an unauthenticated
+visitor never reaches the login form at all — Access challenges them at the
+edge, and the Worker refuses anything that did not come through.
+
+The code half is done and lives in `services/auth/access.js`. It runs on both
+mounts of the panel (`admin.vayuindia.com` and `vayuindia.com/admin`) and
+verifies the JWT itself rather than trusting that Access ran — which is what
+stops a Worker's own `.workers.dev` hostname being a way around the policy.
+
+The dashboard half cannot be done from this repository:
+
+1. **Zero Trust → Access → Applications → Add an application → Self-hosted.**
+   Give it both hostnames the panel answers on:
+
+   ```
+   admin.vayuindia.com
+   vayuindia.com/admin
+   ```
+
+2. **Add a policy.** Action *Allow*, and a rule that names who gets in —
+   `Emails` with the shop's admins listed is the simplest, and *Emails ending
+   in* `@viveksahnidesign.com` the one that survives staff changes.
+
+3. **Pick a login method.** One-time PIN needs no setup and emails a code.
+   Google is the better experience if the team already has Workspace, and is
+   configured under *Settings → Authentication*.
+
+4. **Copy the Application Audience (AUD) tag** from the application's
+   Overview, and note your team name from *Settings → Custom Pages* (the
+   subdomain in `https://<team>.cloudflareaccess.com`).
+
+5. **Set both values in `wrangler.jsonc` and `wrangler.admin.jsonc`**, where
+   each config already has the block commented out:
+
+   ```jsonc
+   "vars": {
+     "ACCESS_TEAM_DOMAIN": "your-team",
+     "ACCESS_AUD": "5c0e3f...64 hex characters"
+   }
+   ```
+
+   Neither is a secret — the team name is in every redirect Access issues,
+   and the AUD tag identifies an application rather than authorising
+   anything — so they belong in the config where a diff shows them, not in
+   `wrangler secret put`.
+
+6. **Deploy, then check it from a private window.** You should be bounced to
+   the Access login screen before the panel's own login form appears.
+
+**Set both values or neither.** Exactly one is treated as a
+misconfiguration and every admin request answers 503 on purpose: a
+half-configured Zero Trust gate that quietly waves everyone through is the
+failure nobody notices. Locally, both are unset and the gate is off, which is
+what `wrangler dev` wants — there is no Access in front of localhost.
+
+The password login stays either way. Access answers *may this person reach
+the admin panel*; the session answers *which admin are they, and what may
+they do*. Two questions, and losing either gate should not be enough on its
+own.
+
+Free for up to 50 users.
+
+## Images: transforming the uploads
+
+Every picture that ships with the site is converted to AVIF and measured at
+build time by `scripts/images.mjs`. That cannot touch a picture an admin
+uploads months after the build — which, on a product page, is the photograph
+the page exists for. Those were served exactly as uploaded: no AVIF, no
+resizing, no width or height on the `<img>`.
+
+The `IMAGES` binding closes that gap. `services/media/uploads.js` resizes and
+re-encodes on the way out of R2, negotiating AVIF or WebP from the browser's
+`Accept` header, and `services/users/admin.js` measures each upload as it
+arrives so the markup can state its size. The bytes stay in R2 — nothing is
+migrated into Images' own storage, so every `/uploads/…` URL already written
+into a product row still means what it meant.
+
+Two things to switch on:
+
+1. The binding, already in `wrangler.jsonc` and `wrangler.api.jsonc`:
+
+   ```jsonc
+   "images": { "binding": "IMAGES" }
+   ```
+
+2. **Images → Transformations** in the dashboard, enabled for the zone. The
+   binding alone is not enough.
+
+Then a request like
+
+```
+/uploads/images/chair_1724692000000_1600x1067.webp?w=640
+```
+
+comes back as a 640px AVIF to a browser that accepts one, cached at the edge
+and marked immutable.
+
+Billing is per unique transformation, which is why `shared/content/variants.js`
+holds an allow-list of nine widths rather than accepting any integer — `?w=`
+open to the integers is an invitation to pay for four thousand encodings of
+the same photograph.
+
+**Nothing here is required.** Remove the binding, or leave transformations
+off, and every request falls back to the original bytes. The pictures just
+weigh more.
+
+**Stream is not used and is not wanted.** There is no video anywhere on this
+site, so the other half of that dashboard card would be cost for nothing.
+
 ## Legacy
 
-`server.cjs`, `server/` and `admin/server/` are the original Node server
-and its JSON store. Nothing on Cloudflare uses them. They still run —
-`npm run legacy`, serving `public/` on port 3000 against
-`admin/data/db.json` — which is useful only for comparing behaviour during
-the migration. Once you are happy with the deployment, all three can be
-deleted along with `admin/data/`.
-
-(They are CommonJS while `src/` is ESM, which is why `server.js` became
-`server.cjs` and why `server/` and `admin/server/` each carry a one-line
-`package.json` marking them `"type": "commonjs"`.)
-
-**They do not share data with the deployed site.** After the first
-`db:import:remote`, D1 is the database of record; edits made through the
-legacy server go into db.json and are not seen by Cloudflare.
+The old Node server (`server.cjs`, `server/`, `admin/server/`) and the
+pre-SvelteKit Worker (`src/worker.js`, `src/partials/`) have been removed: the
+SvelteKit app under `app/` (routes + `app/lib/server`) is the single
+implementation now. The original JSON document store (`admin/data/db.json`) and
+its one-time importer (`scripts/import-db.mjs`) have been removed too — D1 is
+the database of record, and a fresh account starts with an empty catalogue that
+you populate through the admin panel.

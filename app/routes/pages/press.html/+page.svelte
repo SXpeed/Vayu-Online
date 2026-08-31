@@ -1,4 +1,5 @@
 <script>
+  import Seo from '#lib/components/Seo.svelte';
   // Vayu — /pages/press.html, ported from public/pages/press.html.
   import { onMount } from 'svelte';
 
@@ -12,9 +13,11 @@
   });
 </script>
 
-<svelte:head>
-  <title>Press — Vayu</title>
-</svelte:head>
+<Seo
+  title="Press"
+  description="What has been written about Vayu — the shop, the objects and the people who make them. For images, interviews or a visit, get in touch."
+  path="/pages/press.html"
+/>
 
 {@html pageCss}
 
@@ -42,7 +45,7 @@
       make them — in their own words.
     </p>
 
-    <!-- featured piece, filled from js/journal-data.js -->
+    <!-- featured piece, filled from data/press-data.js -->
     <div id="prFeature"></div>
 
     <section aria-labelledby="pr-more-title">

@@ -3,7 +3,6 @@
     "allow": [
       "Bash(grep -n \"^function \\\\|^async function \\\\|^const \\\\|^let \\\\|^/\\\\* =\\\\+\\\\|^/\\\\* -\\\\+\" admin/ui/admin.js)",
       "Bash(npx wrangler *)",
-      "Bash(node scripts/import-db.mjs --local)",
       "Read(//tmp/**)",
       "Bash(curl -s -o /dev/null -w '%{http_code} %{content_type} %{size_download}\\\\n' http://localhost:8788/api/catalogue)",
       "Bash(pkill -f \"wrangler dev\")",

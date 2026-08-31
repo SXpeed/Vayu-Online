@@ -6,10 +6,18 @@
  * so the MENU panel shows them side by side, each with its current event
  * and the pieces gathered for it.
  *
- * This is the only place an event is written down. Adding one is an entry
- * in `events` below — the panel grows a card, no markup changes. Events
- * are listed newest first; the first one in a venue is the one that gets
- * the "Now on" mark.
+ * This is no longer where an event is written down — the programme lives in
+ * the database and is edited under What's On in the admin panel. What is
+ * left here is the fallback the site paints with before /api/events answers,
+ * and if it never does. The two shows below are the two the site shipped
+ * with; their ids match the rows migration 0016 seeded, so the hrefs point
+ * at the same pages either way. Events are listed newest first; the first
+ * one in a venue is the one that gets the "Now on" mark.
+ *
+ * `current` is written on each of them rather than inferred from that
+ * position, because the header now labels a show from the flag: the rows
+ * migration 0016 seeded carry it, and a fallback that left it off would
+ * have the prerendered menu calling its own current show a past one.
  *
  * `curated` is a list of real products, named rather than indexed. The
  * catalogue addresses a product as [cat, idx] — its position in a category
@@ -45,8 +53,9 @@ export const venues = [
                 dates: 'From 21 May 2026',
                 note: 'A season of lighter cloth — linen, cotton and khadi, cut for the heat.',
                 image: '/assets/images/summer_cut.png',
-                href: '/pages/design-for-living.html',
+                href: '/pages/event.html?id=summer-cut',
                 cta: 'See the season',
+                current: true,
                 curated: [
                     { cat: 'fashion', name: 'Sanganer Silk Stole' },
                     { cat: 'fashion', name: 'Grey Patterned Linen Shirt' },
@@ -66,8 +75,9 @@ export const venues = [
                 dates: 'On view till 23 August 2026',
                 note: 'Sarees from the collection of Malvika Singh, shown across three rooms.',
                 image: '/assets/images/gallery_hero.jpg',
-                href: '/pages/gallery.html#exhibition',
+                href: '/pages/event.html?id=personal-heirlooms',
                 cta: 'Enter the exhibition',
+                current: true,
                 curated: [
                     { cat: 'materials', name: 'Block-Print Textile Panel' },
                     { cat: 'fashion', name: 'Handwoven Wool Shawl' },
@@ -101,6 +111,27 @@ export function curatedProduct({ cat, name }) {
             : `/pages/product.html?cat=${cat}&idx=${idx}`
     };
 }
+
+/**
+ * The programme to render: the admin panel's, once it has arrived, and the
+ * two shows written below until then.
+ *
+ * Callers must read this rather than importing `venues` directly — the
+ * static array is the fallback, not the source. It stays in the bundle
+ * because a prerendered page paints before any fetch resolves, and a venue
+ * page with no show on it is worse than one showing last week's.
+ */
+export const allVenues = () => site.venues ?? venues;
+
+/** One venue by id, from whichever list is live. */
+export const venueById = (id) => allVenues().find(v => v.id === id) || null;
+
+/** Every show at every house, newest first within each. */
+export const allEvents = () => allVenues().flatMap(v =>
+    eventsOf(v).map(ev => ({ ...ev, venueId: v.id, venueName: v.name, venueHref: v.href })));
+
+/** One show by its slug, wherever it is on the programme. */
+export const eventById = (id) => allEvents().find(ev => ev.id === id) || null;
 
 /** A venue's events with their curated pieces already resolved. */
 export const eventsOf = (venue) => (venue.events || []).map(ev => ({

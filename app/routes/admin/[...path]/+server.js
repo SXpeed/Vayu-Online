@@ -1,5 +1,14 @@
 /**
- * Vayu — the admin panel, behind the session gate.
+ * Vayu — the admin panel on the storefront origin, behind the same two gates
+ * as the split Worker.
+ *
+ * THIS IS THE SECOND DOOR, and that is the thing to keep in mind when
+ * changing it. The panel is reachable at admin.vayuindia.com (apps/admin/
+ * worker.js) and here at vayuindia.com/admin, and a lock fitted to one of
+ * them is not fitted to the panel — it is fitted to one of two ways in.
+ * Cloudflare Access on the admin subdomain alone would have left this path
+ * wide open, so the Access gate runs here too, and the routing decision that
+ * follows it is the shared one both mounts read from.
  *
  * The panel's files are NOT static assets. They used to live in
  * public/admin/ui, which is SvelteKit's static directory, and that put them
@@ -14,13 +23,19 @@
  * inside the Worker, past the point where it applies.
  *
  * They are bundled into the Worker instead, from app/admin-ui (~144 KB over
- * twelve files), so the only way to read one is through the check below.
+ * twelve files), so the only way to read one is through the checks below.
  */
 
 import { error, redirect } from '@sveltejs/kit';
 import { Store } from '#lib/server/db.js';
 import { currentAdmin } from '#lib/server/sessions.js';
+import { accessGate } from '#services/auth/access.js';
+import { adminRoute, contentTypeFor, PANEL_CACHE_CONTROL } from '#services/auth/admin-gate.js';
 import optionsSource from '#lib/options.js?raw';
+import curatedSource from '#shared/content/curated-spaces.js?raw';
+import insideSource from '#shared/content/inside-vayu.js?raw';
+import artistSource from '#shared/content/home-artist.js?raw';
+import artistPageSource from '#shared/content/artist-page.js?raw';
 
 /**
  * Eagerly bundled: a Worker cannot read from disk, and lazy chunks would be
@@ -43,17 +58,23 @@ const FILES = import.meta.glob('/app/admin-ui/**/*', {
  * bug that having two copies would cause) while still importing cleanly with
  * a relative path.
  */
-const SHARED = { 'shared/options.js': optionsSource };
-
-const TYPES = {
-    html: 'text/html; charset=utf-8',
-    js: 'text/javascript; charset=utf-8',
-    css: 'text/css; charset=utf-8',
-    json: 'application/json; charset=utf-8',
-    svg: 'image/svg+xml',
+const SHARED = {
+    'shared/options.js': optionsSource,
+    // The Curated Spaces page as it ships. The panel seeds its editor from
+    // this document and the storefront falls back to it, so both sides show
+    // the same words when nothing has been saved yet.
+    'shared/curated-spaces.js': curatedSource,
+    // The home page's Inside Vayu block as it ships, and the order the three
+    // sources win in. The storefront paints by it and the panel's card reads
+    // it to say what is on the page — one copy, so the panel cannot describe
+    // a block the page no longer has.
+    'shared/inside-vayu.js': insideSource,
+    // The artist band under it, on the same terms.
+    'shared/home-artist.js': artistSource,
+    // The artist index page's own copy, so the Artists screen can show the
+    // shop what is on that page rather than a set of empty fields.
+    'shared/artist-page.js': artistPageSource,
 };
-
-const contentType = (file) => TYPES[file.split('.').pop()] || 'application/octet-stream';
 
 function send(file) {
     const body = SHARED[file] ?? FILES[`/app/admin-ui/${file}`];
@@ -61,10 +82,8 @@ function send(file) {
 
     return new Response(body, {
         headers: {
-            'Content-Type': contentType(file),
-            // The panel is per-session and must never be held by a shared
-            // cache; it is also small enough that revalidation costs nothing.
-            'Cache-Control': 'private, no-store',
+            'Content-Type': contentTypeFor(file),
+            'Cache-Control': PANEL_CACHE_CONTROL,
         },
     });
 }
@@ -73,36 +92,21 @@ export async function GET({ request, platform, url }) {
     const env = platform?.env;
     if (!env?.DB) error(503, 'Bindings unavailable.');
 
+    // Zero Trust first, and it returns its own Response rather than throwing
+    // a SvelteKit error: a 403 from Access is not a page of this site, and
+    // dressing it as one would invite the reader to try signing in.
+    const denied = await accessGate(env, request, (reason) => {
+        console.log(`access denied: ${reason} ${request.method} ${url.pathname}`);
+    });
+    if (denied) return denied;
+
     const store = new Store(env);
-    const path = url.pathname;
     const signedIn = await currentAdmin(store, request);
 
-    if (path === '/admin' || path === '/admin/') {
-        if (signedIn) return send('index.html');
-        redirect(302, '/admin/login');
-    }
-
-    if (path === '/admin/login') {
-        if (signedIn) redirect(302, '/admin');
-        return send('login.html');
-    }
-
-    const file = path.slice('/admin/'.length);
-
-    // The sign-in page's own assets cannot sit behind the sign-in check.
-    // admin.css is linked by login.html, so gating it redirected the
-    // stylesheet request to /admin/login and handed the browser HTML where
-    // it wanted CSS — leaving the login screen permanently unstyled. A
-    // stylesheet reveals nothing: it is the view modules and their API
-    // shapes that the gate below exists to protect.
-    const PUBLIC = new Set(['admin.css']);
-
-    if (!signedIn && !PUBLIC.has(file)) redirect(302, '/admin/login');
-
-    // No traversal out of the bundle. The lookup is a plain object index, so
-    // a "../" would simply miss — this makes the intent explicit rather than
-    // relying on that.
-    if (!file || file.includes('..')) error(404, 'Not found');
-
-    return send(file);
+    // One policy, shared with apps/admin/worker.js — see
+    // services/auth/admin-gate.js for what each branch is protecting.
+    const route = adminRoute(url.pathname, signedIn);
+    if (route.kind === 'redirect') redirect(302, route.to);
+    if (route.kind === 'notFound') error(404, 'Not found');
+    return send(route.file);
 }

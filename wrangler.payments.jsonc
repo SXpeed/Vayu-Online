@@ -1,0 +1,45 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "vayuindia-payments",
+
+  // ===================================================================
+  // The isolated Razorpay Worker.
+  //
+  // Deliberately minimal, and every absence below is a decision:
+  //
+  //   no routes        — not addressable from the internet. It is reached
+  //                      only through the API Worker's service binding, so
+  //                      there is no URL for an attacker to find.
+  //   no workers_dev   — same reason. A .workers.dev subdomain would undo
+  //                      the whole point by putting it back on the internet.
+  //   no D1, no R2     — this Worker cannot read an order, a customer or an
+  //                      image. It verifies signatures and calls Razorpay.
+  //                      That is the entire blast radius of the one Worker
+  //                      that holds the payment credentials.
+  //
+  // Secrets to set on THIS Worker and on no other:
+  //   npx wrangler secret put RAZORPAY_KEY_ID      -c wrangler.payments.jsonc
+  //   npx wrangler secret put RAZORPAY_KEY_SECRET  -c wrangler.payments.jsonc
+  //   npx wrangler secret put RAZORPAY_WEBHOOK_SECRET -c wrangler.payments.jsonc
+  // ===================================================================
+
+  "main": ".workers/payments/worker.js",
+  "compatibility_date": "2026-08-01",
+  // node:crypto — createHmac and timingSafeEqual for signature verification.
+  "compatibility_flags": ["nodejs_compat"],
+
+  "workers_dev": false,
+
+  // Public hostnames, not secrets — they live here rather than as
+  // `wrangler secret put` so they stay reviewable in a diff. PUBLIC_ORIGIN is
+  // the canonical URL on every product page, the <loc> in sitemap.xml, the
+  // Sitemap: line in robots.txt and the base of the Google OAuth callback.
+  // No trailing slash.
+  "vars": {
+    "PUBLIC_ORIGIN": "https://vayuindia.com"
+  },
+
+  "observability": {
+    "enabled": true
+  }
+}

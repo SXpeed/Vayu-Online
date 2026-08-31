@@ -17,6 +17,11 @@ export function sessionId() {
             sid = 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
             localStorage.setItem(SID_KEY, sid);
         }
+        // Also set as a cookie so the server can read it for wishlist guest
+        // matching and coupon attribution. SameSite=Lax so it is sent on the
+        // top-level navigation to /api/account/wishlist but not on cross-site
+        // requests. One year, matching the localStorage lifetime.
+        document.cookie = `${SID_KEY}=${sid}; path=/; max-age=31536000; SameSite=Lax`;
         return sid;
     } catch {
         return '';

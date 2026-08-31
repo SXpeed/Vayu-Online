@@ -7,4 +7,4 @@
 
 import { initVenuePage } from './venue.js';
 
-export default () => initVenuePage({ venueId: 'gallery-vayu', gridId: 'galleryEdit' });
+export default () => initVenuePage({ venueId: 'gallery-vayu' });

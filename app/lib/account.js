@@ -6,8 +6,10 @@
  *   /api/auth/*     Better Auth — signing in, registering, signing out and
  *                   the Google flow. It owns the session cookie.
  *   /api/account/*  Vayu's own endpoints — the address book, order history
- *                   and profile, which are keyed on the customers table and
- *                   have nothing to do with authentication.
+ *                   and profile, which are keyed on the customers table.
+ *                   /me among them: it reads the Better Auth cookie but
+ *                   answers with the customers row, which is the shape the
+ *                   storefront actually wants.
  *
  * The server resolves a Better Auth session back to a customers row through
  * user.legacyId (see currentCustomer in server/sessions.js), so the second
@@ -54,25 +56,26 @@ async function authCall(path, body) {
  * shopper with the API down is treated as a guest rather than shown an
  * error. `google` says whether Google sign-in is configured, so the UI
  * only ever offers a button that will work.
+ *
+ * This asks /api/account/me and nothing else. It used to read Better Auth's
+ * /get-session and hand-build a customer out of the session user, which was
+ * wrong in two ways that both reached the shopper: `google` was hard-coded
+ * true, so the button showed even with Google unconfigured; and the rebuilt
+ * customer carried no `details`, `addresses` or `hasPassword`, so the
+ * checkout dialog threw on `customer.details.missing` for every signed-in
+ * shopper and the account page offered a password change to Google-only
+ * accounts. /me resolves the same Better Auth cookie server-side and
+ * returns the whole customer, so there is one shape and one source for it.
  */
 export async function currentAccount() {
     try {
-        const res = await fetch(`${AUTH}/get-session`, { cache: 'no-store' });
-        const session = res.ok ? await res.json() : null;
-
-        if (session?.user) {
-            // Shaped like the old /me response so the account page and the
-            // checkout dialog did not have to change.
+        const res = await fetch(`${BASE}/me`, { cache: 'no-store' });
+        if (res.ok) {
+            const data = await res.json();
             return {
-                signedIn: true,
-                google: true,
-                customer: {
-                    id: session.user.legacyId || session.user.id,
-                    name: session.user.name || '',
-                    email: session.user.email,
-                    phone: session.user.phone || '',
-                    picture: session.user.image || null,
-                },
+                signedIn: !!data.signedIn,
+                google: !!data.google,
+                customer: data.customer,
             };
         }
     } catch {
@@ -80,8 +83,9 @@ export async function currentAccount() {
     }
 
     // The API being down must not look like an error to a shopper who was
-    // only browsing.
-    return { signedIn: false, google: true };
+    // only browsing. Google is claimed unconfigured here rather than
+    // configured: a button that cannot work is worse than a missing one.
+    return { signedIn: false, google: false };
 }
 
 /**
@@ -92,16 +96,53 @@ export async function currentAccount() {
 export const googleSignInUrl = (next = location.pathname + location.search) =>
     `${AUTH}/sign-in/social?provider=google&callbackURL=${encodeURIComponent(next)}`;
 
-/** Better Auth returns its own error shape; `call` normalises it. */
-export const signIn = (email, password) =>
-    authCall('/sign-in/email', { email, password });
+/**
+ * Merge a guest's server-side wishlist onto their new customer account.
+ * Called after a successful sign-in or register: the guest_key rows in the
+ * `wishlists` table are promoted to the customer_id, de-duplicated against
+ * what the customer already had. The localStorage cache is then refreshed
+ * from the server so the header badge and wishlist page reflect the merge.
+ *
+ * Fire-and-forget: a failure here must never block sign-in.
+ */
+async function mergeGuestWishlist() {
+    try {
+        const gk = localStorage.getItem('vayu_sid') || '';
+        if (!gk) return;
+        await fetch(`${BASE}/wishlist/merge`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ guestKey: gk }),
+            credentials: 'same-origin',
+        });
+        // Pull the merged wishlist back and update the cache + badge.
+        const res = await fetch(`${BASE}/wishlist`, { credentials: 'same-origin', cache: 'no-store' });
+        if (res.ok) {
+            const data = await res.json();
+            const items = (data.items || []).map(i => ({
+                id: i.productId, cat: i.cat, idx: i.idx,
+                name: i.name, price: i.price, img: i.img, variant: i.variantId,
+            }));
+            localStorage.setItem('vayu_wishlist', JSON.stringify(items));
+            window.dispatchEvent(new CustomEvent('vayu:wishlist-changed', { detail: items }));
+        }
+    } catch { /* wishlist merge must never block sign-in */ }
+}
 
-export const register = (details) =>
-    authCall('/sign-up/email', {
-        email: details.email,
-        password: details.password,
-        name: details.name || '',
-    });
+/** Sign in via Better Auth, then merge the guest wishlist onto the account. */
+export async function signIn(email, password) {
+    const result = await authCall('/sign-in/email', { email, password });
+    await mergeGuestWishlist();
+    return result;
+}
+
+/**
+ * No register() here on purpose. The storefront offers exactly three ways
+ * to buy — Google sign-in, email login and guest checkout — and accounts
+ * are created by the Google flow, so there is no registration form left
+ * to call this from. (Better Auth's /sign-up/email endpoint still exists
+ * server-side; only the storefront UI has stopped offering it.)
+ */
 
 export const signOut = () => authCall('/sign-out', {});
 

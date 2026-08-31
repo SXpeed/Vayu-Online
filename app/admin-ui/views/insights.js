@@ -105,14 +105,52 @@ export async function renderAnalytics() {
     const topProducts = d.topProducts.map(p =>
         miniRow(p.img, esc(p.name), '', `<div class="val">${p.views} views</div>`)).join('');
 
-    const searches = d.searches?.map(s =>
-        miniRow(null, `<span style="font-weight:400">“${esc(s.q)}”</span>`, '',
-            `<div class="meta">${s.results} result(s) · ${timeFmt(s.t)}</div>`)).join('') || '';
+    /**
+     * One line per term, not per search.
+     *
+     * The count is what the term is ranked by, so it leads on the right. The
+     * meta line answers the follow-up question — did it find anything, and
+     * is anyone still typing it — because a term searched sixty times that
+     * now returns nothing is a very different problem from one that always
+     * did.
+     */
+    const searches = d.searches?.map(s => miniRow(
+        null,
+        `<span style="font-weight:400">“${esc(s.q)}”</span>`,
+        `${s.results} result(s) now${s.zeroHits ? ` · ${s.zeroHits} came up empty` : ''} · last ${timeFmt(s.t)}`,
+        `<div class="val">${s.count}×</div>`)).join('') || '';
 
-    const abandoned = d.abandoned?.map(c =>
-        miniRow(null,
-            `<span style="font-weight:400">${c.items.map(i => `${esc(i.name)} × ${i.qty}`).join(', ')}</span>`,
-            `last touched ${timeFmt(c.t)}`, '')).join('') || '';
+    /**
+     * Who left it, in whatever detail is known.
+     *
+     * Three cases, and the card says which one it is looking at rather than
+     * flattening them: a shopper who was signed in, a guest who typed their
+     * details into checkout and stopped at the payment window, and a browser
+     * that never identified itself at all. Only the last is unreachable, and
+     * it is the only one that shows a bare visitor id.
+     */
+    const who = (c) => {
+        if (!c.customer) return `<span class="meta">Guest · visitor ${esc(c.sid)}</span>`;
+        const contact = [c.customer.email, c.customer.phone].filter(Boolean).map(esc).join(' · ');
+        const id = c.customer.id
+            ? `<span class="chip">${esc(c.customer.id)}</span>`
+            : '<span class="chip">no account</span>';
+        return `<b>${esc(c.customer.name || 'Unnamed')}</b> ${id}${contact ? ` · ${contact}` : ''}`;
+    };
+
+    const abandoned = d.abandoned?.map((c) => {
+        const names = c.items.map(i => `${esc(i.name)} × ${i.qty}`).join(', ');
+        const stage = c.stage === 'payment'
+            ? '<span class="chip" style="color:var(--accent)">left at payment</span>'
+            : '';
+        return miniRow(
+            // The first item's photo: enough to recognise the cart at a
+            // glance, which a line of product names alone is not.
+            c.items[0]?.img || null,
+            `${who(c)} ${stage}`,
+            `${names}<br>last touched ${timeFmt(c.t)}`,
+            '');
+    }).join('') || '';
 
     const feed = d.recent.slice(0, 30).map(r =>
         miniRow(null, `<span style="font-weight:400">${esc(r.path)}</span>`,
@@ -134,7 +172,7 @@ export async function renderAnalytics() {
         <div class="dash-grid-2" style="margin-top:16px">
             <div class="card">
                 <h2>Search log</h2>
-                <p class="sub">What people type into header search. Zero-result terms tell you what to stock next.</p>
+                <p class="sub">What people type into header search, counted per term since the first time it was typed. Zero-result terms tell you what to stock next.</p>
                 ${d.zeroResults?.length ? `<div style="margin-bottom:12px">
                     <b style="font-size:12px;color:var(--critical)">Nothing found for:</b>
                     ${d.zeroResults.map(z => `<span class="chip">${esc(z.q)} ×${z.count}</span>`).join('')}</div>` : ''}
@@ -142,7 +180,7 @@ export async function renderAnalytics() {
             </div>
             <div class="card">
                 <h2>Abandoned carts</h2>
-                <p class="sub">Carts idle for over an hour that never became orders.</p>
+                <p class="sub">Idle for over an hour and never became orders — signed-in shoppers and anyone who reached the payment window are named.</p>
                 ${abandoned ? `<div class="mini-list">${abandoned}</div>` : '<div class="empty">No abandoned carts — good sign.</div>'}
             </div>
         </div>
@@ -180,6 +218,96 @@ export async function renderActivity() {
 
 /* ================= inventory ================= */
 
+/**
+ * A back-in-stock request, with the piece it is about.
+ *
+ * This row used to be an email and a raw product id — which told the operator
+ * nothing about what was being waited on, so answering the one question the
+ * screen exists for ("is it back yet?") meant leaving for the catalogue and
+ * looking the id up by hand. It now carries what the product page carries:
+ * the plate, the name, what it costs, its SKU, the categories it sits in,
+ * and the stock that decides whether the request can be closed.
+ */
+
+/** ?id= alone resolves — the product page searches every category by id. */
+const productHref = (id) => `/pages/product.html?id=${encodeURIComponent(id)}`;
+
+const waitFlag = (a) =>
+    `<span class="status ${a.notified ? 'delivered' : 'new'}">${a.notified ? 'notified' : 'waiting'}</span>`;
+
+/** Price, its struck-through compare-at, and the SKU — whichever exist. */
+const priceLine = (p) => [
+    `<strong>${money(p.price)}</strong>`,
+    p.compareAt ? `<s>${money(p.compareAt)}</s>` : '',
+    p.sku ? `SKU ${esc(p.sku)}` : '',
+].filter(Boolean).join(' · ');
+
+/**
+ * The line the operator is actually here for.
+ *
+ * `p.stock` is summed from the variants server-side when a product has any,
+ * because the products row's own stock column is ignored once variants
+ * exist. Reading the wrong one would tell the operator that a piece with 20
+ * on the product row and 0 in every variant was available.
+ */
+const stockLine = (p) => {
+    const note = p.variants
+        ? ` ${p.variants === 1 ? '1 variant' : `all ${p.variants} variants`}`
+        : '';
+    return p.stock > 0
+        ? `<span class="stock-back">Back in stock — ${p.stock} available${p.variants ? ` across${note}` : ''}</span>`
+        : `<span class="stock-low">Out of stock${p.variants ? ` in${note}` : ''}</span>`;
+};
+
+/**
+ * The request outlived the product. A guard rather than a case seen in
+ * practice: stock_alerts.product_id is ON DELETE CASCADE, so removing a
+ * product takes its requests with it. It stands for rows that arrive with
+ * foreign keys off — a restore or an import.
+ */
+const orphanCard = (a) => `
+    <div class="alert-card">
+        <span class="thumb thumb-lg is-missing"></span>
+        <div class="grow">
+            <div class="nm">${esc(a.productName || a.productId)}</div>
+            <div class="meta">No longer in the catalogue.</div>
+            <div class="meta">Requested by <strong>${esc(a.email)}</strong> · ${timeFmt(a.t)}</div>
+        </div>
+        ${waitFlag(a)}
+    </div>`;
+
+const alertCard = (a) => {
+    const p = a.product;
+    if (!p) return orphanCard(a);
+
+    const href = productHref(a.productId);
+    const plate = p.img
+        ? `<img class="thumb thumb-lg" src="${esc(p.img)}" alt="" loading="lazy">`
+        : '<span class="thumb thumb-lg is-missing"></span>';
+    // Only worth showing when it is not the ordinary case — a draft or
+    // archived piece explains why stock is not coming back on its own.
+    const state = p.status && p.status !== 'active'
+        ? `<span class="status ${esc(p.status)}">${esc(p.status)}</span>` : '';
+    const cats = p.categories.length
+        ? `<div class="meta">${p.categories.map(c => `<span class="chip">${esc(c)}</span>`).join('')}</div>` : '';
+
+    return `
+    <div class="alert-card">
+        <a href="${href}" target="_blank" rel="noopener noreferrer">${plate}</a>
+        <div class="grow">
+            <div class="nm">
+                <a href="${href}" target="_blank" rel="noopener noreferrer">${esc(a.productName)}</a>
+                ${state}
+            </div>
+            <div class="meta">${priceLine(p)}</div>
+            ${cats}
+            <div class="meta">${stockLine(p)}</div>
+            <div class="meta">Requested by <strong>${esc(a.email)}</strong> · ${timeFmt(a.t)}</div>
+        </div>
+        ${waitFlag(a)}
+    </div>`;
+};
+
 export async function renderInventory() {
     const { log, alerts } = await api('inventory');
 
@@ -188,10 +316,7 @@ export async function renderInventory() {
             <td class="num" style="color:${l.delta > 0 ? 'var(--good-text)' : 'var(--critical)'}">${l.delta > 0 ? '+' : ''}${l.delta}</td>
             <td>${esc(l.reason)}</td><td>${esc(l.by)}</td><td>${timeFmt(l.t)}</td></tr>`).join('');
 
-    const waiting = alerts.map(a => miniRow(
-        null, esc(a.email), `${esc(a.productId)} · ${timeFmt(a.t)}`,
-        `<span class="status ${a.notified ? 'delivered' : 'new'}">${a.notified ? 'notified' : 'waiting'}</span>`,
-    )).join('');
+    const waiting = alerts.map(alertCard).join('');
 
     viewEl.innerHTML = `
         <div class="dash-grid">

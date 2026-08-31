@@ -4,17 +4,40 @@
  */
 
 import { $, viewEl, esc, dateFmt, toast, guard, openModal, closeModal, modalChrome } from '../lib/dom.js';
-import { api, state } from '../lib/api.js';
+import { api, state, catTitle } from '../lib/api.js';
 import { pickImage } from '../lib/media.js';
+// ../shared/curated-spaces.js is shared/content/curated-spaces.js, re-served
+// through the admin route: the panel's files are shipped as source, so a bare
+// #shared/ specifier would reach the browser unresolved.
+import { CURATED_SPACES_DEFAULT, BLANK_ROOM, withCuratedDefaults } from '../shared/curated-spaces.js';
+import {
+    INSIDE_VAYU_SHIPPED, insideVayuEffective, currentShow, sameTiles,
+} from '../shared/inside-vayu.js';
+import { ARTIST_BAND_SHIPPED, artistBandEffective } from '../shared/home-artist.js';
 
 /* ================= storefront content ================= */
 
-const BLANK_SLIDE = { img: '', alt: '', title: '', ctaText: '', ctaHref: '' };
+const BLANK_SLIDE = { img: '', imgMobile: '', alt: '', title: '', ctaText: '', ctaHref: '' };
+
+/** The house the home page's Inside Vayu block follows. */
+const INSIDE_VAYU_VENUE = 'gallery-vayu';
+
+/**
+ * One image slot: the plate, and the button that replaces it.
+ *
+ * `which` is the field it writes to, so the desktop and phone slots are the
+ * same control twice rather than two near-copies that can drift.
+ */
+const imgSlot = (url, which, label) => `
+    <div class="slide-img" data-slot="${which}">
+        ${url ? `<img src="${esc(url)}" alt="">` : '<div class="slide-img-empty">No image</div>'}
+        <div class="slide-img-label">${label}</div>
+        <div class="slide-img-actions">
+            <button type="button" class="btn small" data-act="pick" data-f="${which}">Upload</button>
+        </div>
+    </div>`;
 
 function slideCard(s, i, total) {
-    const preview = s.img
-        ? `<img src="${esc(s.img)}" alt="">`
-        : '<div class="slide-img-empty">No image</div>';
     // A slide with neither heading nor button becomes a poster: the whole
     // image is one link. Say so, rather than leaving it to be discovered.
     const posterNote = !s.title && !s.ctaText
@@ -23,11 +46,9 @@ function slideCard(s, i, total) {
 
     return `
         <div class="slide-row" data-i="${i}">
-            <div class="slide-img">
-                ${preview}
-                <div class="slide-img-actions">
-                    <button type="button" class="btn small" data-act="pick">Upload</button>
-                </div>
+            <div class="slide-imgs">
+                ${imgSlot(s.img, 'img', 'Desktop')}
+                ${imgSlot(s.imgMobile, 'imgMobile', 'Phone')}
             </div>
             <div class="slide-fields">
                 <div class="slide-head">
@@ -38,8 +59,13 @@ function slideCard(s, i, total) {
                         <button type="button" class="btn small danger" data-act="rm" title="Remove slide">✕</button>
                     </div>
                 </div>
-                <div class="field"><label>Image URL</label>
+                <div class="field"><label>Desktop image URL</label>
                     <input data-f="img" value="${esc(s.img)}" placeholder="/assets/images/hero.jpg"></div>
+                <div class="field"><label>Phone image URL</label>
+                    <input data-f="imgMobile" value="${esc(s.imgMobile || '')}" placeholder="Empty = use the desktop image on phones too">
+                    <div class="help">Shown instead of the desktop image on screens up to 768px wide.
+                        Upload one framed upright — a wide campaign shot loses its subject when a phone
+                        crops it.</div></div>
                 <div class="field"><label>Heading</label>
                     <input data-f="title" value="${esc(s.title)}" placeholder="Empty = image-only poster slide"></div>
                 <div class="slide-two">
@@ -86,11 +112,45 @@ const defaultsCard = (d) => `
 
 export async function renderContent() {
     const { content } = await api('content');
+    // The programme, because Inside Vayu below is drawn from it. Tolerated
+    // failing: a panel role without events, or a shop with no shows yet,
+    // still gets the card — filled from what the page ships with instead.
+    const { events = [] } = await api('events').catch(() => ({ events: [] }));
     let slides = structuredClone(content.heroSlides || []);
+    // Only an explicit false turns the box off — an unsaved setting has to
+    // keep the look the shop already has.
+    const tileBox = content.productTileBox !== false;
     const defaults = {
         description: '', care: '', dimensions: [], materials: [],
         ...structuredClone(content.productDefaults || {}),
     };
+    // Inside Vayu is shown filled, with what the home page is actually
+    // showing: the current exhibition's hero and plates where it has them,
+    // the shipped block where it does not. A card left blank cannot answer
+    // the question it is opened with — what is on the page now? — and the
+    // shop has no other way to find out but to go and look.
+    //
+    // Filled fields have to be saved carefully, though. Writing them back as
+    // they stand would pin every one of them, and the block would stop
+    // following the programme it was built to follow. So both readings are
+    // kept: `live` fills the form, `derived` is what the page would show
+    // with nothing saved at all, and at save time a field still equal to
+    // `derived` is stored empty — which is how "keep following" is spelled.
+    // A field the shop had already overridden differs from `derived`, so it
+    // survives untouched.
+    const show = currentShow(events.filter(e => e.venue === INSIDE_VAYU_VENUE));
+    const live = insideVayuEffective(content.insideVayu, show);
+    const derived = insideVayuEffective(null, show);
+    let tiles = structuredClone(live.tiles);
+
+    // The artist band under it. Only one source to fall back to here — the
+    // shipped picture — so what the page shows is what the shop saved over
+    // it, and ARTIST_BAND_SHIPPED plays the part `derived` plays above.
+    const band = artistBandEffective(content.artist);
+
+    // What's On in the header. One — the show that is on now — for a shop
+    // that has never chosen, which is what the panel does with no setting.
+    const menuShows = Math.min(6, Math.max(1, Math.trunc(Number(content.menuShows)) || 1));
 
     viewEl.innerHTML = `
         <div class="card" style="max-width:760px;margin-bottom:16px">
@@ -100,7 +160,102 @@ export async function renderContent() {
                 <input id="ct-ann" value="${esc(content.announcement)}" placeholder="e.g. Free shipping above ₹5,000 · Diwali dispatch till 18 Oct">
             </div>
         </div>
+        <div class="card" style="max-width:760px;margin-bottom:16px">
+            <h2>What&rsquo;s On in the menu</h2>
+            <p class="sub">The panel that opens under MENU. Each house shows what is on there now;
+                ask for more and it lists its most recent closed shows under it, marked Past.</p>
+            <div class="field">
+                <label>Shows per house</label>
+                <select id="ct-menushows">
+                    ${[1, 2, 3, 4].map(n => `<option value="${n}"${n === menuShows ? ' selected' : ''}>${
+                        n === 1 ? 'Only what is on now' : `${n} — what is on now, and ${n - 1} before it`
+                    }</option>`).join('')}
+                </select>
+                <div class="help">A house with nothing on shows its most recent, so the panel is
+                    never empty.</div>
+            </div>
+        </div>
+        <div class="card" style="max-width:760px;margin-bottom:16px">
+            <h2>Product tiles</h2>
+            <p class="sub">How a product looks in every grid on the site — the collection, the
+                rails on the venue pages and the suggestions under a product.</p>
+            <div class="field">
+                <label style="display:flex;align-items:center;gap:9px;cursor:pointer">
+                    <input type="checkbox" id="ct-tilebox" style="width:auto" ${tileBox ? 'checked' : ''}>
+                    Show the box around each tile
+                </label>
+                <div class="help">On, a tile is a white plate with a hairline around it. Off, the
+                    photograph sits directly on the page with no plate, no outline and no hover
+                    lift.</div>
+            </div>
+        </div>
         ${defaultsCard(defaults)}
+        <div class="card" style="max-width:760px;margin-bottom:16px">
+            <h2>Inside Vayu</h2>
+            <p class="sub">The block near the foot of the home page, filled in below with what
+                it is showing right now. It follows the gallery's current show by itself — that
+                show's hero is the wide photograph and its first two pictures are the thumbnails,
+                all linking to its page — so putting up a new exhibition under What&rsquo;s On
+                changes the home page with it. Change a field to hold it against that; empty a
+                field to let it follow again. Saving without changing anything changes nothing.</p>
+            ${show ? `<div class="help" style="margin:-4px 0 14px">Following
+                <strong>${esc(show.title)}</strong> at Gallery Vayu${show.current ? ''
+                    : ' — its most recent show, since none is marked as on now'}.</div>` : `<div
+                class="help" style="margin:-4px 0 14px">No show on the gallery's programme yet, so
+                this is what the page ships with. Add one under What&rsquo;s On and the block
+                follows it.</div>`}
+            <div class="slide-two">
+                <div class="field"><label>Heading</label>
+                    <input id="iv-title" value="${esc(live.title)}" placeholder="${esc(INSIDE_VAYU_SHIPPED.title)}"></div>
+                <div class="field"><label>Link text</label>
+                    <input id="iv-ctatext" value="${esc(live.ctaText)}" placeholder="${esc(INSIDE_VAYU_SHIPPED.ctaText)}"></div>
+            </div>
+            <div class="field"><label>Link goes to</label>
+                <input id="iv-ctahref" value="${esc(live.ctaHref)}" placeholder="${esc(INSIDE_VAYU_SHIPPED.ctaHref)}"></div>
+
+            <div class="field" style="margin-top:14px"><label>Wide photograph
+                <span style="text-transform:none;letter-spacing:0;color:var(--muted)">— empty it to follow the current show</span></label>
+                <div id="iv-hero-preview">${heroPreview(live.heroImg)}</div>
+                <div class="slide-img-actions" style="margin:8px 0 12px">
+                    <button type="button" class="btn small" id="iv-hero-pick">Upload</button>
+                </div>
+                <input id="iv-heroimg" value="${esc(live.heroImg)}" placeholder="${esc(INSIDE_VAYU_SHIPPED.heroImg)}"></div>
+            <div class="slide-two">
+                <div class="field"><label>Photograph description</label>
+                    <input id="iv-heroalt" value="${esc(live.heroAlt)}" placeholder="${esc(INSIDE_VAYU_SHIPPED.heroAlt)}"></div>
+                <div class="field"><label>Photograph goes to</label>
+                    <input id="iv-herohref" value="${esc(live.heroHref)}" placeholder="${esc(INSIDE_VAYU_SHIPPED.heroHref)}"></div>
+            </div>
+
+            <div class="field" style="margin-top:14px"><label>Thumbnails</label>
+                <div class="help">The current exhibition's own pictures, unless you change
+                    them. Up to four, each able to point somewhere of its own. Remove them all to
+                    follow the exhibition again.</div>
+                <div id="iv-tiles" style="margin-top:10px"></div>
+                <button class="btn small" id="iv-tile-add" type="button">+ Add thumbnail</button>
+            </div>
+        </div>
+        <div class="card" style="max-width:760px;margin-bottom:16px">
+            <h2>Featured artist</h2>
+            <p class="sub">The wide picture directly under Inside Vayu on the home page, filled in
+                below with what it is showing now. Empty a field to put back what the page ships
+                with.</p>
+            <div class="field"><label>Picture</label>
+                <div id="ar-preview">${heroPreview(band.img)}</div>
+                <div class="slide-img-actions" style="margin:8px 0 12px">
+                    <button type="button" class="btn small" id="ar-pick">Upload</button>
+                </div>
+                <input id="ar-img" value="${esc(band.img)}" placeholder="${esc(ARTIST_BAND_SHIPPED.img)}"></div>
+            <div class="slide-two">
+                <div class="field"><label>Picture description</label>
+                    <input id="ar-alt" value="${esc(band.alt)}" placeholder="${esc(ARTIST_BAND_SHIPPED.alt)}"></div>
+                <div class="field"><label>Goes to</label>
+                    <input id="ar-href" value="${esc(band.href)}" placeholder="${esc(ARTIST_BAND_SHIPPED.href)}"></div>
+            </div>
+            <div class="help">The band is one picture and nothing else, so the description is all
+                a screen reader has to announce it by — and it is what the section is labelled
+                with. Name the artist in it.</div>
+        </div>
         <div class="card" style="max-width:760px">
             <h2>Home hero carousel</h2>
             <p class="sub">The full-width slideshow at the top of the home page. Each slide has its own
@@ -171,7 +326,8 @@ export async function renderContent() {
             case 'pick': {
                 const url = await pickImage();
                 if (!url) return;
-                slides[i].img = url;
+                // data-f says which slot's button this was — desktop or phone.
+                slides[i][btn.dataset.f || 'img'] = url;
                 break;
             }
             case 'rm': slides.splice(i, 1); break;
@@ -186,6 +342,71 @@ export async function renderContent() {
         draw();
     });
 
+    /* ---- Inside Vayu ---- */
+    const drawTiles = () => {
+        $('#iv-tiles').innerHTML = tiles.map((t, i) => `
+            <div class="slide-two" data-tile="${i}" style="margin-bottom:10px">
+                <div class="field"><label>Picture ${i + 1}</label>
+                    <div style="display:flex;gap:8px">
+                        <input class="iv-tile-img" value="${esc(t.img)}" placeholder="/assets/images/gallery_tile1.jpg">
+                        <button type="button" class="btn small" data-tile-pick="${i}">Upload</button>
+                        <button type="button" class="btn small danger" data-tile-del="${i}">✕</button>
+                    </div></div>
+                <div class="field"><label>Goes to</label>
+                    <input class="iv-tile-href" value="${esc(t.href)}" placeholder="/pages/event.html?id=…"></div>
+                <div class="field" style="grid-column:1 / -1"><label>Description</label>
+                    <input class="iv-tile-alt" value="${esc(t.alt)}" placeholder="What the picture shows"></div>
+            </div>`).join('') || '<div class="empty">None — the row follows the current exhibition&rsquo;s pictures.</div>';
+    };
+
+    /** Read the rows back before anything redraws them. */
+    const readTiles = () => [...document.querySelectorAll('#iv-tiles [data-tile]')].map(row => ({
+        img: row.querySelector('.iv-tile-img').value.trim(),
+        href: row.querySelector('.iv-tile-href').value.trim(),
+        alt: row.querySelector('.iv-tile-alt').value.trim(),
+    })).filter(t => t.img);
+
+    drawTiles();
+
+    $('#ar-pick').addEventListener('click', async () => {
+        const url = await pickImage();
+        if (!url) return;
+        $('#ar-img').value = url;
+        $('#ar-preview').innerHTML = heroPreview(url);
+    });
+
+    $('#iv-hero-pick').addEventListener('click', async () => {
+        const url = await pickImage();
+        if (!url) return;
+        $('#iv-heroimg').value = url;
+        $('#iv-hero-preview').innerHTML = heroPreview(url);
+    });
+
+    $('#iv-tile-add').addEventListener('click', () => {
+        if (tiles.length >= 4) return;
+        tiles = [...readTiles(), { img: '', alt: '', href: '' }];
+        drawTiles();
+    });
+
+    $('#iv-tiles').addEventListener('click', async (e) => {
+        const del = e.target.closest('[data-tile-del]');
+        const pick = e.target.closest('[data-tile-pick]');
+        if (del) {
+            tiles = readTiles().filter((_, i) => i !== Number(del.dataset.tileDel));
+            drawTiles();
+            return;
+        }
+        if (pick) {
+            const url = await pickImage();
+            if (!url) return;
+            const current = readTiles();
+            const i = Number(pick.dataset.tilePick);
+            current[i] = { ...(current[i] || { alt: '', href: '' }), img: url };
+            tiles = current;
+            drawTiles();
+        }
+    });
+
     $('#ct-save').addEventListener('click', async () => {
         const err = $('#ct-err');
         err.textContent = '';
@@ -193,10 +414,37 @@ export async function renderContent() {
             err.textContent = 'Every slide needs an image (or remove the empty slide).';
             return;
         }
+
+        // Inside Vayu's fields arrived filled with what the page is showing,
+        // so what is stored is only what the shop actually changed. A value
+        // still equal to what the block would show by itself is stored empty
+        // — that is what keeps it following the exhibition rather than
+        // freezing today's picture onto the home page for good. A field
+        // overridden on some earlier visit differs from `derived` and so is
+        // written back as it stands.
+        const pin = (value, self) => (value === self ? '' : value);
+        const rowTiles = readTiles();
+
         try {
             const r = await api('content', 'PUT', {
                 announcement: $('#ct-ann').value,
+                productTileBox: $('#ct-tilebox').checked,
+                menuShows: Number($('#ct-menushows').value),
                 heroSlides: slides,
+                insideVayu: {
+                    title: pin($('#iv-title').value.trim(), derived.title),
+                    ctaText: pin($('#iv-ctatext').value.trim(), derived.ctaText),
+                    ctaHref: pin($('#iv-ctahref').value.trim(), derived.ctaHref),
+                    heroImg: pin($('#iv-heroimg').value.trim(), derived.heroImg),
+                    heroAlt: pin($('#iv-heroalt').value.trim(), derived.heroAlt),
+                    heroHref: pin($('#iv-herohref').value.trim(), derived.heroHref),
+                    tiles: sameTiles(rowTiles, derived.tiles) ? [] : rowTiles,
+                },
+                artist: {
+                    img: pin($('#ar-img').value.trim(), ARTIST_BAND_SHIPPED.img),
+                    alt: pin($('#ar-alt').value.trim(), ARTIST_BAND_SHIPPED.alt),
+                    href: pin($('#ar-href').value.trim(), ARTIST_BAND_SHIPPED.href),
+                },
                 productDefaults: {
                     description: $('#pd-desc').value.trim(),
                     care: $('#pd-care').value.trim(),
@@ -210,6 +458,220 @@ export async function renderContent() {
             slides = structuredClone(r.content.heroSlides || []);
             draw();
             toast('Saved — refresh the home page to see it');
+        } catch (error_) { err.textContent = error_.message; }
+    });
+}
+
+/* ================= curated spaces ================= */
+
+/**
+ * The Curated Spaces page, edited whole.
+ *
+ * It gets its own view rather than a fourth card under Site Content
+ * because it is a page, not a setting: it has a hero, a statement and a
+ * variable number of rooms, and folding that into the content form would
+ * have made one very long scroll behind a single save button.
+ *
+ * The plates reuse the hero carousel's .slide-* rows, so a room is edited
+ * with the same picture-left / fields-right shape as a slide and the panel
+ * keeps one way of editing an image with words attached to it.
+ */
+
+/**
+ * A room's category is picked from the live taxonomy rather than typed: it
+ * is looked up against the catalogue by that slug, and a typo would leave
+ * the room's rail silently empty with nothing to say why.
+ */
+function categoryOptions(selected) {
+    const cats = Object.entries(state.categories || {});
+    const known = cats.some(([slug]) => slug === selected);
+    return [
+        `<option value=""${selected ? '' : ' selected'}>— none (no pieces below) —</option>`,
+        ...cats.map(([slug]) => `
+            <option value="${esc(slug)}"${slug === selected ? ' selected' : ''}>${esc(catTitle(slug))}</option>`),
+        // A category since renamed or removed still shows, so opening the
+        // form does not quietly repoint the room at something else.
+        !known && selected ? `<option value="${esc(selected)}" selected>${esc(selected)} (missing)</option>` : '',
+    ].join('');
+}
+
+function roomCard(r, i, total) {
+    const preview = r.img
+        ? `<img src="${esc(r.img)}" alt="">`
+        : '<div class="slide-img-empty">No image</div>';
+
+    return `
+        <div class="slide-row" data-i="${i}">
+            <div class="slide-img">
+                ${preview}
+                <div class="slide-img-actions">
+                    <button type="button" class="btn small" data-act="pick">Upload</button>
+                </div>
+            </div>
+            <div class="slide-fields">
+                <div class="slide-head">
+                    <b>Room ${i + 1}</b>
+                    <div class="slide-move">
+                        <button type="button" class="btn small" data-act="up" ${i === 0 ? 'disabled' : ''} title="Move up">↑</button>
+                        <button type="button" class="btn small" data-act="down" ${i === total - 1 ? 'disabled' : ''} title="Move down">↓</button>
+                        <button type="button" class="btn small danger" data-act="rm" title="Remove room">✕</button>
+                    </div>
+                </div>
+                <div class="field"><label>Image URL</label>
+                    <input data-f="img" value="${esc(r.img)}" placeholder="/assets/images/cat_furniture.jpg"></div>
+                <div class="slide-two">
+                    <div class="field"><label>Room name</label>
+                        <input data-f="name" value="${esc(r.name)}" placeholder="The Living Room"></div>
+                    <div class="field"><label>Caption</label>
+                        <input data-f="tag" value="${esc(r.tag)}" placeholder="Furniture"></div>
+                </div>
+                <div class="field"><label>Furnished from</label>
+                    <select data-f="category">${categoryOptions(r.category)}</select>
+                    <div class="help">The pieces under &ldquo;Shop the Spaces&rdquo; come from this category.</div></div>
+                <div class="field"><label>Image description (for screen readers)</label>
+                    <input data-f="alt" value="${esc(r.alt)}" placeholder="A chair, a throw and a vase in a quiet corner"></div>
+            </div>
+        </div>`;
+}
+
+const heroPreview = (img) => img
+    ? `<img src="${esc(img)}" alt="" style="width:100%;max-height:220px;object-fit:cover">`
+    : '<div class="slide-img-empty" style="height:140px">No image</div>';
+
+export async function renderCuratedSpaces() {
+    const { content } = await api('content');
+    const saved = withCuratedDefaults(content.curatedSpaces);
+    let rooms = structuredClone(saved.rooms);
+
+    viewEl.innerHTML = `
+        <div class="card" style="max-width:760px;margin-bottom:16px">
+            <h2>Page heading</h2>
+            <p class="sub">The title at the top of the Curated Spaces page, and the small note
+                beside it.</p>
+            <div class="slide-two">
+                <div class="field"><label>Title</label>
+                    <input id="cs-title" value="${esc(saved.title)}" placeholder="${esc(CURATED_SPACES_DEFAULT.title)}"></div>
+                <div class="field"><label>Note</label>
+                    <input id="cs-meta" value="${esc(saved.meta)}" placeholder="${esc(CURATED_SPACES_DEFAULT.meta)}"></div>
+            </div>
+        </div>
+
+        <div class="card" style="max-width:760px;margin-bottom:16px">
+            <h2>Hero image</h2>
+            <p class="sub">The wide photograph under the title. A photographed room reads better here
+                than a catalogue shot on white.</p>
+            <div id="cs-hero-preview">${heroPreview(saved.heroImg)}</div>
+            <div class="slide-img-actions" style="margin:8px 0 12px">
+                <button type="button" class="btn small" id="cs-hero-pick">Upload</button>
+            </div>
+            <div class="field"><label>Image URL</label>
+                <input id="cs-heroImg" value="${esc(saved.heroImg)}" placeholder="/assets/images/cat_furniture.jpg"></div>
+            <div class="field" style="margin-top:12px"><label>Image description (for screen readers)</label>
+                <input id="cs-heroAlt" value="${esc(saved.heroAlt)}" placeholder="A room set with cane and teak"></div>
+        </div>
+
+        <div class="card" style="max-width:760px;margin-bottom:16px">
+            <h2>Introduction</h2>
+            <p class="sub">The line in italics between the hero and the rooms.</p>
+            <div class="field"><textarea id="cs-statement" rows="3">${esc(saved.statement)}</textarea></div>
+        </div>
+
+        <div class="card" style="max-width:760px;margin-bottom:16px">
+            <h2>Section headings</h2>
+            <div class="slide-two">
+                <div class="field"><label>Rooms section</label>
+                    <input id="cs-sectionTitle" value="${esc(saved.sectionTitle)}" placeholder="${esc(CURATED_SPACES_DEFAULT.sectionTitle)}"></div>
+                <div class="field"><label>Note beside it</label>
+                    <input id="cs-sectionNote" value="${esc(saved.sectionNote)}" placeholder="${esc(CURATED_SPACES_DEFAULT.sectionNote)}"></div>
+            </div>
+            <div class="field" style="margin-top:12px"><label>Products section</label>
+                <input id="cs-shopTitle" value="${esc(saved.shopTitle)}" placeholder="${esc(CURATED_SPACES_DEFAULT.shopTitle)}"></div>
+        </div>
+
+        <div class="card" style="max-width:760px">
+            <h2>The rooms</h2>
+            <p class="sub">Each room is one plate on the page. The category it is furnished from also
+                fills the product rail underneath, so the pictures and the pieces stay in step.</p>
+            <div id="cs-rooms" class="slide-editor"></div>
+            <button class="btn small" id="cs-room-add" style="margin-top:12px">+ Add room</button>
+            <div class="modal-actions">
+                <div class="form-error" id="cs-err"></div>
+                <button class="btn primary" id="cs-save">Save page</button>
+            </div>
+        </div>`;
+
+    const roomsEl = $('#cs-rooms');
+    const draw = () => {
+        roomsEl.innerHTML = rooms.map((r, i) => roomCard(r, i, rooms.length)).join('')
+            || '<div class="empty">No rooms — the page will show the three it ships with.</div>';
+    };
+    draw();
+
+    // Typing updates the model in place without redrawing, so the caret
+    // never jumps out of the field being edited. <select> fires change
+    // rather than input, so both are listened for.
+    const track = (e) => {
+        const row = e.target.closest('[data-i]');
+        if (row && e.target.dataset.f) rooms[Number(row.dataset.i)][e.target.dataset.f] = e.target.value;
+    };
+    roomsEl.addEventListener('input', track);
+    roomsEl.addEventListener('change', track);
+
+    roomsEl.addEventListener('click', async (e) => {
+        const btn = e.target.closest('button[data-act]');
+        if (!btn) return;
+        const i = Number(btn.closest('[data-i]').dataset.i);
+
+        switch (btn.dataset.act) {
+            case 'pick': {
+                const url = await pickImage();
+                if (!url) return;
+                rooms[i].img = url;
+                break;
+            }
+            case 'rm': rooms.splice(i, 1); break;
+            case 'up': if (i > 0) [rooms[i - 1], rooms[i]] = [rooms[i], rooms[i - 1]]; break;
+            case 'down': if (i < rooms.length - 1) [rooms[i + 1], rooms[i]] = [rooms[i], rooms[i + 1]]; break;
+        }
+        draw();
+    });
+
+    $('#cs-room-add').addEventListener('click', () => {
+        rooms.push({ ...BLANK_ROOM });
+        draw();
+    });
+
+    $('#cs-hero-pick').addEventListener('click', async () => {
+        const url = await pickImage();
+        if (!url) return;
+        $('#cs-heroImg').value = url;
+        $('#cs-hero-preview').innerHTML = heroPreview(url);
+    });
+
+    $('#cs-save').addEventListener('click', async () => {
+        const err = $('#cs-err');
+        err.textContent = '';
+        if (rooms.some(r => !String(r.img).trim())) {
+            err.textContent = 'Every room needs an image (or remove the empty room).';
+            return;
+        }
+        try {
+            const r = await api('content', 'PUT', {
+                curatedSpaces: {
+                    title: $('#cs-title').value.trim(),
+                    meta: $('#cs-meta').value.trim(),
+                    heroImg: $('#cs-heroImg').value.trim(),
+                    heroAlt: $('#cs-heroAlt').value.trim(),
+                    statement: $('#cs-statement').value.trim(),
+                    sectionTitle: $('#cs-sectionTitle').value.trim(),
+                    sectionNote: $('#cs-sectionNote').value.trim(),
+                    shopTitle: $('#cs-shopTitle').value.trim(),
+                    rooms,
+                },
+            });
+            rooms = structuredClone(withCuratedDefaults(r.content.curatedSpaces).rooms);
+            draw();
+            toast('Saved — refresh the Curated Spaces page to see it');
         } catch (error_) { err.textContent = error_.message; }
     });
 }

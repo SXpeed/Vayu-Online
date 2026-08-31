@@ -11,6 +11,7 @@
    * different list.
    */
   import { categories, catHref } from '#lib/taxonomy.js';
+  import { imageSize, deliverySrc } from '#shared/content/picture.js';
 
   const entries = $derived(Object.entries(categories()));
 </script>
@@ -18,7 +19,12 @@
 <div class="curated-grid">
   {#each entries as [slug, cat] (slug)}
     <a class="curated-card" href={catHref(slug)}>
-      <img src={cat.curated} alt={cat.title} />
+      <!-- The AVIF, and the picture's own dimensions: this rail is the first
+           thing under the hero, so a card with no reserved height pushes the
+           whole page down when it loads. Both come from the generated
+           manifest, not from anyone measuring by hand. -->
+      <img src={deliverySrc(cat.curated)} alt={cat.title} loading="lazy" decoding="async"
+        width={imageSize(cat.curated)?.w} height={imageSize(cat.curated)?.h} />
       <div class="card-overlay">
         <span>{cat.title.toUpperCase()}</span>
       </div>

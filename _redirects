@@ -4,3 +4,31 @@
 # matches no file on its own. 200 is a rewrite, not a redirect: the visitor
 # keeps the "/" URL and gets the prerendered home page.
 /    /index.html    200
+
+# /pages/jenjum.html was one artist written into markup. Artists are rows
+# now and share one page, so the old address is a permanent move rather
+# than a dead link -- it has been in the sitemap, and it is what anything
+# already printed or linked points at.
+/pages/jenjum.html    /pages/artist-profile.html?id=jenjum-gadi    301
+
+# --- The pictures are AVIF now ------------------------------------------
+#
+# public/assets/images ships .avif and nothing else: the PNG and JPEG
+# sources were deleted once every twin existed, which took the directory
+# from 41MB to 2.4MB. Their NAMES did not go anywhere. "/assets/images/
+# hero.jpg" is written into markup, into the content modules, into rows in
+# D1 that the shop edits from the panel, and into links other people have
+# already saved — 215 references that no build step can rewrite, and some
+# that no build step can even see.
+#
+# So the old name goes on working. 200 is a rewrite, not a redirect: the
+# visitor keeps the URL they asked for and receives the AVIF, served with
+# its own Content-Type, in one round trip and with no Worker invocation.
+#
+# shared/content/picture.js resolves the paths it can (deliverySrc) so the
+# markup names the real file where it knows it. These two lines are what
+# covers everything else — and they take precedence even when a source is
+# still on disk, so a stray .png put back by hand cannot quietly start
+# serving 2MB again.
+/assets/images/:name.png    /assets/images/:name.avif    200
+/assets/images/:name.jpg    /assets/images/:name.avif    200

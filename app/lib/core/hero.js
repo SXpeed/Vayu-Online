@@ -20,8 +20,17 @@
  * fighting the first.
  */
 
-/** Must match --hero-delay in styles.css, or the progress rail fills out of step. */
-const DELAY = 6000;
+/**
+ * Must match --hero-delay in styles.css, or the progress rail fills out of
+ * step with the slide it is measuring.
+ *
+ * Hovering does NOT pause this. It used to: mouseenter stopped the timer and
+ * mouseleave started it again, which meant the one visitor actually looking
+ * at the hero — cursor resting on the image — was the one who never saw the
+ * second slide. A carousel that stops when watched is a carousel with one
+ * slide. A hidden tab still stops it, because nobody is watching that.
+ */
+const DELAY = 5000;
 
 export function initHero() {
     const hero = document.getElementById('homeHero');
@@ -66,15 +75,11 @@ export function initHero() {
     const onVisibility = () => (document.hidden ? stop() : start());
 
     bars.forEach((b, n) => b.addEventListener('click', () => { stop(); go(n); start(); }));
-    hero.addEventListener('mouseenter', stop);
-    hero.addEventListener('mouseleave', start);
     document.addEventListener('visibilitychange', onVisibility);
 
     hero._vayuTeardown = () => {
         clearInterval(timer);
         timer = null;
-        hero.removeEventListener('mouseenter', stop);
-        hero.removeEventListener('mouseleave', start);
         document.removeEventListener('visibilitychange', onVisibility);
         hero._vayuTeardown = null;
     };

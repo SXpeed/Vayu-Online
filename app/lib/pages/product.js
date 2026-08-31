@@ -395,12 +395,18 @@ if (product) {
         header.setAttribute('aria-expanded', String(open));
     });
 
-    // Open the first section by default — whichever one that now is, since a
-    // product with no description leads with its dimensions instead.
-    const firstAcc = accordion?.querySelector('.prod-acc-item');
-    if (firstAcc) {
-        firstAcc.classList.add('open');
-        firstAcc.querySelector('.prod-acc-header')?.setAttribute('aria-expanded', 'true');
+    // Description alone starts open; Dimensions, Materials, Care and
+    // Shipping all start closed and are opened by the shopper.
+    //
+    // Addressed by id, not by position. This used to open whichever item was
+    // first, which is only the description when the product has one — a
+    // piece with no description opened onto its Dimensions table instead, so
+    // what greeted the shopper changed product by product. Nothing opens
+    // when there is no description rather than promoting the next section.
+    const descHeader = accordion?.querySelector('.prod-acc-header[data-target="acc-desc"]');
+    if (descHeader) {
+        descHeader.parentElement.classList.add('open');
+        descHeader.setAttribute('aria-expanded', 'true');
     }
 
     // ---- Toast helper ----
@@ -508,67 +514,6 @@ if (product) {
         bindProductTiles(suggestGrid, showToast);
     }
 
-    // ---- Reviews (moderated in the admin panel) ----
-    if (product.id) {
-        const sec = document.createElement('section');
-        sec.style.cssText = 'max-width:760px;margin:70px auto 20px;padding:0 20px;font-family:Jost,sans-serif;';
-        sec.innerHTML = `
-            <h2 style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;margin-bottom:4px;">Reviews</h2>
-            <div data-summary style="font-size:13px;color:#8d887e;margin-bottom:18px;">No reviews yet — be the first.</div>
-            <div data-list style="display:grid;gap:16px;margin-bottom:28px;"></div>
-            <form data-form style="display:grid;gap:10px;background:#faf8f4;padding:18px;border-radius:2px;" novalidate>
-                <div style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#4e4a43;">Write a review</div>
-                <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                    <input name="name" required placeholder="Your name" style="flex:1;min-width:160px;padding:9px 12px;border:1px solid #d9d3c7;border-radius:2px;font:inherit;font-size:13px;">
-                    <select name="rating" style="padding:9px 12px;border:1px solid #d9d3c7;border-radius:2px;font:inherit;font-size:13px;background:#fff;">
-                        ${[5, 4, 3, 2, 1].map(n => `<option value="${n}">${'★'.repeat(n)}${'☆'.repeat(5 - n)}</option>`).join('')}
-                    </select>
-                </div>
-                <textarea name="text" required placeholder="What did you think of this piece?" style="min-height:80px;padding:9px 12px;border:1px solid #d9d3c7;border-radius:2px;font:inherit;font-size:13px;resize:vertical;"></textarea>
-                <div style="display:flex;gap:12px;align-items:center;">
-                    <button type="submit" style="padding:10px 22px;background:#141210;color:#fff;border:0;border-radius:2px;font:inherit;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;cursor:pointer;">Submit</button>
-                    <span data-note style="font-size:12.5px;color:#8d887e;"></span>
-                </div>
-            </form>`;
-        const host = suggestGrid ? suggestGrid.closest('section') || suggestGrid.parentElement : document.querySelector('main') || document.body;
-        host.before(sec);
-
-        const stars = (n) => '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n));
-        fetch(`/api/reviews?productId=${encodeURIComponent(product.id)}`)
-            .then(r => r.ok ? r.json() : null)
-            .then(data => {
-                if (!data || !data.count) return;
-                sec.querySelector('[data-summary]').innerHTML =
-                    `<span style="color:#9E3A26;letter-spacing:2px;">${stars(data.avg)}</span> ${data.avg} · ${data.count} review${data.count === 1 ? '' : 's'}`;
-                sec.querySelector('[data-list]').innerHTML = data.reviews.map(r => `
-                    <div style="border-bottom:1px solid #ece8df;padding-bottom:14px;">
-                        <div style="color:#9E3A26;letter-spacing:2px;font-size:13px;">${stars(r.rating)}</div>
-                        <div style="font-size:14px;margin:5px 0;color:#4e4a43;line-height:1.65;">${r.text.replaceAll('<', '&lt;')}</div>
-                        <div style="font-size:12px;color:#8d887e;">${r.name.replaceAll('<', '&lt;')} · ${new Date(r.t).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</div>
-                    </div>`).join('');
-            })
-            .catch(() => { });
-
-        sec.querySelector('[data-form]').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const f = e.target;
-            const note = sec.querySelector('[data-note]');
-            try {
-                const res = await fetch('/api/reviews', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        productId: product.id,
-                        name: f.name.value.trim(),
-                        rating: Number(f.rating.value),
-                        text: f.text.value.trim(),
-                    }),
-                });
-                const j = await res.json();
-                note.textContent = res.ok ? j.message : (j.error || 'Could not submit.');
-                if (res.ok) f.reset();
-            } catch { note.textContent = 'Could not submit.'; }
-        });
-    }
 } else {
     const prodName = document.getElementById('prodName');
     if (prodName) prodName.textContent = 'Product Not Found';

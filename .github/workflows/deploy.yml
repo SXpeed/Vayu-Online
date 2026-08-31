@@ -1,0 +1,106 @@
+# Vayu — deploy to Cloudflare on push to main.
+#
+# Four Workers, deployed in dependency order. That order is not cosmetic:
+# they call each other through service bindings, and a binding to a Worker
+# that does not exist yet fails the deploy.
+#
+#     vayuindia-payments          (no bindings out)
+#         ^
+#     vayuindia-api               binds PAYMENTS -> vayuindia-payments
+#         ^
+#     vayuindia-admin             binds API      -> vayuindia-api
+#
+#     vayuindia              the storefront; D1 + R2 only
+#
+# The storefront is deployed last so that if an earlier step fails, the live
+# site is still serving the previous build rather than a half-updated stack.
+#
+# ---------------------------------------------------------------------------
+# Required GitHub repository secrets (Settings -> Secrets and variables ->
+# Actions -> New repository secret):
+#
+#   CLOUDFLARE_API_TOKEN    Create at dash.cloudflare.com/profile/api-tokens
+#                           with the "Edit Cloudflare Workers" template, and
+#                           add D1:Edit and R2:Edit to it. The OAuth token
+#                           `wrangler login` gives you is NOT usable in CI.
+#   CLOUDFLARE_ACCOUNT_ID   dash.cloudflare.com -> Workers -> Account ID
+#
+# The application's own secrets (BETTER_AUTH_SECRET, INTERNAL_SECRET,
+# GOOGLE_*, RAZORPAY_*) are NOT set here. They are set once per Worker with
+# `wrangler secret put` and persist across deploys — putting them in CI would
+# mean re-uploading them on every push and keeping a second copy in GitHub.
+# ---------------------------------------------------------------------------
+
+name: Deploy to Cloudflare
+
+on:
+  push:
+    branches: [main]
+  # Lets you re-run a deploy from the Actions tab without an empty commit.
+  workflow_dispatch:
+
+# One deploy at a time. Two concurrent runs would race on the same Workers,
+# and `cancel-in-progress: false` means a running deploy finishes rather than
+# being killed half way through the four steps.
+concurrency:
+  group: deploy-cloudflare
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # Fails the run before anything is deployed if the remote schema is
+      # behind the migrations in this commit. Deploying code that expects a
+      # column the database does not have is the failure this prevents.
+      - name: Check migrations
+        run: node scripts/check-migrations.mjs
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Build the standalone Workers
+        run: node scripts/build-workers.mjs
+
+      - name: Build the storefront
+        run: node scripts/build.mjs
+
+      - name: Deploy payments
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy -c wrangler.payments.jsonc
+
+      - name: Deploy api
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy -c wrangler.api.jsonc
+
+      - name: Deploy admin
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy -c wrangler.admin.jsonc
+
+      - name: Deploy storefront
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy

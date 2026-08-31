@@ -1,29 +1,101 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "vayu-site",
+  "name": "vayuindia",
+
+  // ===================================================================
+  // DEPLOY RUNBOOK — this config is the storefront monolith.
+  //
+  // The D1 id and the R2 bucket name below are already correct for the
+  // account this deploys to. Three things live OUTSIDE this file and have to
+  // be done before a deploy is worth anything:
+  //
+  //   1. SCHEMA. The remote database exists but is created EMPTY. Until this
+  //      runs, the deploy succeeds and every /api/* route 500s at runtime
+  //      while the prerendered shell keeps serving — a total backend failure
+  //      that reads as a front-end bug:
+  //
+  //        npx wrangler d1 migrations apply vayuindia-db --remote
+  //
+  //      npm run deploy refuses to run ahead of this (check-migrations.mjs).
+  //
+  //   2. SECRETS. `wrangler deploy` does NOT upload .dev.vars. These are set
+  //      once per Worker and persist across deploys:
+  //
+  //        npx wrangler secret put BETTER_AUTH_SECRET        (required)
+  //        npx wrangler secret put GOOGLE_CLIENT_ID          (optional)
+  //        npx wrangler secret put GOOGLE_CLIENT_SECRET      (optional)
+  //        npx wrangler secret put RAZORPAY_KEY_ID           (optional)
+  //        npx wrangler secret put RAZORPAY_KEY_SECRET       (optional)
+  //        npx wrangler secret put RAZORPAY_WEBHOOK_SECRET   (optional)
+  //
+  //      BETTER_AUTH_SECRET is the only hard requirement — it signs the
+  //      customer session cookie. Without the Google pair, email and password
+  //      still work. Without Razorpay the shop is cash-on-delivery, and those
+  //      three can instead be set from the admin panel (Settings → Payment),
+  //      which writes them to D1; the code reads the env first and falls back
+  //      to the row.
+  //
+  //      NOT secrets, and deliberately not on that list:
+  //        PUBLIC_ORIGIN   — a public hostname; it is in `vars` below so it
+  //                          stays reviewable in a diff.
+  //        INTERNAL_SECRET — authenticates calls BETWEEN the split Workers.
+  //                          This config is the monolith: payments run in
+  //                          this same isolate (services/payments/index.js
+  //                          falls back to razorpay.js when PAYMENTS is
+  //                          absent), so nothing here reads it.
+  //
+  //   3. AN ADMIN TO SIGN IN AS. A database built from migrations alone has
+  //      an empty `admins` table, and the panel is the only other place an
+  //      admin can be added — so there is no way in until this runs:
+  //
+  //        node scripts/create-admin.mjs --email=you@example.com --remote
+  //
+  // Then:  npm run deploy
+  // ===================================================================
 
   // Both of these point INSIDE .svelte-kit/, and that is load-bearing:
   // @sveltejs/adapter-cloudflare does `rmSync(assets.directory)` and
-  // `rmSync(main)` at the start of every build. While they pointed at
-  // ./public and ./src/worker.js — which is what they were before the
-  // SvelteKit migration — a build would have deleted the whole site and the
-  // Worker source with it. Never point either at a hand-authored directory.
+  // `rmSync(main)` at the start of every build. If they pointed at a
+  // hand-authored directory — ./public, ./src/worker.js — a build would
+  // delete the site and the Worker source with it. Never repoint these.
   "main": ".svelte-kit/cloudflare/_worker.js",
   "compatibility_date": "2026-08-01",
   "compatibility_flags": ["nodejs_compat"],
+
+  // Public hostnames, not secrets — they live here rather than as
+  // `wrangler secret put` so they stay reviewable in a diff. PUBLIC_ORIGIN is
+  // the canonical URL on every product page, the <loc> in sitemap.xml, the
+  // Sitemap: line in robots.txt and the base of the Google OAuth callback.
+  // No trailing slash.
+  "vars": {
+    "PUBLIC_ORIGIN": "https://vayuindia.com"
+
+    // ---- ZERO TRUST (optional) -------------------------------------
+    // This Worker also mounts the admin panel at vayuindia.com/admin — the
+    // second of the two doors into it. Putting Cloudflare Access on
+    // admin.vayuindia.com and not here would lock one of them and leave
+    // this one open, so if the Access application covers both hostnames,
+    // set the same two values here as in wrangler.admin.jsonc:
+    //
+    //   "ACCESS_TEAM_DOMAIN": "your-team",
+    //   "ACCESS_AUD": "<the application's Audience tag>"
+    //
+    // Both or neither. Exactly one makes every /admin request 503 on
+    // purpose — see services/auth/access.js and README-cloudflare.md.
+    // ----------------------------------------------------------------
+  },
 
   "assets": {
     "directory": ".svelte-kit/cloudflare",
     "binding": "ASSETS",
     // Every link on this site is written out in full ("/pages/cart.html").
     // The default would 307 those to extensionless URLs, so each navigation
-    // costs a redirect and every existing link and bookmark bounces. This
-    // was in the pre-SvelteKit config for the same reason.
+    // costs a redirect and every existing link and bookmark bounces.
     "html_handling": "none",
     "not_found_handling": "none",
     // Workers Assets serves a matching file BEFORE the Worker runs, so
-    // without this the panel's own files (/admin/ui/admin.js, views/*) are
-    // handed to anyone who asks for them by path and the session gate in
+    // without this the admin panel's own files (/admin/ui/admin.js, views/*)
+    // are handed to anyone who asks for them by path and the session gate in
     // routes/admin/[...path] never runs. _routes.json does not apply here:
     // that is a Pages concept, and this is a Worker with assets.
     "run_worker_first": [
@@ -31,28 +103,117 @@
       "/api/*",
       "/admin",
       "/admin/*",
-      "/uploads/*"
+      "/uploads/*",
+      // The server-rendered SEO routes. A product's price and stock change
+      // from the admin panel without a deploy, so these cannot be
+      // prerendered like the rest of the site.
+      "/products/*",
+      "/sitemap.xml",
+      "/robots.txt"
+      //
+      // /pages/product.html is deliberately NOT listed. It 301s onto
+      // /products/<slug>, and listing it here was tried first and did NOT
+      // work: while the page was prerendered it existed as a file in the
+      // assets directory, and this setting did not stop that file being
+      // served. What fixed it was `prerender = false` on the route itself
+      // (routes/pages/product.html/+page.server.js), which takes it out of
+      // the assets directory altogether.
     ]
   },
 
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "vayu-db",
-      // vayu-db on the vayuxdesign@gmail.com account.
-      "database_id": "4162de18-3cd3-409e-a196-bd91cab8bee2",
+      "database_name": "vayuindia-db",
+      // ACCOUNT-SPECIFIC. `npx wrangler d1 create vayuindia-db` prints this.
+      //
+      // A placeholder rather than an empty string, because `wrangler dev`
+      // asserts on a falsy databaseId and refuses to boot — blank here means
+      // `npm run dev` fails out of the box, which is the worst possible
+      // first experience of a fresh checkout. Locally the id is only a key
+      // for the sqlite file under .wrangler/state, so any non-empty string
+      // works and the whole site runs offline against it.
+      //
+      // Remote is where it must be real. Deploying with this placeholder
+      // still SUCCEEDS — the Worker uploads fine — and then every /api/*
+      // route 500s at runtime with 7404 "database could not be found",
+      // while the prerendered shell keeps serving. That failure reads as a
+      // front-end bug and is not one. `npm run deploy` guards against it:
+      // scripts/check-migrations.mjs cannot read the schema and fails closed.
+      "database_id": "a28900c6-fa6b-4aa5-9472-4a3769676c5b",
       "migrations_dir": "migrations"
     }
   ],
 
   // Admin image uploads. D1 rows cap at 1 MB and are the wrong home for
   // binaries, so the bytes live here and the row keeps the key.
+  // ACCOUNT-SPECIFIC: bucket names are unique per account.
+  //   npx wrangler r2 bucket create vayuindia-storage
   "r2_buckets": [
     {
       "binding": "UPLOADS",
-      "bucket_name": "vayuindia"
+      "bucket_name": "vayuindia-storage"
     }
   ],
+
+  // Image transformations, for /uploads/* only.
+  //
+  // Every picture that SHIPS with the site is converted to AVIF and measured
+  // at build time by scripts/images.mjs, and none of that needs this
+  // binding. What it cannot touch is an image an admin uploads months after
+  // the build — and on a product page that is the photograph the page
+  // exists for. This binding is how those get the same treatment, resized to
+  // the requested rung and re-encoded to whatever the browser says it can
+  // read, on the way out of R2. See services/media/uploads.js.
+  //
+  // R2 stays the source of truth: the bytes are not moved into Images'
+  // own storage, so every /uploads/… URL already written into a product row
+  // goes on meaning exactly what it meant.
+  //
+  // Billed per unique transformation, which is why the widths are an
+  // allow-list rather than any integer (shared/content/variants.js) and why
+  // every result is cached. Remove this binding and the route serves the
+  // original bytes instead — nothing breaks, the pictures just weigh more.
+  //
+  // NOTE: transformations must also be enabled for the zone, under
+  // Images → Transformations in the dashboard. The binding alone is not
+  // enough, and without it every transform throws and falls back.
+  "images": {
+    "binding": "IMAGES"
+  },
+
+  // Gives you <worker>.<subdomain>.workers.dev immediately, with no domain
+  // and no DNS. Keep it on until a custom domain is attached — and keep it
+  // on afterwards too, so the two are independent rather than swapped.
+  "workers_dev": true,
+
+  // ---- CUSTOM DOMAIN -----------------------------------------------
+  // Use `custom_domain: true`, NOT a bare route pattern. A pattern without a
+  // trailing /* matches the root and nothing else, which is a real failure
+  // this project already hit: the apex answered while /api/* and /pages/*
+  // fell through to the old origin and returned its 404 page.
+  //
+  // hooks.server.js 301s www onto the apex, so BOTH are listed — www has to
+  // reach the Worker before it can be redirected at all.
+  //
+  // Both hostnames must sit on a zone owned by the account being deployed to.
+  // Wrangler creates the DNS record and the certificate on the first deploy;
+  // it does NOT create the zone. If the zone is missing the deploy fails
+  // loudly, which is the safe direction.
+  //
+  // These match PUBLIC_ORIGIN above. Change one and change the other: that
+  // var is the canonical URL on every product page, the <loc> in sitemap.xml,
+  // the Sitemap: line in robots.txt and the base of the OAuth callback.
+  //
+  // Declaring `routes` makes Wrangler default workers_dev to FALSE, which
+  // silently switches off the workers.dev URL. That is why it is set
+  // explicitly above.
+  // ------------------------------------------------------------------
+  "routes": [
+    { "pattern": "vayuindia.com", "custom_domain": true },
+    { "pattern": "www.vayuindia.com", "custom_domain": true }
+  ],
+
 
   "observability": {
     "enabled": true

@@ -11,9 +11,9 @@
   import { page } from '$app/state';
   import Header from '#lib/components/Header.svelte';
   import Footer from '#lib/components/Footer.svelte';
-  import { site, hydrateNav, hydrateCatalogue } from '#lib/stores/site.svelte.js';
+  import { site, hydrateNav, hydrateCatalogue, hydrateEvents } from '#lib/stores/site.svelte.js';
   import { renderRemoteSiteContent } from '#lib/core/site-content.js';
-  import '../../public/css/styles.css';
+  import '../styles/styles.css';
 
   let { children } = $props();
 
@@ -31,7 +31,11 @@
    * never got past the two slides hard-coded in the markup.
    */
   $effect(() => {
-    if (site.content) renderRemoteSiteContent();
+    // Both, deliberately. The Inside Vayu block draws itself from the
+    // gallery's current show, which arrives on its own schedule from
+    // /api/events — reading only site.content would paint the block before
+    // the programme existed and never paint it again.
+    if (site.content || site.venues) renderRemoteSiteContent();
   });
 
   /**
@@ -65,7 +69,7 @@
   }
 
   /** Pages that render products fetch the catalogue themselves. */
-  const CATALOGUE_ROUTES = /\/pages\/(product|collection-detail|jenjum|design-for-living|journal|journal-post)\.html$/;
+  const CATALOGUE_ROUTES = /\/pages\/(product|collection-detail|artist-profile|design-for-living|event)\.html$/;
 
   onMount(async () => {
     const { initShell } = await import('#lib/core/shell.js');
@@ -75,6 +79,11 @@
     enableSpeculation();
 
     if (!CATALOGUE_ROUTES.test(page.url.pathname)) hydrateNav();
+
+    // The programme, for the MENU panel's two venue cards — which are on
+    // every page, so this is fetched on every page. Small and edge-cached;
+    // the panel falls back to the shipped shows until it answers.
+    hydrateEvents();
 
     armSearch();
 

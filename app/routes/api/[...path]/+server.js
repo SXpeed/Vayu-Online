@@ -19,7 +19,7 @@ import { currentAdmin, roleError } from '#lib/server/sessions.js';
 import { cachedResponse, storeResponse, purgeCatalogueCache } from '#lib/server/cache.js';
 import { PUBLIC_ROUTES, ADMIN_ROUTES } from '#lib/server/routes.js';
 import * as accounts from '#lib/server/accounts.js';
-import { validate } from '#lib/schemas/index.js';
+import { validate } from '#shared/schemas/index.js';
 
 const HAS_BODY = new Set(['POST', 'PUT', 'PATCH']);
 

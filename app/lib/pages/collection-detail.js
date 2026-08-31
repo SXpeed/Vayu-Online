@@ -14,6 +14,7 @@ import { hydrateCatalogue } from '#lib/stores/site.svelte.js';
 import { slugToLabel, subToSlug } from '../taxonomy.js';
 import { productCardHTML, bindProductTiles } from '../product-card.js';
 import { showToast } from '../core/toast.js';
+import { setDescription, setCanonical, setOpenGraph } from '../core/head.js';
 
 export default async function initCollectionDetail() {
     const collectionGrid = document.getElementById('collectionGrid');
@@ -73,6 +74,17 @@ export default async function initCollectionDetail() {
             document.title = `${catInfo.title} — Vayu`;
             if (catTitle) catTitle.textContent = catInfo.title;
         }
+
+        // The rest of the head, which until now every category shared: one
+        // description and no canonical across all of them, so four distinct
+        // pages competed for the same result. See core/head.js for why this
+        // has to happen here rather than at build time.
+        const heading = sub ? slugToLabel(sub) : catInfo.title;
+        const description = `${heading} at Vayu — handcrafted pieces by master `
+            + `artisans and contemporary Indian makers, from our New Delhi shop.`;
+        setDescription(description);
+        setCanonical(location.pathname + location.search);
+        setOpenGraph({ title: `${heading} — Vayu`, description });
 
         // Set the banner. The markup no longer ships a hardcoded src, so
         // there is no longer a wasted request for the home hero followed by

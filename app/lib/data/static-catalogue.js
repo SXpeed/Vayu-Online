@@ -2,7 +2,7 @@
  * Vayu — shared product catalogue.
  *
  * The live catalogue now comes from the admin panel via /api/catalogue
- * (see data/remote.js); the static object below is the offline fallback
+ * (see stores/site.svelte.js); the static object below is the offline fallback
  * and the seed for the admin database on first run. `idx` in
  * /pages/product.html?cat=&idx= is the position of an item in its category
  * array, so never reorder these lists.

@@ -21,8 +21,10 @@
             <span class="sep" id="crumbSep" style="display:none;">|</span>
             <span id="crumbSub" style="display:none;">Sub</span>
         </nav>
-        <div class="collection-banner-219"
-            style="width: 100%; aspect-ratio: 32 / 9; max-height: 380px; overflow: hidden; border-radius: 2px; margin-bottom: 4px; position: relative; background: #FAF8F5;">
+        <!-- Styling lives in section 09 of styles.css, not in a style=""
+             attribute here: the desktop rule widens this box past the page
+             gutter, and an inline width would outrank it. -->
+        <div class="collection-banner-219">
             <!-- No src here on purpose. It used to be hardcoded to hero.jpg,
                  which script.js then replaced with the real category banner:
                  one wasted full-size request plus a visible flash of the

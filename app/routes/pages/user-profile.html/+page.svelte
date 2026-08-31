@@ -1,4 +1,5 @@
 <script>
+  import Seo from '#lib/components/Seo.svelte';
   // Vayu — /pages/user-profile.html, ported from public/pages/user-profile.html.
   import { onMount } from 'svelte';
 
@@ -12,9 +13,12 @@
   });
 </script>
 
-<svelte:head>
-  <title>Your Account — Vayu</title>
-</svelte:head>
+<Seo
+  title="Your Account"
+  description="Your Vayu account — orders, addresses and details."
+  path="/pages/user-profile.html"
+  noindex
+/>
 
 {@html pageCss}
 
@@ -24,19 +28,19 @@
       <span>My Account</span>
     </nav>
 
-    <!-- Signed out: sign in or create an account. Shown until /api/account/me
+    <!-- Signed out: sign in with Google or email. Shown until /api/account/me
          says otherwise, so the panels below never flash for a visitor who is
          not signed in. Buying does not need any of this — the cart offers a
-         guest checkout. -->
+         guest checkout, and accounts are created by Google sign-in. -->
     <section class="acct-gate" id="acctGate" hidden>
       <div class="acct-gate-card">
         <h1 id="gateTitle">Sign in</h1>
         <p class="acct-gate-lede" id="gateLede">Your orders, details and saved addresses in one place.</p>
 
-        <!-- Filled in by the script when the server reports Google sign-in
-             as configured; hidden otherwise, so no dead button is shown. -->
+        <!-- The script fills in the link; the button itself is always shown,
+             whether or not Google sign-in is configured server-side. -->
         <div id="gateGoogle" hidden>
-          <a class="acct-google" id="gateGoogleLink" href="#">
+          <a class="acct-google" id="gateGoogleLink" href="#gateGoogle">
             <svg viewBox="0 0 18 18" width="17" height="17" aria-hidden="true">
               <path fill="#4285F4"
                 d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.62z" />
@@ -52,17 +56,9 @@
         </div>
 
         <form class="acct-gate-form" id="gateForm" novalidate>
-          <div class="acct-field is-wide" id="gateNameField" hidden>
-            <label for="gateName">Full name</label>
-            <input type="text" id="gateName" name="name" autocomplete="name">
-          </div>
           <div class="acct-field is-wide">
             <label for="gateEmail">Email</label>
             <input type="email" id="gateEmail" name="email" autocomplete="email" required>
-          </div>
-          <div class="acct-field is-wide" id="gatePhoneField" hidden>
-            <label for="gatePhone">Phone</label>
-            <input type="tel" id="gatePhone" name="phone" autocomplete="tel" placeholder="10-digit mobile">
           </div>
           <div class="acct-field is-wide">
             <label for="gatePassword">Password</label>
@@ -72,7 +68,6 @@
           <p class="acct-error" id="gateError" role="alert"></p>
           <div class="acct-form-actions">
             <button type="submit" class="acct-save" id="gateSubmit">Sign in</button>
-            <button type="button" class="acct-linkbtn" id="gateSwitch">Create an account</button>
           </div>
         </form>
         <p class="acct-gate-foot">

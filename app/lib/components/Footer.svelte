@@ -23,29 +23,45 @@
       <div class="foot-logo">
         <span class="word">VAYU</span>
       </div>
+      <!-- The networks' own marks, as each brand publishes them: solid
+           glyphs on a 24x24 grid, in the brand's own colour, standing on
+           the footer with no ring or plate around them.
+
+           Filled, not stroked — these are the official silhouettes and
+           they are meant to be filled. Instagram has no flat colour of its
+           own, so it carries the corner-to-corner gradient from its brand
+           guidelines; the gradient id is namespaced because the mobile
+           footer is in the same document and ids are global. -->
       <div class="socials">
-        <a href="https://instagram.com" class="social-insta" aria-label="Instagram" target="_blank"><svg
-            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-            stroke-linejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="5" />
-            <circle cx="12" cy="12" r="4" />
-            <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+        <a href="https://instagram.com" class="social-insta" aria-label="Instagram" target="_blank"
+          rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="27" height="27" aria-hidden="true">
+            <defs>
+              <radialGradient id="vayuIgGrad" cx="0.3" cy="1.07" r="1.1">
+                <stop offset="0%" stop-color="#FDD54F" />
+                <stop offset="24%" stop-color="#F67D28" />
+                <stop offset="50%" stop-color="#DC2743" />
+                <stop offset="76%" stop-color="#CC2366" />
+                <stop offset="100%" stop-color="#8A3AB9" />
+              </radialGradient>
+            </defs>
+            <path fill="url(#vayuIgGrad)"
+              d="M12 2.16c3.2 0 3.58.01 4.85.07 3.25.15 4.77 1.69 4.92 4.92.06 1.27.07 1.64.07 4.85 0 3.2-.01 3.58-.07 4.85-.15 3.22-1.66 4.77-4.92 4.92-1.27.06-1.64.07-4.85.07-3.2 0-3.58-.01-4.85-.07-3.26-.15-4.77-1.7-4.92-4.92C2.17 15.58 2.16 15.2 2.16 12c0-3.2.01-3.58.07-4.85.15-3.23 1.66-4.77 4.92-4.92C8.42 2.17 8.8 2.16 12 2.16ZM12 0C8.74 0 8.33.01 7.05.07 2.7.27.28 2.69.07 7.05.01 8.33 0 8.74 0 12c0 3.26.01 3.67.07 4.95.2 4.36 2.62 6.78 6.98 6.98C8.33 23.99 8.74 24 12 24c3.26 0 3.67-.01 4.95-.07 4.35-.2 6.78-2.62 6.98-6.98.06-1.28.07-1.69.07-4.95 0-3.26-.01-3.67-.07-4.95-.2-4.35-2.62-6.78-6.98-6.98C15.67.01 15.26 0 12 0Zm0 5.84a6.16 6.16 0 1 0 0 12.32 6.16 6.16 0 0 0 0-12.32ZM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8Zm6.41-11.85a1.44 1.44 0 1 0 0 2.88 1.44 1.44 0 0 0 0-2.88Z" />
           </svg></a>
-        <a href="https://facebook.com" class="social-fb" aria-label="Facebook" target="_blank"><svg viewBox="0 0 24 24"
-            fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 9h3l.5-3H14V4.5c0-.8.3-1.5 1.5-1.5H17V.2C16.6.1 15.4 0 14.3 0 11.8 0 10 1.5 10 4.2V6H7v3h3v9h4V9z" />
+        <a href="https://facebook.com" class="social-fb" aria-label="Facebook" target="_blank"
+          rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="27" height="27" aria-hidden="true">
+            <path fill="#1877F2"
+              d="M24 12.07C24 5.44 18.63.07 12 .07S0 5.44 0 12.07c0 5.99 4.39 10.95 10.13 11.85v-8.38H7.08v-3.47h3.05V9.43c0-3.01 1.79-4.67 4.53-4.67 1.31 0 2.69.24 2.69.24v2.95h-1.51c-1.49 0-1.96.93-1.96 1.87v2.25h3.33l-.53 3.47h-2.8v8.38C19.61 23.02 24 18.06 24 12.07Z" />
           </svg></a>
-        <a href="https://pinterest.com" class="social-pin" aria-label="Pinterest" target="_blank"><svg
-            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-            stroke-linejoin="round">
-            <path
-              d="M12 2C6.5 2 2 6.5 2 12c0 4.2 2.6 7.8 6.2 9.3-.1-.8-.2-2 0-2.9l1.1-4.7s-.3-.6-.3-1.4c0-1.3.8-2.3 1.7-2.3.8 0 1.2.6 1.2 1.3 0 .8-.5 2-.8 3.2-.2 1 .5 1.8 1.5 1.8 1.8 0 3-2.3 3-4.5 0-1.9-1.3-3.3-3.6-3.3-2.6 0-4.2 2-4.2 4.3 0 .8.2 1.4.6 1.8l-.3 1.1c0 .2-.2.3-.4.2-1.1-.5-1.7-1.9-1.7-3.4 0-2.7 2.3-6 6.8-6 3.6 0 6 2.6 6 5.4 0 3.7-2.1 6.5-5.1 6.5-1 0-2-.5-2.3-1.2l-.6 2.5c-.2 1-.7 2-1.2 2.8A10 10 0 1 0 12 2z" />
+        <a href="https://pinterest.com" class="social-pin" aria-label="Pinterest" target="_blank"
+          rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="27" height="27" aria-hidden="true">
+            <path fill="#E60023"
+              d="M12 0C5.37 0 0 5.37 0 12c0 5.08 3.16 9.42 7.62 11.16-.11-.95-.2-2.4.04-3.44.22-.94 1.4-5.96 1.4-5.96s-.36-.72-.36-1.78c0-1.66.97-2.91 2.17-2.91 1.02 0 1.52.77 1.52 1.69 0 1.03-.66 2.57-1 4-.28 1.19.6 2.16 1.78 2.16 2.13 0 3.77-2.24 3.77-5.49 0-2.86-2.06-4.86-5.01-4.86-3.41 0-5.41 2.56-5.41 5.2 0 1.03.4 2.14.89 2.74.1.12.11.22.08.35-.09.37-.29 1.2-.33 1.36-.05.22-.17.27-.4.16-1.5-.69-2.44-2.87-2.44-4.64 0-3.78 2.75-7.25 7.92-7.25 4.16 0 7.39 2.96 7.39 6.92 0 4.13-2.6 7.46-6.23 7.46-1.21 0-2.35-.63-2.76-1.38l-.75 2.85c-.27 1.04-1 2.35-1.5 3.15 1.13.35 2.31.53 3.55.53 6.63 0 12-5.37 12-12S18.63 0 12 0Z" />
           </svg></a>
-        <a href="https://youtube.com" class="social-yt" aria-label="YouTube" target="_blank"><svg viewBox="0 0 24 24"
-            fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path
-              d="M22.5 7c-.2-1.2-.9-2-2.1-2.2C18.5 4.5 12 4.5 12 4.5s-6.5 0-8.4.3C2.4 5 1.7 5.8 1.5 7 1.2 8.8 1.2 12 1.2 12s0 3.2.3 5c.2 1.2.9 2 2.1 2.2 1.9.3 8.4.3 8.4.3s6.5 0 8.4-.3c1.2-.2 1.9-1 2.1-2.2.3-1.8.3-5 .3-5s0-3.2-.3-5z" />
-            <path d="M10 15.5v-7l6 3.5-6 3.5z" fill="currentColor" stroke="none" />
+        <a href="https://youtube.com" class="social-yt" aria-label="YouTube" target="_blank"
+          rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="27" height="27" aria-hidden="true">
+            <path fill="#FF0000"
+              d="M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.5 3.55 12 3.55 12 3.55s-7.5 0-9.38.5A3.02 3.02 0 0 0 .5 6.19C0 8.07 0 12 0 12s0 3.93.5 5.81a3.02 3.02 0 0 0 2.12 2.14c1.88.5 9.38.5 9.38.5s7.5 0 9.38-.5a3.02 3.02 0 0 0 2.12-2.14C24 15.93 24 12 24 12s0-3.93-.5-5.81Z" />
+            <path fill="#FFFFFF" d="M9.55 15.57V8.43L15.82 12l-6.27 3.57Z" />
           </svg></a>
       </div>
     </div>
@@ -75,7 +91,6 @@
         <ul>
           <li><a href="/pages/about.html">Our Story</a></li>
           <li><a href="/pages/artist.html">Designers & Artists</a></li>
-          <li><a href="/pages/journal.html">Journal</a></li>
           <li><a href="/pages/press.html">Press</a></li>
         </ul>
       </div>
@@ -194,13 +209,6 @@
             <path d="M16 3.13a4 4 0 0 1 0 7.75" />
           </svg>
           <span>Designers & Artists</span>
-        </a>
-        <a href="/pages/journal.html" class="m-about-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z" />
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-          </svg>
-          <span>Journal</span>
         </a>
         <a href="/pages/press.html" class="m-about-item">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -384,7 +392,6 @@
         <a href="/pages/artist.html">Designers & Artists</a>
         <a href="/pages/design-for-living.html">Design for Living</a>
         <a href="/pages/gallery.html">Gallery Vayu</a>
-        <a href="/pages/journal.html">Journal</a>
         <a href="/pages/press.html">Press</a>
         <a href="/pages/about.html">About Us</a>
       </div>

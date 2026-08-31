@@ -104,8 +104,6 @@ a { color: inherit; }
   min-height: 18px;
   text-align: center;
 }
-.login-hint { margin-top: 22px; font-size: 12px; color: var(--muted); }
-.login-hint code { background: var(--paper); padding: 2px 6px; border-radius: 4px; }
 
 /* ============ SHELL ============ */
 
@@ -287,7 +285,90 @@ table.grid td.num, table.grid th.num { text-align: right; font-variant-numeric: 
 .status.shipped::before { background: var(--series-2); }
 .status.new::before { background: var(--serious); }
 .status.archived::before, .status.cancelled::before { background: var(--critical); }
+/* Payment state. Reuses the .status pill so a payment badge and an order
+   badge read as the same kind of thing, with its own dot colours: money in
+   is good, money owed is a warning, money lost is critical. */
+.status.pay-paid::before { background: var(--good); }
+.status.pay-pending::before { background: var(--warning); }
+.status.pay-failed::before { background: var(--critical); }
+.status.pay-refunded::before { background: var(--serious); }
+
+/* One line, not a stack. Stacked, the badge sat ~10px above the baseline
+   that Total, Placed and Status share, and since the badge is the element
+   the eye lands on, the whole column read as misaligned even though the
+   block itself was centred. Inline puts the badge on that shared line. */
+.pay-cell { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.pay-method { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+
+.pay-detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  background: var(--surface);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--body);
+}
+
+/* The ids are long and must not push the button off the row. */
+.pay-ids { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); }
+.pay-ids code { font-size: 11.5px; word-break: break-all; }
+
 .stock-low { color: var(--critical); font-weight: 600; }
+.stock-back { color: var(--good-text); font-weight: 600; }
+
+/* ---- back-in-stock request ----
+   Wider than a .mini-row and aligned to the top rather than the middle,
+   because the body is a stack — price, categories, stock, requester — not
+   a single line. The plate is the product's own image at the size the
+   catalogue table uses, doubled, so the piece is recognisable at a glance
+   without opening it. */
+.alert-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 8px;
+  border-radius: 10px;
+  border-bottom: 1px solid var(--hairline);
+}
+.alert-card:last-child { border-bottom: 0; }
+.alert-card:hover { background: var(--surface); }
+.alert-card .grow { flex: 1; min-width: 0; }
+/* Not nowrap/ellipsis like .mini-row .nm: a product name is the thing the
+   operator is trying to read here, so it wraps instead of being cut. */
+.alert-card .nm {
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.alert-card .nm a { color: inherit; text-decoration: none; }
+.alert-card .nm a:hover { text-decoration: underline; }
+.alert-card .meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.alert-card .meta s { opacity: 0.7; }
+
+/* The list-row size. Still below the 42px the detail panel and the catalogue
+   use, so the row stays tighter than a product row, but large enough that a
+   garment is actually recognisable rather than a coloured smudge. */
+.thumb.sm { width: 38px; height: 38px; border-radius: 7px; }
+
+/* A line whose product has no image. `display: block` because this one is a
+   <span>, not an <img> — it has no intrinsic box to inherit. */
+.thumb.is-missing { display: block; background: var(--paper); }
+
+.thumb-lg { width: 84px; height: 84px; border-radius: 10px; }
+/* A product with no image, or one whose row has been deleted. Renders as
+   an empty plate rather than a broken-image glyph. */
+.thumb-lg.is-missing { display: block; background: var(--paper); }
 
 .empty {
   text-align: center;
@@ -527,6 +608,33 @@ table.grid td.num, table.grid th.num { text-align: right; font-variant-numeric: 
 /* ============ ORDERS / DETAIL ============ */
 
 .order-items { display: grid; gap: 8px; margin: 10px 0; }
+/* The Items column in the orders list: the product images, overlapped into
+   a stack so a four-line order costs about the width of two thumbnails. The
+   ring is the card colour rather than a border, which reads as separation
+   between the plates without adding a second outline to each one. */
+.items-cell { display: flex; align-items: center; gap: 10px; }
+.item-stack { display: flex; align-items: center; }
+.item-stack .thumb { box-shadow: 0 0 0 2px var(--card); }
+.item-stack > * + * { margin-left: -11px; }
+
+.item-stack .more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  min-width: 38px;
+  padding: 0 7px;
+  border-radius: 7px;
+  background: var(--paper);
+  border: 1px solid var(--hairline);
+  box-shadow: 0 0 0 2px var(--card);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.items-cell .count { font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+
 .order-line { display: flex; gap: 12px; align-items: center; font-size: 13px; }
 .order-line .val { margin-left: auto; font-variant-numeric: tabular-nums; }
 .timeline { border-left: 2px solid var(--hairline); margin: 12px 0 0 6px; padding-left: 16px; display: grid; gap: 8px; font-size: 12.5px; color: var(--body); }
@@ -554,7 +662,18 @@ select.status-select { padding: 5px 8px; border-radius: 7px; border: 1px solid v
   border-radius: var(--radius);
   background: var(--surface);
 }
+/* Two plates per slide now — desktop and phone — stacked in the column the
+   single one used to fill. */
+.slide-imgs { display: grid; gap: 12px; align-content: start; }
 .slide-img { position: relative; }
+.slide-img-label {
+  margin-top: 6px;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+}
 .slide-img img {
   width: 100%;
   aspect-ratio: 16 / 9;
@@ -617,3 +736,55 @@ select.status-select { padding: 5px 8px; border-radius: 7px; border: 1px solid v
   .side-nav { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
   .main { padding: 20px 16px 50px; }
 }
+
+/* ---- product editor: search & sharing ------------------------------
+   The slug, meta title and meta description. Grouped in one bordered
+   block rather than dropped in as three more rows of the form grid,
+   because they are the only fields in the editor that change how the
+   product appears somewhere other than this site. */
+.seo-editor {
+    border: 1px solid var(--line, #E3DDD2);
+    border-radius: 3px;
+    padding: 14px 16px;
+    display: grid;
+    gap: 4px;
+}
+
+.seo-lab {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted, #8A8681);
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+.seo-lab:first-child { margin-top: 0; }
+
+/* The origin sits flush against the field so the whole thing reads as one
+   URL, which is what stops someone pasting a full https:// address in. */
+.seo-url {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.seo-origin {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    color: var(--muted, #8A8681);
+    background: var(--sunk, #FAF8F5);
+    border: 1px solid var(--line, #E3DDD2);
+    border-right: none;
+    border-radius: 3px 0 0 3px;
+    padding: 8px 2px 8px 10px;
+    white-space: nowrap;
+}
+
+.seo-url input {
+    border-radius: 0 3px 3px 0 !important;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+}
+
+.seo-editor textarea { resize: vertical; min-height: 52px; }

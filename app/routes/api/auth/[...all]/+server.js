@@ -64,6 +64,44 @@ async function handleAuth({ request, platform, url }) {
  * not recognise.
  */
 export async function GET(event) {
+    const { request, url, platform } = event;
+
+    // Intercept GET requests for social sign in (made by standard <a> links)
+    // and convert them to POST for better-auth.
+    if (url.pathname === '/api/auth/sign-in/social') {
+        const provider = url.searchParams.get('provider');
+        const callbackURL = url.searchParams.get('callbackURL');
+
+        if (provider) {
+            const env = platform?.env;
+            if (!env?.DB) error(503, 'Bindings unavailable.');
+            
+            const postReq = new Request(request.url, {
+                method: 'POST',
+                headers: request.headers,
+                body: JSON.stringify({ provider, callbackURL })
+            });
+            // Ensure the content-type is json since we added a json body
+            postReq.headers.set('content-type', 'application/json');
+
+            const auth = getAuth(env);
+            const response = await auth.handler(postReq);
+            
+            if (response.ok) {
+                const data = await response.clone().json().catch(() => null);
+                if (data?.url) {
+                    const redirect = new Response(null, { 
+                        status: 302, 
+                        headers: response.headers 
+                    });
+                    redirect.headers.set('Location', data.url);
+                    return redirect;
+                }
+            }
+            return response;
+        }
+    }
+
     return handleAuth(event);
 }
 

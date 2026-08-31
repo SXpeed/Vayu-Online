@@ -1,10 +1,12 @@
 /**
  * Vayu — the checkout dialog.
  *
- * Three ways in, one way out. A shopper may sign in, create an account, or
- * carry on as a guest; whichever they pick, the same POST /api/checkout
- * places the order. Signing in is a convenience, never a gate — the guest
- * route is always one click from the first screen.
+ * Three ways in, one way out. A shopper may sign in with Google, sign in
+ * with email, or carry on as a guest; whichever they pick, the same POST
+ * /api/checkout places the order. Signing in is a convenience, never a
+ * gate — the guest route is always one click from the first screen.
+ * There is deliberately no account-creation screen here: accounts are
+ * made through Google sign-in, and buying has never needed one anyway.
  *
  * What an account buys the shopper is typing. The server reports which
  * delivery details it already holds (`customer.details.missing`), and this
@@ -14,7 +16,7 @@
  */
 
 import { escapeHtml } from './core/html.js';
-import { currentAccount, signIn, register, signOut, googleSignInUrl } from './account.js';
+import { currentAccount, signIn, signOut, googleSignInUrl } from './account.js';
 
 /** Every delivery field, in the order they are shown. */
 const FIELDS = [
@@ -113,8 +115,6 @@ export function openCheckout({ getItems, getCoupon, onPlaced }) {
 
     /** Who is checking out. `account` is null for a guest. */
     let account = null;
-    /** Whether the server has Google sign-in configured. */
-    let googleReady = false;
     /** Which saved address is prefilling the form. */
     let addressId = null;
 
@@ -143,20 +143,17 @@ export function openCheckout({ getItems, getCoupon, onPlaced }) {
             <p class="co-lede">Sign in to use your saved details, or carry straight on.</p>
             <div class="co-choice">
                 <button type="button" class="cart-checkout-btn co-guest"><span>Continue as guest</span></button>
-                ${googleReady ? googleButton() : ''}
+                ${googleButton()}
                 <button type="button" class="co-alt" data-screen="signin">Sign in with email</button>
-                <button type="button" class="co-alt" data-screen="register">Create an account</button>
             </div>`;
         card.querySelector('.co-guest').addEventListener('click', () => renderDetails('full'));
-        card.querySelectorAll('[data-screen]').forEach(b => {
-            b.addEventListener('click', () => (b.dataset.screen === 'signin' ? renderSignIn() : renderRegister()));
-        });
+        card.querySelector('[data-screen="signin"]').addEventListener('click', renderSignIn);
     }
 
     function renderSignIn() {
         card.innerHTML = `
             <h2>Sign in</h2>
-            ${googleReady ? `${googleButton('Sign in with Google')}<div class="co-or">or</div>` : ''}
+            ${googleButton('Sign in with Google')}<div class="co-or">or</div>
             <form id="coAuth" class="co-auth">
                 <label>Email<input name="email" type="email" required autocomplete="email"></label>
                 <label>Password<input name="password" type="password" required autocomplete="current-password"></label>
@@ -166,38 +163,15 @@ export function openCheckout({ getItems, getCoupon, onPlaced }) {
                     <button type="submit" class="cart-checkout-btn co-submit"><span>Sign in</span></button>
                 </div>
             </form>
-            <p class="co-lede">No account? <button type="button" class="co-link" data-register>Create one</button>
-               or <button type="button" class="co-link" data-guest>continue as guest</button>.</p>`;
+            <p class="co-lede">No account? <button type="button" class="co-link" data-guest>Continue as guest</button>
+               — no account needed to buy.</p>`;
         wireAuthForm(async (fd) => signIn(fd.get('email'), fd.get('password')));
     }
 
-    function renderRegister() {
-        card.innerHTML = `
-            <h2>Create an account</h2>
-            <p class="co-lede">So your details and orders are here next time.</p>
-            ${googleReady ? `${googleButton('Sign up with Google')}<div class="co-or">or</div>` : ''}
-            <form id="coAuth" class="co-auth">
-                <label>Full name<input name="name" required autocomplete="name"></label>
-                <label>Email<input name="email" type="email" required autocomplete="email"></label>
-                <label>Phone<input name="phone" type="tel" autocomplete="tel" placeholder="10-digit mobile"></label>
-                <label>Password<input name="password" type="password" required minlength="8" autocomplete="new-password"></label>
-                <p class="co-error" aria-live="polite"></p>
-                <div class="co-actions">
-                    <button type="button" class="co-cancel" data-back>Back</button>
-                    <button type="submit" class="cart-checkout-btn co-submit"><span>Create account</span></button>
-                </div>
-            </form>
-            <p class="co-lede">Already have one? <button type="button" class="co-link" data-signin>Sign in</button>
-               or <button type="button" class="co-link" data-guest>continue as guest</button>.</p>`;
-        wireAuthForm(async (fd) => register(Object.fromEntries(fd)));
-    }
-
-    /** Shared plumbing for the two auth forms. */
+    /** Shared plumbing for the sign-in form. */
     function wireAuthForm(submitFn) {
         card.querySelector('[data-back]')?.addEventListener('click', renderChoice);
         card.querySelector('[data-guest]')?.addEventListener('click', () => renderDetails('full'));
-        card.querySelector('[data-signin]')?.addEventListener('click', renderSignIn);
-        card.querySelector('[data-register]')?.addEventListener('click', renderRegister);
 
         card.querySelector('#coAuth').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -377,9 +351,8 @@ export function openCheckout({ getItems, getCoupon, onPlaced }) {
 
     /* ---- open on whichever screen fits ---- */
 
-    currentAccount().then(({ signedIn, customer, google }) => {
+    currentAccount().then(({ signedIn, customer }) => {
         if (!veil.isConnected) return;
-        googleReady = !!google;
         if (!signedIn) return renderChoice();
         account = customer;
         addressId = (customer.addresses || []).find(a => a.isDefault)?.id || null;

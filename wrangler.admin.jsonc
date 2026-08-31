@@ -1,0 +1,92 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "vayuindia-admin",
+
+  // ===================================================================
+  // admin.vayuindia.com — the admin panel.
+  //
+  // Note what is NOT bound here, because each absence is the isolation
+  // doing its job:
+  //
+  //   no R2      — image uploads go through /api/admin/*, which this Worker
+  //                forwards to the API Worker. The panel Worker cannot read
+  //                or write the bucket itself.
+  //   no ASSETS  — the panel's files are bundled INTO the Worker. Published
+  //                as assets they would be served before the Worker runs,
+  //                and the session gate would never execute.
+  //   no payment secrets — those live on vayuindia-payments alone.
+  //
+  // D1 is bound only so the session gate can look up the admin cookie
+  // before deciding whether to hand over a file.
+  //
+  // Set on this Worker:
+  //   npx wrangler secret put INTERNAL_SECRET -c wrangler.admin.jsonc
+  //
+  // It must be the SAME value as on vayuindia-api. It is what proves a forwarded
+  // request came over the service binding rather than off the internet.
+  // ===================================================================
+
+  "main": ".workers/admin/worker.js",
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "vars": {
+    "PUBLIC_ORIGIN": "https://vayuindia.com",
+    "ADMIN_ORIGIN": "https://admin.vayuindia.com",
+    "API_ORIGIN": "https://api.vayuindia.com"
+
+    // ---- ZERO TRUST (optional) -------------------------------------
+    // Cloudflare Access in front of the panel. Neither value is a secret —
+    // the team name is in every redirect URL Access issues and the AUD tag
+    // identifies an application rather than authorising anything — so they
+    // live here where a diff shows them, not in `wrangler secret put`.
+    //
+    //   "ACCESS_TEAM_DOMAIN": "your-team",
+    //   "ACCESS_AUD": "<the application's Audience tag>"
+    //
+    // Set BOTH to turn the gate on, NEITHER to leave it off. Exactly one is
+    // treated as a misconfiguration and every request 503s, because a
+    // half-configured Zero Trust gate that quietly waves everyone through
+    // is the failure nobody notices.
+    //
+    // The Worker verifies the JWT Access stamps rather than trusting that
+    // Access ran, which is what stops this Worker's own .workers.dev
+    // hostname being a way round the policy. Setting these here and not in
+    // wrangler.jsonc leaves vayuindia.com/admin — the panel's other mount —
+    // ungated; set them in both.
+    //
+    // The dashboard side (creating the application, the policy, the
+    // identity provider) is in README-cloudflare.md.
+    // ----------------------------------------------------------------
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "vayuindia-db",
+      // ACCOUNT-SPECIFIC — the same id as in wrangler.api.jsonc.
+      "database_id": "a28900c6-fa6b-4aa5-9472-4a3769676c5b",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // The API Worker. Admin traffic never leaves Cloudflare: the panel calls
+  // this Worker same-origin, and this Worker calls the API over the binding.
+  "services": [
+    {
+      "binding": "API",
+      "service": "vayuindia-api"
+    }
+  ],
+
+  // ---- CUSTOM DOMAIN -----------------------------------------------
+  //   "routes": [
+  //     { "pattern": "admin.vayuindia.com", "custom_domain": true }
+  //   ]
+  // ------------------------------------------------------------------
+  "workers_dev": true,
+
+  "observability": {
+    "enabled": true
+  }
+}

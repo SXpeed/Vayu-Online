@@ -1,0 +1,20 @@
+-- A phone crop for a show's hero.
+--
+-- The hero is a different shape on each device and always has been: 21:9 on
+-- a desktop page, and 1:1 on a phone since the frame was squared off. One
+-- photograph cannot serve both. `object-fit: cover` crops to fill, so a wide
+-- campaign shot on a phone keeps its middle and loses both ends — which is
+-- exactly where a poster puts its title, and where a room shot puts the two
+-- walls that made it worth photographing.
+--
+-- So the shop can upload a second, tall crop of the same picture. Empty is
+-- the normal case and means "use the wide one on phones too", which is what
+-- every show already does — that is why this column defaults to '' rather
+-- than being NOT NULL with no default: the rows that exist are correct as
+-- they are and must not need a backfill.
+--
+-- The home page's hero carousel already worked this way (site_content's
+-- `imgMobile`, editable under Site content → Home hero carousel). This gives
+-- the same handle to the shows, on the same terms and with the same name in
+-- the panel, so there is one idea here rather than two.
+ALTER TABLE events ADD COLUMN image_mobile TEXT NOT NULL DEFAULT '';

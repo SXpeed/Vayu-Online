@@ -7,10 +7,42 @@
    * partial had been fetched over HTTP; they are {#each} blocks now, so they
    * are part of the prerendered document and there is nothing to fill in.
    */
-  import { venues, eventsOf } from '#lib/data/events.js';
+  import { allVenues, eventsOf } from '#lib/data/events.js';
+  import { currentShow } from '#shared/content/inside-vayu.js';
+  import { site } from '#lib/stores/site.svelte.js';
   import { categories, subsOf, catHref } from '#lib/taxonomy.js';
+  import { iconFor } from '#lib/data/category-icons.js';
   import { onMount } from 'svelte';
   import { counts, watchCounts } from '#lib/stores/counts.svelte.js';
+  import { deliverySrc } from '#shared/content/picture.js';
+
+  // The programme the panel publishes, or the shipped one until it lands.
+  // $derived so the MENU panel redraws itself when /api/events answers,
+  // rather than showing whatever was true at build time for ever.
+  const venueList = $derived(allVenues());
+
+  /**
+   * How many shows each house puts in the MENU panel.
+   *
+   * One — whatever is on now — unless the shop asks for more under Site
+   * Content. The panel used to list a house's whole programme, so every
+   * exhibition that closed stayed in the header beside the one that had
+   * replaced it, flagged "Also on" as though it were still hanging.
+   */
+  const menuShows = $derived(Math.max(1, Math.trunc(Number(site.content?.menuShows)) || 1));
+
+  /**
+   * A house's shows for the panel: the current one first, then the most
+   * recent of the rest, cut to the limit.
+   *
+   * Current-first rather than newest-first, so a panel set to show two
+   * never opens with a season that has already closed.
+   */
+  const showsIn = (venue) => {
+    const shows = eventsOf(venue);
+    const now = currentShow(shows);
+    return (now ? [now, ...shows.filter(e => e !== now)] : shows).slice(0, menuShows);
+  };
 
   const entries = $derived(Object.entries(categories()));
 
@@ -50,17 +82,20 @@
           <div class="cdrop-inner mdrop-inner">
             <!-- one .mdrop-venue per house, filled from js/events.js -->
             <div class="mdrop-venues">
-              {#each venues as venue (venue.id)}
+              {#each venueList as venue (venue.id)}
                 <section class="mdrop-venue">
                   <a class="mdrop-venue-head" href={venue.href}>
                     <span class="mdrop-venue-kind">{venue.kind}</span>
                     <span class="mdrop-venue-name">{venue.name}</span>
                   </a>
-                  {#each eventsOf(venue) as ev, i}
-                    <article class="mdrop-event{i === 0 ? ' is-current' : ''}">
+                  {#each showsIn(venue) as ev (ev.href)}
+                    <article class="mdrop-event{ev.current ? ' is-current' : ''}">
                       <a class="mdrop-event-media" href={ev.href}>
-                        <img src={ev.image} alt={ev.title} loading="lazy">
-                        <span class="mdrop-event-flag">{i === 0 ? 'Now on' : 'Also on'}</span>
+                        <img src={deliverySrc(ev.image)} alt={ev.title} loading="lazy">
+                        <!-- Read off the show, not off its position: with more
+                             than one on show the second is a closed season, and
+                             "Also on" said it was still hanging. -->
+                        <span class="mdrop-event-flag">{ev.current ? 'Now on' : 'Past'}</span>
                       </a>
                       <div class="mdrop-event-line">
                         <span class="mdrop-event-dates">{ev.dates}</span>
@@ -81,10 +116,34 @@
                   <span class="mdrop-label">Shop by</span>
                   <span class="mdrop-shop-name">Category</span>
                 </span>
-                <!-- from the taxonomy, like every other category list -->
-                <ul>
+                <!-- From the taxonomy, like every other category list.
+
+                     Each row is a mark, a name and a chevron. The chevron
+                     is decorative — it points at the category's own page,
+                     which is where the link goes. It deliberately does NOT
+                     open a nested sub-category list: the rail is one flat
+                     level. COLLECTION is the panel that breaks a category
+                     into its subs, and a second, shallower copy of that
+                     tree here would be one more thing to keep in step. -->
+                <ul class="mdrop-cats">
                   {#each entries as [slug, cat] (slug)}
-                    <li><a href={catHref(slug)}>{cat.title}</a></li>
+                    <li>
+                      <a href={catHref(slug)}>
+                        <svg class="mdrop-cat-icon" width="21" height="21" viewBox="0 0 24 24" fill="none"
+                          stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                          aria-hidden="true">
+                          {#each iconFor(slug) as d}
+                            <path {d}></path>
+                          {/each}
+                        </svg>
+                        <span class="mdrop-cat-name">{cat.title}</span>
+                        <svg class="mdrop-cat-go" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                          stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                          aria-hidden="true">
+                          <path d="m9 5.5 6.5 6.5L9 18.5"></path>
+                        </svg>
+                      </a>
+                    </li>
                   {/each}
                 </ul>
                 <a class="mdrop-all" href="/pages/collection.html">View all collections →</a>
@@ -117,7 +176,7 @@
             </div>
             <a class="cdrop-feature" href="/pages/collection.html">
               <span class="cdrop-feature-media">
-                <img src="/assets/images/cat_furniture.png" alt="" loading="lazy">
+                <img src={deliverySrc('/assets/images/cat_furniture.png')} alt="" loading="lazy">
               </span>
               <span class="cdrop-feature-body">
                 <span class="cdrop-feature-title">View All Collections</span>
@@ -135,38 +194,16 @@
             <div class="gdrop-intro">
               <span class="gdrop-eyebrow">Artist · Vayu</span>
               <a class="gdrop-title" href="/pages/artist.html">Hands That Make</a>
-              <p class="gdrop-note">Six studios across India — weavers, founders, carvers and potters we have kept
-                company with for a decade.</p>
-              <a class="gdrop-cta" href="/pages/artist.html">Meet All Artists →</a>
+              <p class="gdrop-note">Our artist in residence — working in brass, in pieces rooted in memory,
+                craft and cultural inheritance.</p>
+              <a class="gdrop-cta" href="/pages/artist.html">Meet the Artist →</a>
             </div>
-            <div class="gdrop-tiles">
-              <a class="gdrop-tile" href="/pages/jenjum.html">
-                <span class="gdrop-tile-media"><img src="/assets/images/jenjum_gadi.png" alt="" loading="lazy"></span>
+            <div class="gdrop-tiles gdrop-tiles-few">
+              <a class="gdrop-tile" href="/pages/artist-profile.html?id=jenjum-gadi">
+                <span class="gdrop-tile-media"><img src={deliverySrc('/assets/images/jenjum_gadi.png')} alt="" loading="lazy"></span>
                 <span class="gdrop-tile-body">
                   <span class="gdrop-tile-name">Jenjum Gadi</span>
                   <span class="gdrop-tile-tag">In Residence</span>
-                </span>
-              </a>
-              <a class="gdrop-tile" href="/pages/artist.html#lakshmi-devi">
-                <span class="gdrop-tile-media"><img src="/assets/images/prod_silk_stole.png" alt="" loading="lazy"></span>
-                <span class="gdrop-tile-body">
-                  <span class="gdrop-tile-name">Lakshmi Devi</span>
-                  <span class="gdrop-tile-tag">Weaver</span>
-                </span>
-              </a>
-              <a class="gdrop-tile" href="/pages/artist.html#imtiaz-ahmad">
-                <span class="gdrop-tile-media"><img src="/assets/images/prod_brass_cuff.png" alt="" loading="lazy"></span>
-                <span class="gdrop-tile-body">
-                  <span class="gdrop-tile-name">Imtiaz Ahmad</span>
-                  <span class="gdrop-tile-tag">Brass</span>
-                </span>
-              </a>
-              <a class="gdrop-tile" href="/pages/artist.html#savita-kumar">
-                <span class="gdrop-tile-media"><img src="/assets/images/prod_ceramic_plate_set.png" alt=""
-                    loading="lazy"></span>
-                <span class="gdrop-tile-body">
-                  <span class="gdrop-tile-name">Savita Kumar</span>
-                  <span class="gdrop-tile-tag">Ceramics</span>
                 </span>
               </a>
             </div>
@@ -185,22 +222,22 @@
               <a class="gdrop-cta" href="/pages/gallery.html">Enter the Gallery →</a>
             </div>
             <div class="gdrop-tiles">
-              <a class="gdrop-tile" href="/pages/gallery.html#exhibition">
-                <span class="gdrop-tile-media"><img src="/assets/images/gallery_tile1.png" alt="" loading="lazy"></span>
+              <a class="gdrop-tile" href="/pages/event.html?id=personal-heirlooms">
+                <span class="gdrop-tile-media"><img src={deliverySrc('/assets/images/gallery_tile1.png')} alt="" loading="lazy"></span>
                 <span class="gdrop-tile-body">
                   <span class="gdrop-tile-name">The Exhibition</span>
                   <span class="gdrop-tile-tag">Three rooms</span>
                 </span>
               </a>
-              <a class="gdrop-tile" href="/pages/gallery.html#hands">
-                <span class="gdrop-tile-media"><img src="/assets/images/journal_ceramics.png" alt="" loading="lazy"></span>
+              <a class="gdrop-tile" href="/pages/artist.html">
+                <span class="gdrop-tile-media"><img src={deliverySrc('/assets/images/journal_ceramics.png')} alt="" loading="lazy"></span>
                 <span class="gdrop-tile-body">
                   <span class="gdrop-tile-name">The Hands Behind It</span>
                   <span class="gdrop-tile-tag">Makers</span>
                 </span>
               </a>
               <a class="gdrop-tile" href="/pages/artist.html">
-                <span class="gdrop-tile-media"><img src="/assets/images/journal_weaving.png" alt="" loading="lazy"></span>
+                <span class="gdrop-tile-media"><img src={deliverySrc('/assets/images/journal_weaving.png')} alt="" loading="lazy"></span>
                 <span class="gdrop-tile-body">
                   <span class="gdrop-tile-name">The Artists</span>
                   <span class="gdrop-tile-tag">Profiles</span>
@@ -213,7 +250,7 @@
                    and had stopped doing so. This is what the tile was for. -->
               <a class="gdrop-tile" href="https://maps.app.goo.gl/GdmtApHnAYBem1Cr8"
                 target="_blank" rel="noopener noreferrer">
-                <span class="gdrop-tile-media"><img src="/assets/images/gallery_tile3.png" alt="" loading="lazy"></span>
+                <span class="gdrop-tile-media"><img src={deliverySrc('/assets/images/gallery_tile3.png')} alt="" loading="lazy"></span>
                 <span class="gdrop-tile-body">
                   <span class="gdrop-tile-name">Visit Us</span>
                   <span class="gdrop-tile-tag">Lodhi Road</span>
@@ -223,7 +260,7 @@
           </div>
         </div>
       </li>
-      <li><a href="/pages/journal.html">JOURNAL</a></li>
+      <li><a href="/pages/press.html">PRESS</a></li>
       <li><a href="/pages/about.html">ABOUT</a></li>
     </ul>
     <!-- search field: replaces the menu in the bar while open, and on phones

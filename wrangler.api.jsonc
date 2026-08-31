@@ -1,0 +1,95 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "vayuindia-api",
+
+  // ===================================================================
+  // api.vayuindia.com — the public and admin API.
+  //
+  // This is the only Worker that talks to the services directly. The
+  // storefront reaches it cross-origin with credentials; the admin panel
+  // does NOT — it calls its own origin and the admin Worker forwards here
+  // over a service binding, so /api/admin/* has no browser-reachable
+  // surface at all.
+  //
+  // Set on this Worker:
+  //   npx wrangler secret put BETTER_AUTH_SECRET -c wrangler.api.jsonc
+  //   npx wrangler secret put INTERNAL_SECRET    -c wrangler.api.jsonc
+  //   npx wrangler secret put GOOGLE_CLIENT_ID     (optional)
+  //   npx wrangler secret put GOOGLE_CLIENT_SECRET (optional)
+  //
+  // INTERNAL_SECRET must be the SAME value on the admin Worker: it is what
+  // the admin Worker stamps on a forwarded request to prove the call came
+  // over the binding rather than off the internet.
+  // ===================================================================
+
+  "main": ".workers/api/worker.js",
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "vars": {
+    // The origins the CORS gate will allow, and the canonical URLs the API
+    // emits. Not secrets — they are public hostnames — so they live here
+    // rather than as `wrangler secret put`, which keeps them reviewable in
+    // the diff. Replace with the real domains before deploying.
+    "PUBLIC_ORIGIN": "https://vayuindia.com",
+    "ADMIN_ORIGIN": "https://admin.vayuindia.com",
+    "API_ORIGIN": "https://api.vayuindia.com"
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "vayuindia-db",
+      // ACCOUNT-SPECIFIC. The same database every Worker in the split
+      // shares — `npx wrangler d1 create vayuindia-db` prints this id once, and
+      // it goes in each config that needs DB.
+      "database_id": "a28900c6-fa6b-4aa5-9472-4a3769676c5b",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  "r2_buckets": [
+    {
+      "binding": "UPLOADS",
+      "bucket_name": "vayuindia-storage"
+    }
+  ],
+
+  // Used here for one thing only: measuring an upload as it arrives, so its
+  // width and height can be written into the key it is stored under and the
+  // markup can state them (services/users/admin.js). An <img> with no size
+  // is a box of unknown height, and the page jumps when the bytes land.
+  //
+  // The resizing itself happens on the storefront Worker, which is what
+  // serves /uploads/*. Optional here as it is there: without the binding an
+  // upload is stored unmeasured, exactly as every upload before this was.
+  "images": {
+    "binding": "IMAGES"
+  },
+
+  // The isolated payments Worker. A service binding is an internal call
+  // inside Cloudflare: it never touches the public internet, adds no DNS,
+  // and cannot be reached by anyone who is not this Worker.
+  "services": [
+    {
+      "binding": "PAYMENTS",
+      "service": "vayuindia-payments"
+    }
+  ],
+
+  // ---- CUSTOM DOMAIN -----------------------------------------------
+  // Add once api.vayuindia.com exists as a zone on the account:
+  //
+  //   "routes": [
+  //     { "pattern": "api.vayuindia.com", "custom_domain": true }
+  //   ]
+  //
+  // Declaring `routes` flips workers_dev to false by default, which is why
+  // it is stated explicitly below rather than left to the default.
+  // ------------------------------------------------------------------
+  "workers_dev": true,
+
+  "observability": {
+    "enabled": true
+  }
+}

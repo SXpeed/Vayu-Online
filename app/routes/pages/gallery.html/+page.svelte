@@ -1,6 +1,8 @@
 <script>
+  import Seo from '#lib/components/Seo.svelte';
   // Vayu — /pages/gallery.html, ported from public/pages/gallery.html.
   import { onMount } from 'svelte';
+  import { deliverySrc } from '#shared/content/picture.js';
 
 
   onMount(() => {
@@ -8,9 +10,11 @@
   });
 </script>
 
-<svelte:head>
-  <title>Gallery Vayu — Vayu</title>
-</svelte:head>
+<Seo
+  title="Gallery Vayu"
+  description="Gallery Vayu, New Delhi — exhibitions of brass, clay, cane and handwoven cloth, gathered from the makers we have kept company with for a decade."
+  path="/pages/gallery.html"
+/>
 
 
 <main class="wrap gallery-page">
@@ -32,8 +36,13 @@
       <div class="g-meta">On view till 23 August 2026</div>
     </div>
 
-    <a class="g-hero" href="#exhibition">
-      <img src="/assets/images/gallery_hero.jpg" alt="Personal Heirlooms">
+    <!-- The hero opens the current show's own page, which is where its
+         pictures now live. It used to jump to a plate section further down
+         this page; that section has gone, and an anchor to an element that
+         no longer exists is a link that silently does nothing.
+         pages/venue.js sets the href from the show marked "Now on". -->
+    <a class="g-hero" id="venueHero" href="/pages/gallery.html">
+      <img src={deliverySrc('/assets/images/gallery_hero.jpg')} alt="Personal Heirlooms">
     </a>
 
     <p class="g-statement">
@@ -41,81 +50,14 @@
       from the makers we have kept company with for a decade.
     </p>
 
-    <section id="exhibition" aria-labelledby="exhibition-title">
-      <div class="g-sec-head">
-        <h2 class="g-sec-title" id="exhibition-title">The Exhibition</h2>
-        <span class="g-sec-note">Three rooms</span>
-      </div>
-      <div class="g-grid">
-        <figure class="g-card">
-          <button type="button" class="g-card-media" aria-label="Enlarge image">
-            <img src="/assets/images/gallery_tile1.png" alt="Exhibition room — bedroom setting" loading="lazy">
-          </button>
-          <figcaption>
-            <span class="g-card-name">The Quiet Room</span>
-            <span class="g-card-tag">Room 01</span>
-          </figcaption>
-        </figure>
-        <figure class="g-card">
-          <button type="button" class="g-card-media" aria-label="Enlarge image">
-            <img src="/assets/images/gallery_tile2.png" alt="Exhibition room — living room setting" loading="lazy">
-          </button>
-          <figcaption>
-            <span class="g-card-name">The Long Table</span>
-            <span class="g-card-tag">Room 02</span>
-          </figcaption>
-        </figure>
-        <figure class="g-card">
-          <button type="button" class="g-card-media" aria-label="Enlarge image">
-            <img src="/assets/images/gallery_tile3.png" alt="Exhibition room — ceramics display" loading="lazy">
-          </button>
-          <figcaption>
-            <span class="g-card-name">The Clay Wall</span>
-            <span class="g-card-tag">Room 03</span>
-          </figcaption>
-        </figure>
-      </div>
-    </section>
-
-    <section id="hands" aria-labelledby="hands-title">
-      <div class="g-sec-head">
-        <h2 class="g-sec-title" id="hands-title">The Hands Behind It</h2>
-        <a class="g-sec-note" href="/pages/artist.html" style="color:var(--accent);">All Artists →</a>
-      </div>
-      <div class="g-pair">
-        <figure class="g-card">
-          <button type="button" class="g-card-media" aria-label="Enlarge image">
-            <img src="/assets/images/journal_ceramics.png" alt="Potter shaping a vessel" loading="lazy">
-          </button>
-          <figcaption>
-            <span class="g-card-name">At the Wheel</span>
-            <span class="g-card-tag">Craft</span>
-          </figcaption>
-        </figure>
-        <figure class="g-card">
-          <button type="button" class="g-card-media" aria-label="Enlarge image">
-            <img src="/assets/images/journal_weaving.png" alt="Handloom weaving in progress" loading="lazy">
-          </button>
-          <figcaption>
-            <span class="g-card-name">On the Loom</span>
-            <span class="g-card-tag">Textile</span>
-          </figcaption>
-        </figure>
-      </div>
-    </section>
-
-    <section id="edit" aria-labelledby="edit-title">
-      <div class="g-sec-head">
-        <h2 class="g-sec-title" id="edit-title">The Exhibition's Edit</h2>
-        <a class="g-sec-note" href="/pages/collection.html" style="color:var(--accent);">All Collections →</a>
-      </div>
-      <!-- The same tiles the collection grid uses, rendered from events.js
-           by lib/pages/venue.js — the pieces the MENU panel lists for this
-           show. The curated list has always been in the data; only the
-           store page rendered its own, so the gallery's three were shown in
-           the menu and nowhere else. -->
-      <div class="prod-grid" id="galleryEdit"></div>
-    </section>
+    <!-- Two sections used to close this page: "The Hands Behind It", a pair
+         of stock craft photographs that belonged to no particular show, and
+         "The Exhibition's Edit", the curated product tiles. Both are gone, so
+         this page and design-for-living.html now read the same way — head,
+         hero, statement, the plates of the show that is on, and what has been
+         shown before. The pieces gathered for a show are still listed, on the
+         show's own page (/pages/event.html?id=), where they describe one
+         exhibition rather than the venue in general. -->
 
     <!-- The Visit strip (address, hours, enquiries) used to close this page.
          It is gone for the same reason it went from design-for-living: the
@@ -123,17 +65,6 @@
          second copy to keep in step, and it did not stay in step. -->
   </main>
 
-  <!-- Lightbox. A native <dialog>, so Escape, the focus trap and the inert
-       backdrop are handled by the platform rather than by hand. -->
-  <dialog class="g-lightbox" id="galleryLightbox" aria-label="Gallery image viewer">
-    <div class="g-lightbox-inner">
-      <button type="button" class="g-lb-close" id="lbClose" aria-label="Close viewer">&times;</button>
-      <button type="button" class="g-lb-btn g-lb-prev" id="lbPrev" aria-label="Previous image">&#8249;</button>
-      <button type="button" class="g-lb-btn g-lb-next" id="lbNext" aria-label="Next image">&#8250;</button>
-      <img id="lbImage" src="" alt="">
-      <p class="g-lightbox-caption">
-        <span id="lbCaption"></span>
-        <span class="g-lb-count" id="lbCount"></span>
-      </p>
-    </div>
-  </dialog>
+  <!-- The lightbox went with the plates. Nothing on this page enlarges any
+       more: the past-show tiles are links to pages, and the pictures of each
+       show are on the show's own page, which carries its own viewer. -->

@@ -7,10 +7,10 @@ import { sveltekit } from '@sveltejs/kit/vite';
  * SvelteKit 3 dropped svelte.config.js, and dropped the `kit` namespace with
  * it: adapter and files are passed straight to the sveltekit() plugin.
  *
- * The app lives under app/ rather than SvelteKit's default src/, because
- * src/ already holds the Worker's server modules (db, catalogue, checkout,
- * sessions …) that predate the migration. Keeping the two apart lets the
- * port move one module at a time instead of in a single cut.
+ * The app lives under app/ rather than SvelteKit's default src/. The server
+ * modules (db, catalogue, checkout, sessions …) live in app/lib/server, the
+ * storefront and its shared logic in app/lib, and the admin panel's source in
+ * app/admin-ui — routes, server logic and the UI kept together under app/.
  */
 export default {
   build: {
@@ -41,9 +41,16 @@ export default {
         // modules were only ever handed to someone with a session. Listing
         // it here keeps the Worker in front of those paths, so the gate in
         // routes/admin/[...path] still runs.
+        // `/css/*` was excluded here too, until the stylesheet stopped being
+        // a static asset. It lived in public/ from the pre-SvelteKit site,
+        // which linked /css/styles.css directly — but the layout *imports*
+        // it, so Vite was already bundling and minifying it into a hashed
+        // asset while a second, unminified 132KB copy rode along in the
+        // deploy that nothing ever requested. It is source now
+        // (app/styles/styles.css) and there is no /css/ to exclude.
         routes: {
           include: ['/*'],
-          exclude: ['/_app/immutable/*', '/assets/*', '/css/*'],
+          exclude: ['/_app/immutable/*', '/assets/*'],
         },
       }),
       // Listed rather than crawled. The crawler starts at / and follows
@@ -59,12 +66,12 @@ export default {
           '/pages/cart.html',
           '/pages/collection-detail.html',
           '/pages/collection.html',
+          '/pages/curated-spaces.html',
           '/pages/design-for-living.html',
+          '/pages/event.html',
           '/pages/gallery.html',
           '/pages/help.html',
-          '/pages/jenjum.html',
-          '/pages/journal-post.html',
-          '/pages/journal.html',
+          '/pages/artist-profile.html',
           '/pages/legal.html',
           '/pages/press.html',
           '/pages/product.html',

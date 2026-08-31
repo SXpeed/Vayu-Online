@@ -1,10 +1,16 @@
 /**
  * Vayu Admin — everything downstream of a sale: orders, customers,
- * coupons and review moderation.
+ * coupons.
  */
 
 import { $, viewEl, esc, money, dateFmt, timeFmt, toast, guard, openModal, closeModal, modalChrome } from '../lib/dom.js';
 import { api } from '../lib/api.js';
+
+/** Toggle the expandable detail row beneath a clicked row. */
+function toggleDetail(rows, tr) {
+    const detail = rows.querySelector(`tr[data-detail="${tr.dataset.id}"]`);
+    if (detail) detail.hidden = !detail.hidden;
+}
 
 /* ================= orders ================= */
 
@@ -31,17 +37,137 @@ function orderDetail(o) {
         + (o.customer.phone ? ` · ${esc(o.customer.phone)}` : '');
 
     return `
-        <tr class="detail-row" data-detail="${o.id}" hidden><td colspan="6">
+        <tr class="detail-row" data-detail="${o.id}" hidden><td colspan="7">
             <div class="order-items">
                 ${lines}${discount}
                 <div class="order-line"><span style="color:var(--muted)">Shipping</span>
                     <span class="val">${o.shipping ? money(o.shipping) : 'Free'}</span></div>
                 <div class="order-line"><b>Total</b><b class="val">${money(o.total)}</b></div>
             </div>
+            ${paymentDetail(o)}
             <div style="font-size:13px;color:var(--body)"><b>Ship to:</b> ${shipTo}</div>
             <div class="timeline">${o.timeline.map(t =>
                 `<div><b>${esc(t.status)}</b> · ${timeFmt(t.t)} — ${esc(t.note)}</div>`).join('')}</div>
         </td></tr>`;
+}
+
+/**
+ * How a payment reads in the panel.
+ *
+ * 'cod' is the only method that collects nothing up front, so everything else
+ * is shown as Prepaid rather than named by processor — an admin cares whether
+ * the money is in, not which gateway carried it.
+ */
+const payMethod = (m) => (m === 'cod' ? 'COD' : 'Prepaid');
+
+const PAY_LABEL = {
+    paid: 'Paid',
+    pending: 'Pending',
+    failed: 'Failed',
+    refunded: 'Refunded',
+};
+
+/** Method and payment state, for the list row. */
+function paymentCell(o) {
+    const p = o.payment || {};
+    const state = p.status || 'pending';
+    // The badge carries the state and the label carries the method, with no
+    // special-casing between them. An earlier version said "On delivery" for
+    // a pending COD order, which read as redundant once the two sat on one
+    // line beside each other — "Pending · COD" already says it.
+    return `<div class="pay-cell">
+            <span class="status pay-${esc(state)}">${esc(PAY_LABEL[state] || state)}</span>
+            <span class="pay-method">${esc(payMethod(p.method))}</span>
+        </div>`;
+}
+
+/**
+ * The payment block in the expanded panel: the transaction ids, and the
+ * button that settles a disagreement with Razorpay's own record.
+ */
+function paymentDetail(o) {
+    const p = o.payment || {};
+    const prepaid = p.method !== 'cod';
+
+    const ids = prepaid
+        ? `<div class="pay-ids">
+               <span>Payment <code>${esc(p.paymentId || '—')}</code></span>
+               <span>Order <code>${esc(p.orderId || '—')}</code></span>
+           </div>`
+        : '';
+
+    const paid = p.paidAt ? ` · paid ${timeFmt(p.paidAt)}` : '';
+
+    // Only a prepaid order has anything at Razorpay to ask about.
+    const verify = prepaid
+        ? `<button class="btn small" data-act="verify" data-id="${o.id}">Check with Razorpay</button>`
+        : '';
+
+    return `<div class="pay-detail">
+            <div><b>Payment:</b> ${esc(payMethod(p.method))} ·
+                <span class="status pay-${esc(p.status || 'pending')}">${esc(PAY_LABEL[p.status] || p.status || 'pending')}</span>${paid}</div>
+            ${ids}${verify}
+        </div>`;
+}
+
+/**
+ * How many product images the Items column shows before it stops counting.
+ *
+ * Four keeps the column to a fixed width whatever the order holds — a
+ * fifteen-line order would otherwise stretch the table and push Total and
+ * Status off the edge on a laptop.
+ */
+const MAX_THUMBS = 4;
+
+/**
+ * The Items column: the products themselves, not just how many there were.
+ *
+ * Recognising an order at a glance is the whole job of this column, and
+ * "3 items" does not do it. Anything past MAX_THUMBS collapses into a +n
+ * chip; the full list is one click away in the panel below, so nothing is
+ * hidden, only deferred.
+ *
+ * A line with no image renders as an empty plate rather than the browser's
+ * broken-image glyph — the same treatment .thumb-lg.is-missing already gives
+ * a deleted product elsewhere in the panel. Order lines keep their own copy
+ * of the image, so this shows what was bought even after the product itself
+ * has been edited or deleted.
+ */
+function itemsCell(items) {
+    const qty = items.reduce((n, i) => n + i.qty, 0);
+    const shown = items.slice(0, MAX_THUMBS);
+    const hidden = items.length - shown.length;
+
+    // The name rides in `title` so hovering a thumbnail identifies it without
+    // opening the row.
+    const pics = shown.map(i => (i.img
+        ? `<img class="thumb sm" src="${esc(i.img)}" alt="" loading="lazy" title="${esc(i.name)}">`
+        : `<span class="thumb sm is-missing" title="${esc(i.name)}"></span>`
+    )).join('');
+
+    return `<div class="items-cell">
+            <div class="item-stack">${pics}${hidden ? `<span class="more">+${hidden}</span>` : ''}</div>
+            <span class="count">${qty} item${qty === 1 ? '' : 's'}</span>
+        </div>`;
+}
+
+/** An order row followed by its hidden detail panel. */
+function orderRow(o) {
+    return `
+        <tr data-id="${o.id}" style="cursor:pointer">
+            <td><b>${esc(o.number)}</b></td>
+            <td>${esc(o.customer.name)}<div style="font-size:12px;color:var(--muted)">${esc(o.customer.email)}</div></td>
+            <td>${itemsCell(o.items)}</td>
+            <td class="num">${money(o.total)}</td>
+            <td>${paymentCell(o)}</td>
+            <td>${timeFmt(o.createdAt)}</td>
+            <td style="white-space:nowrap">
+                <select class="status-select" data-id="${o.id}">
+                    ${ORDER_STATUSES.map(s => `<option ${o.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select>
+                <a class="btn small" href="/api/admin/orders/${o.id}/invoice" target="_blank" rel="noopener"
+                   title="Invoice" data-act="invoice">🧾</a></td>
+        </tr>
+        ${orderDetail(o)}`;
 }
 
 export async function renderOrders() {
@@ -56,7 +182,7 @@ export async function renderOrders() {
             <a class="btn" href="/api/admin/export/orders.csv">Export CSV</a>
         </div>
         <div class="card"><div class="table-scroll"><table class="grid">
-            <thead><tr><th>Order</th><th>Customer</th><th>Items</th><th class="num">Total</th><th>Placed</th><th>Status</th></tr></thead>
+            <thead><tr><th>Order</th><th>Customer</th><th>Items</th><th class="num">Total</th><th>Payment</th><th>Placed</th><th>Status</th></tr></thead>
             <tbody id="order-rows"></tbody>
         </table></div></div>`;
 
@@ -64,21 +190,12 @@ export async function renderOrders() {
 
     function draw() {
         const list = orders.filter(o => !statusFilter || o.status === statusFilter);
-        rowsEl.innerHTML = list.length ? list.map(o => `
-            <tr data-id="${o.id}" style="cursor:pointer">
-                <td><b>${esc(o.number)}</b></td>
-                <td>${esc(o.customer.name)}<div style="font-size:12px;color:var(--muted)">${esc(o.customer.email)}</div></td>
-                <td>${o.items.reduce((n, i) => n + i.qty, 0)} item(s)</td>
-                <td class="num">${money(o.total)}</td>
-                <td>${timeFmt(o.createdAt)}</td>
-                <td style="white-space:nowrap">
-                    <select class="status-select" data-id="${o.id}">
-                        ${ORDER_STATUSES.map(s => `<option ${o.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select>
-                    <a class="btn small" href="/api/admin/orders/${o.id}/invoice" target="_blank" rel="noopener"
-                       title="Invoice" data-act="invoice">🧾</a></td>
-            </tr>
-            ${orderDetail(o)}`).join('')
-            : `<tr><td colspan="6"><div class="empty">No orders${statusFilter ? ' with this status' : ' yet'}.</div></td></tr>`;
+        if (!list.length) {
+            const suffix = statusFilter ? ' with this status' : ' yet';
+            rowsEl.innerHTML = `<tr><td colspan="7"><div class="empty">No orders${suffix}.</div></td></tr>`;
+            return;
+        }
+        rowsEl.innerHTML = list.map(orderRow).join('');
     }
     draw();
 
@@ -86,12 +203,34 @@ export async function renderOrders() {
 
     // Clicking the row expands it — but not when the click was meant for
     // the status dropdown or the invoice link inside it.
-    rowsEl.addEventListener('click', (e) => {
+    rowsEl.addEventListener('click', async (e) => {
+        // Reconcile against Razorpay. Handled before the row-toggle below,
+        // and it must not collapse the panel it was clicked inside.
+        const verify = e.target.closest('[data-act=verify]');
+        if (verify) {
+            e.stopPropagation();
+            verify.disabled = true;
+            // guard() reports errors as a toast but returns only a boolean,
+            // so the fresh order is caught here rather than from its return.
+            let result = null;
+            const ok = await guard(
+                async () => { result = await api(`orders/${verify.dataset.id}/verify-payment`, 'POST'); },
+                'Checked with Razorpay',
+            );
+            verify.disabled = false;
+            if (ok && result?.order) {
+                // Replace the local copy so the badge and the panel both
+                // show what Razorpay just said, without a full reload.
+                const i = orders.findIndex(o => o.id === verify.dataset.id);
+                if (i > -1) orders[i] = result.order;
+                draw();
+            }
+            return;
+        }
+
         if (e.target.closest('select, [data-act=invoice]')) return;
         const tr = e.target.closest('tr[data-id]');
-        if (!tr) return;
-        const detail = rowsEl.querySelector(`tr[data-detail="${tr.dataset.id}"]`);
-        if (detail) detail.hidden = !detail.hidden;
+        if (tr) toggleDetail(rowsEl, tr);
     });
 
     rowsEl.addEventListener('change', async (e) => {
@@ -107,39 +246,73 @@ export async function renderOrders() {
 
 /* ================= customers ================= */
 
+/** The orders, tags and notes panel shown under a customer row. */
+function customerDetail(c, orders) {
+    const theirOrders = orders.filter(o => o.email === c.email).map(o => `
+        <div class="mini-row"><div class="grow"><div class="nm">${esc(o.number)}</div>
+            <div class="meta">${timeFmt(o.createdAt)}</div></div>
+            <span class="status ${o.status}">${o.status}</span>
+            <div class="val">${money(o.total)}</div></div>`).join('')
+        || '<div class="meta">None recorded.</div>';
+
+    return `
+        <tr class="detail-row" data-detail="${c.id}" hidden><td colspan="5">
+            <div style="display:grid;gap:10px">
+                <div><b style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Orders</b>
+                    <div class="mini-list">${theirOrders}</div></div>
+                <div class="field"><label>Tags (comma-separated)</label>
+                    <input data-f="tags" data-id="${c.id}" value="${esc((c.tags || []).join(', '))}" placeholder="vip, wholesale"></div>
+                <div class="field"><label>Notes</label>
+                    <textarea data-f="notes" data-id="${c.id}" placeholder="Private notes about this customer">${esc(c.notes || '')}</textarea></div>
+                <div><button class="btn small primary" data-act="save-cust" data-id="${c.id}">Save notes &amp; tags</button></div>
+            </div>
+        </td></tr>`;
+}
+
+/** A customer row followed by its hidden detail panel. */
+function customerRow(c, orders) {
+    return `
+        <tr data-id="${c.id}" style="cursor:pointer">
+            <td><b>${esc(c.name)}</b>${(c.tags || []).map(t => `<span class="chip">${esc(t)}</span>`).join('')}</td>
+            <td>${esc(c.email)}<div style="font-size:12px;color:var(--muted)">${esc(c.phone)}</div></td>
+            <td class="num">${c.ordersCount}</td>
+            <td class="num">${money(c.totalSpent)}</td>
+            <td>${dateFmt(c.lastSeen)}</td>
+        </tr>
+        ${customerDetail(c, orders)}`;
+}
+
+/** One row in the newsletter subscribers list. */
+function subscriberRow(s) {
+    return `
+                <div class="mini-row"><div class="grow"><div class="nm">${esc(s.email)}</div></div>
+                <div class="meta">${dateFmt(s.t)}</div></div>`;
+}
+
+/** The newsletter subscribers card. */
+function subscribersBlock(subscribers) {
+    const exportLink = subscribers.length
+        ? '<a class="link-btn" href="/api/admin/export/subscribers.csv" style="margin-left:8px">Export CSV</a>'
+        : '';
+    const list = subscribers.length
+        ? `<div class="mini-list">${[...subscribers].reverse().map(subscriberRow).join('')}</div>`
+        : '<div class="empty">No subscribers yet.</div>';
+    return `
+        <div class="card">
+            <h2>Newsletter subscribers</h2>
+            <p class="sub">${subscribers.length} signup(s) from the storefront footer.
+                ${exportLink}</p>
+            ${list}
+        </div>`;
+}
+
 export async function renderCustomers() {
     const { customers, subscribers, orders } = await api('customers');
 
     const customerRows = [...customers]
         .sort((a, b) => b.totalSpent - a.totalSpent)
-        .map(c => {
-            const theirOrders = orders.filter(o => o.email === c.email).map(o => `
-                <div class="mini-row"><div class="grow"><div class="nm">${esc(o.number)}</div>
-                    <div class="meta">${timeFmt(o.createdAt)}</div></div>
-                    <span class="status ${o.status}">${o.status}</span>
-                    <div class="val">${money(o.total)}</div></div>`).join('')
-                || '<div class="meta">None recorded.</div>';
-
-            return `
-            <tr data-id="${c.id}" style="cursor:pointer">
-                <td><b>${esc(c.name)}</b>${(c.tags || []).map(t => `<span class="chip">${esc(t)}</span>`).join('')}</td>
-                <td>${esc(c.email)}<div style="font-size:12px;color:var(--muted)">${esc(c.phone)}</div></td>
-                <td class="num">${c.ordersCount}</td>
-                <td class="num">${money(c.totalSpent)}</td>
-                <td>${dateFmt(c.lastSeen)}</td>
-            </tr>
-            <tr class="detail-row" data-detail="${c.id}" hidden><td colspan="5">
-                <div style="display:grid;gap:10px">
-                    <div><b style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Orders</b>
-                        <div class="mini-list">${theirOrders}</div></div>
-                    <div class="field"><label>Tags (comma-separated)</label>
-                        <input data-f="tags" data-id="${c.id}" value="${esc((c.tags || []).join(', '))}" placeholder="vip, wholesale"></div>
-                    <div class="field"><label>Notes</label>
-                        <textarea data-f="notes" data-id="${c.id}" placeholder="Private notes about this customer">${esc(c.notes || '')}</textarea></div>
-                    <div><button class="btn small primary" data-act="save-cust" data-id="${c.id}">Save notes &amp; tags</button></div>
-                </div>
-            </td></tr>`;
-        }).join('');
+        .map(c => customerRow(c, orders))
+        .join('');
 
     viewEl.innerHTML = `
         <div class="dash-grid">
@@ -152,15 +325,7 @@ export async function renderCustomers() {
                         || '<tr><td colspan="5"><div class="empty">No customers yet.</div></td></tr>'}</tbody>
                 </table></div>
             </div>
-            <div class="card">
-                <h2>Newsletter subscribers</h2>
-                <p class="sub">${subscribers.length} signup(s) from the storefront footer.
-                    ${subscribers.length ? '<a class="link-btn" href="/api/admin/export/subscribers.csv" style="margin-left:8px">Export CSV</a>' : ''}</p>
-                ${subscribers.length ? `<div class="mini-list">${[...subscribers].reverse().map(s => `
-                    <div class="mini-row"><div class="grow"><div class="nm">${esc(s.email)}</div></div>
-                    <div class="meta">${dateFmt(s.t)}</div></div>`).join('')}</div>`
-                    : '<div class="empty">No subscribers yet.</div>'}
-            </div>
+            ${subscribersBlock(subscribers)}
         </div>`;
 
     const rows = $('#cust-rows');
@@ -179,9 +344,7 @@ export async function renderCustomers() {
         // Clicks inside the open panel must not collapse it.
         if (e.target.closest('input, textarea, .detail-row')) return;
         const tr = e.target.closest('tr[data-id]');
-        if (!tr) return;
-        const detail = rows.querySelector(`tr[data-detail="${tr.dataset.id}"]`);
-        if (detail) detail.hidden = !detail.hidden;
+        if (tr) toggleDetail(rows, tr);
     });
 }
 
@@ -198,13 +361,19 @@ function couponRow(c) {
         c.expiresAt ? `till ${dateFmt(c.expiresAt)}` : 'no expiry',
     ].filter(Boolean).join(' · ');
 
-    const audience = named.length
-        ? named.slice(0, 2).map(x => `<span class="chip">${esc(x)}</span>`).join('')
-          + (named.length > 2 ? `<span class="chip">+${named.length - 2}</span>` : '')
-        : '<span style="color:var(--muted);font-size:12.5px">everyone</span>';
+    let audience;
+    if (named.length) {
+        const shown = named.slice(0, 2).map(x => `<span class="chip">${esc(x)}</span>`).join('');
+        const extra = named.length > 2 ? `<span class="chip">+${named.length - 2}</span>` : '';
+        audience = shown + extra;
+    } else {
+        audience = '<span style="color:var(--muted);font-size:12.5px">everyone</span>';
+    }
 
-    const statusClass = expired ? 'archived' : (c.active ? 'active' : 'draft');
-    const statusText = expired ? 'expired' : (c.active ? 'active' : 'off');
+    const activeClass = c.active ? 'active' : 'draft';
+    const activeText = c.active ? 'active' : 'off';
+    const statusClass = expired ? 'archived' : activeClass;
+    const statusText = expired ? 'expired' : activeText;
 
     return `
         <tr data-id="${c.id}">
@@ -246,6 +415,22 @@ export async function renderCoupons() {
     });
 }
 
+/** Gather the coupon form fields into a request body. */
+function readCouponForm(modal) {
+    const list = (sel) => $(sel, modal).value.split(',').map(s => s.trim()).filter(Boolean);
+    return {
+        code: $('#cp-code', modal).value,
+        type: $('#cp-type', modal).value,
+        value: Number($('#cp-value', modal).value),
+        minOrder: Number($('#cp-min', modal).value) || 0,
+        expiresAt: $('#cp-exp', modal).value || null,
+        usageLimit: Number($('#cp-limit', modal).value) || 0,
+        perCustomerLimit: Number($('#cp-percust', modal).value) || 0,
+        active: $('#cp-active', modal).checked,
+        restrictTo: { emails: list('#cp-emails'), phones: list('#cp-phones') },
+    };
+}
+
 export function couponEditor(coupon) {
     const v = coupon || {
         code: '', type: 'percent', value: 10, minOrder: 0, expiresAt: null,
@@ -278,22 +463,11 @@ export function couponEditor(coupon) {
             <button class="btn primary" id="cp-save">${coupon ? 'Save changes' : 'Create coupon'}</button>
         </div>`);
 
-    const list = (sel) => $(sel, modal).value.split(',').map(s => s.trim()).filter(Boolean);
     const err = modalChrome(modal, '#cp-cancel', '#cp-err');
 
     $('#cp-save', modal).addEventListener('click', async () => {
-        const body = {
-            code: $('#cp-code', modal).value,
-            type: $('#cp-type', modal).value,
-            value: Number($('#cp-value', modal).value),
-            minOrder: Number($('#cp-min', modal).value) || 0,
-            expiresAt: $('#cp-exp', modal).value || null,
-            usageLimit: Number($('#cp-limit', modal).value) || 0,
-            perCustomerLimit: Number($('#cp-percust', modal).value) || 0,
-            active: $('#cp-active', modal).checked,
-            restrictTo: { emails: list('#cp-emails'), phones: list('#cp-phones') },
-        };
         try {
+            const body = readCouponForm(modal);
             if (coupon) await api(`coupons/${coupon.id}`, 'PUT', body);
             else await api('coupons', 'POST', body);
             closeModal();
@@ -303,54 +477,3 @@ export function couponEditor(coupon) {
     });
 }
 
-/* ================= review moderation ================= */
-
-const stars = (n) => '★'.repeat(n) + '☆'.repeat(5 - n);
-
-const REVIEW_STATUS_CLASS = { approved: 'active', rejected: 'archived', pending: 'draft' };
-
-export async function renderReviews() {
-    const { reviews } = await api('reviews');
-
-    const pending = reviews.filter(r => r.status === 'pending').length;
-    const badge = $('#reviews-badge');
-    badge.textContent = pending;
-    badge.hidden = !pending;
-
-    const rows = reviews.map(r => `
-        <div class="mini-row" data-id="${r.id}" style="align-items:flex-start">
-            <div class="grow">
-                <div class="nm">${esc(r.productName)} — <span style="color:var(--accent);letter-spacing:2px">${stars(r.rating)}</span></div>
-                <div style="font-size:13px;color:var(--body);margin:4px 0">${esc(r.text)}</div>
-                <div class="meta">${esc(r.name)}${r.email ? ' · ' + esc(r.email) : ''} · ${timeFmt(r.t)}</div>
-            </div>
-            <span class="status ${REVIEW_STATUS_CLASS[r.status]}">${r.status}</span>
-            <div style="display:flex;gap:6px">
-                ${r.status !== 'approved' ? '<button class="btn small" data-act="approve">Approve</button>' : ''}
-                ${r.status !== 'rejected' ? '<button class="btn small" data-act="reject">Reject</button>' : ''}
-                <button class="btn small danger" data-act="del">✕</button>
-            </div>
-        </div>`).join('');
-
-    viewEl.innerHTML = `
-        <div class="card">
-            <h2>Customer reviews</h2>
-            <p class="sub">Reviews appear on the storefront only after approval.</p>
-            ${reviews.length ? `<div class="mini-list" id="rev-list">${rows}</div>` : '<div class="empty">No reviews yet.</div>'}
-        </div>`;
-
-    $('#rev-list')?.addEventListener('click', async (e) => {
-        const btn = e.target.closest('button[data-act]');
-        if (!btn) return;
-        const id = btn.closest('[data-id]').dataset.id;
-        const act = btn.dataset.act;
-
-        if (act === 'del') {
-            if (!confirm('Delete this review?')) return;
-            if (await guard(() => api(`reviews/${id}`, 'DELETE'))) renderReviews();
-            return;
-        }
-        const status = act === 'approve' ? 'approved' : 'rejected';
-        if (await guard(() => api(`reviews/${id}`, 'PUT', { status }))) renderReviews();
-    });
-}

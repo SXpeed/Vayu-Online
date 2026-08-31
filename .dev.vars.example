@@ -1,0 +1,93 @@
+# Vayu — local development secrets.
+#
+# Copy this file to `.dev.vars` and fill in the values. `.dev.vars` is
+# gitignored; this template is not, so it must never carry a real value.
+#
+#   cp .dev.vars.example .dev.vars
+#
+# THIS FILE IS FOR LOCAL DEVELOPMENT ONLY. `wrangler dev` reads it;
+# `wrangler deploy` does NOT upload it. Production values are set per Worker:
+#
+#   npx wrangler secret put BETTER_AUTH_SECRET                        # storefront
+#   npx wrangler secret put BETTER_AUTH_SECRET -c wrangler.api.jsonc  # api
+#
+# Which Worker needs which secret:
+#
+#   secret                     site   api   admin   payments
+#   ------------------------------------------------------------
+#   INTERNAL_SECRET             x      x      x
+#   BETTER_AUTH_SECRET          x      x
+#   GOOGLE_CLIENT_ID            x      x
+#   GOOGLE_CLIENT_SECRET        x      x
+#   RAZORPAY_KEY_ID                                    x
+#   RAZORPAY_KEY_SECRET                                x
+#   RAZORPAY_WEBHOOK_SECRET                            x
+#
+# PUBLIC_ORIGIN is not a secret — it is a public hostname — so in production
+# it lives in the `vars` block of each wrangler config, not here.
+
+
+# ---------------------------------------------------------------------------
+# The origin this site answers on. No trailing slash.
+#
+# Locally this is the wrangler dev address. In production it is the real
+# domain, and it is the value people most often forget: it is the canonical
+# URL on every product page, the <loc> in sitemap.xml, the Sitemap: line in
+# robots.txt and the base of the Google OAuth callback.
+# ---------------------------------------------------------------------------
+PUBLIC_ORIGIN=http://127.0.0.1:8787
+
+
+# ---------------------------------------------------------------------------
+# Signs the customer session cookie (Better Auth).
+#
+# Any long random string. Changing it invalidates every signed-in session.
+# Generate one with:  openssl rand -base64 32
+# ---------------------------------------------------------------------------
+BETTER_AUTH_SECRET=
+
+
+# ---------------------------------------------------------------------------
+# Shared between the storefront, the API and the admin Worker so they can
+# authenticate each other's internal calls.
+#
+# MUST be byte-identical in all three. A mismatch is not a loud failure —
+# internal calls simply start being rejected.
+# Generate one with:  openssl rand -base64 32
+# ---------------------------------------------------------------------------
+INTERNAL_SECRET=
+
+
+# ---------------------------------------------------------------------------
+# Google sign-in. From console.cloud.google.com → APIs & Services →
+# Credentials → OAuth 2.0 Client ID (type: Web application).
+#
+# The Authorised redirect URI must be registered there exactly as:
+#   <PUBLIC_ORIGIN>/api/account/google/callback
+#
+# Add BOTH the local and the production URI, or sign-in works in one and
+# fails silently in the other. Leave these blank to run without Google
+# sign-in; email and password still work.
+# ---------------------------------------------------------------------------
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+
+# ---------------------------------------------------------------------------
+# Razorpay. From dashboard.razorpay.com → Settings → API Keys.
+#
+# The key id is public — it is handed to the browser to open the checkout —
+# and only the secret must be protected.
+#
+# These can also be set from the admin panel (Settings → Payment), which
+# writes them to the D1 `settings` table. Prefer these variables: a database
+# dump or admin access exposes the stored copy in plaintext, and the code
+# reads the environment first and falls back to the row.
+#
+# The webhook secret is the one you type into Razorpay's webhook settings —
+# it is what proves an incoming payment notification is genuinely theirs.
+# Leave all three blank to run with cash on delivery only.
+# ---------------------------------------------------------------------------
+RAZORPAY_KEY_ID=
+RAZORPAY_KEY_SECRET=
+RAZORPAY_WEBHOOK_SECRET=

@@ -7,4 +7,4 @@
 
 import { initVenuePage } from './venue.js';
 
-export default () => initVenuePage({ venueId: 'design-for-living', gridId: 'dflEdit' });
+export default () => initVenuePage({ venueId: 'design-for-living' });

@@ -20,7 +20,7 @@
    loses what they had already typed.
    ============================================================ */
 import {
-  currentAccount, signIn, register, signOut,
+  currentAccount, signIn, signOut,
   updateProfile, changePassword, addAddress, removeAddress, myOrders, googleSignInUrl,
 } from '../account.js';
 import { escapeHtml as esc } from '../core/html.js';
@@ -77,35 +77,17 @@ let account = null;
   if (initial) select(initial);
 })();
 
-/* ---- sign in / create account ---- */
+/* ---- sign in ---- */
 
 const gate = $('acctGate');
 const wrap = $('accountWrap');
-let gateMode = 'signin';
 
-/** Set by /api/account/me — the button only appears if it will work. */
-let googleReady = false;
-
-function renderGateMode() {
-  const creating = gateMode === 'register';
-  $('gateGoogleLabel').textContent = creating ? 'Sign up with Google' : 'Continue with Google';
-  $('gateTitle').textContent = creating ? 'Create an account' : 'Sign in';
-  $('gateLede').textContent = creating
-    ? 'So your details, addresses and orders are waiting next time.'
-    : 'Your orders, details and saved addresses in one place.';
-  $('gateSubmit').textContent = creating ? 'Create account' : 'Sign in';
-  $('gateSwitch').textContent = creating ? 'I already have an account' : 'Create an account';
-  $('gateNameField').hidden = !creating;
-  $('gatePhoneField').hidden = !creating;
-  $('gateName').required = creating;
-  $('gatePassword').autocomplete = creating ? 'new-password' : 'current-password';
-  showError($('gateError'), '');
-}
-
-$('gateSwitch').addEventListener('click', () => {
-  gateMode = gateMode === 'signin' ? 'register' : 'signin';
-  renderGateMode();
-});
+/**
+ * The gate offers exactly two ways in — Google and email/password — plus
+ * the guest route: buying needs no account, and accounts are created by
+ * Google sign-in rather than by a registration form. The Google button
+ * is always shown, whether or not the server has credentials yet.
+ */
 
 $('gateForm').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -114,9 +96,7 @@ $('gateForm').addEventListener('submit', async (e) => {
   showError($('gateError'), '');
   const fd = new FormData(e.target);
   try {
-    const data = gateMode === 'register'
-      ? await register(Object.fromEntries(fd))
-      : await signIn(fd.get('email'), fd.get('password'));
+    const data = await signIn(fd.get('email'), fd.get('password'));
     account = data.customer;
     await carryOverLocalData();
     showAccount();
@@ -393,15 +373,14 @@ function showAccount() {
 }
 
 function showGate() {
-  renderGateMode();
   wrap.hidden = true;
   gate.hidden = false;
 }
 
-const { signedIn, customer, google } = await currentAccount();
+const { signedIn, customer } = await currentAccount();
 
-googleReady = !!google;
-$('gateGoogle').hidden = !googleReady;
+// Always offered; the server explains itself if Google is not configured.
+$('gateGoogle').hidden = false;
 // Land back on this page, on whichever tab they were heading for.
 $('gateGoogleLink').href = googleSignInUrl(location.pathname + location.search);
 
@@ -412,8 +391,8 @@ if (signedIn) {
   showGate();
 
   // A cancelled or failed Google round trip comes back with a flag
-  // rather than silently doing nothing. Set after showGate(), because
-  // renderGateMode() clears the error line as it draws.
+  // rather than silently doing nothing. Set after showGate() so the gate
+  // is visible before the error line is filled.
   const outcome = new URLSearchParams(location.search).get('signin');
   if (outcome === 'cancelled') showError($('gateError'), 'Google sign-in was cancelled.');
   if (outcome === 'failed') showError($('gateError'), 'Google sign-in did not complete. Please try again.');

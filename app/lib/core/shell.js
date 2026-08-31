@@ -15,6 +15,24 @@
 
 import { scrollToTop } from './scroll.js';
 
+/**
+ * Expose the header + promo-banner heights so the fixed desktop bar can
+ * offset content correctly. Four things depend on --hdr-h: the body's top
+ * padding on pages without the hero, the COLLECTION dropdown's `top`, and
+ * the sticky gallery / order summary on the product and cart pages.
+ *
+ * Module-level and exported rather than a closure inside initShell, because
+ * the announcement bar is added to the header after this has already run —
+ * core/site-content.js calls it once the bar is in, so the offsets account
+ * for the extra height instead of staying a bar too short.
+ */
+export function measureBars() {
+    const header = document.getElementById('header');
+    if (header) document.documentElement.style.setProperty('--hdr-h', header.offsetHeight + 'px');
+    const banner = document.querySelector('.top-banner');
+    if (banner) document.documentElement.style.setProperty('--banner-h', banner.offsetHeight + 'px');
+}
+
 export function initShell() {
     // Deduplicate mobile bottom nav and overlay if multiple exist in DOM
     const navs = document.querySelectorAll('.mobile-bottom-nav');
@@ -43,22 +61,13 @@ export function initShell() {
     const header = document.getElementById('header');
     if (header) addEventListener('scroll', () => header.classList.toggle('scrolled', scrollY > 8), { passive: true });
 
-    // Expose the header + promo-banner heights so the fixed desktop bar can
-    // offset content correctly. Four things depend on --hdr-h: the body's top
-    // padding on pages without the hero, the COLLECTION dropdown's `top`, and
-    // the sticky gallery / order summary on the product and cart pages.
-    const setBarHeights = () => {
-        if (header) document.documentElement.style.setProperty('--hdr-h', header.offsetHeight + 'px');
-        const banner = document.querySelector('.top-banner');
-        if (banner) document.documentElement.style.setProperty('--banner-h', banner.offsetHeight + 'px');
-    };
-    setBarHeights();
-    addEventListener('resize', setBarHeights, { passive: true });
+    measureBars();
+    addEventListener('resize', measureBars, { passive: true });
 
     // The bar's height comes from the logo's Cormorant Garamond line box, so a
     // measurement taken before the webfont settles is wrong — and it used to
     // stay wrong for the life of the page, since this only ran on load/resize.
-    if (document.fonts?.ready) document.fonts.ready.then(setBarHeights);
+    if (document.fonts?.ready) document.fonts.ready.then(measureBars);
 
     // mobile menu popup sheet
     const burger = document.getElementById('burger');

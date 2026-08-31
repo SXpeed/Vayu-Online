@@ -2,11 +2,16 @@
  * Vayu — the two venue pages: Design for Living (the store) and Gallery
  * Vayu (the gallery).
  *
- * They are siblings by design. Both are one show at one address, written in
- * the same `.g-*` language: an editorial head, a 16:9 hero, an italic
- * statement, a plate grid, and the pieces from that show as the site's own
- * product tiles. A change to the section rhythm should land on both, so the
+ * They are siblings by design, and now literally the same page with
+ * different content: an editorial head, a 16:9 hero that opens the current
+ * show, an italic statement, and the archive of what the house has shown
+ * before. A change to the section rhythm should land on both, so the
  * behaviour lives here once rather than being written twice and drifting.
+ *
+ * Everything belonging to a particular show — its pictures, its plates and
+ * the pieces gathered for it — is on that show's own page. These two pages
+ * say what the house is and what it has done; they no longer try to be the
+ * current show as well.
  *
  * Two things this restores, both lost in the SvelteKit migration:
  *
@@ -17,39 +22,19 @@
  *                  carried across. Every tile on both pages has been
  *                  promising to enlarge and doing nothing.
  *
- *   the edit       data/events.js gives each venue a curated list. Only the
- *                  store page rendered its own; the gallery's three pieces
- *                  existed in the data and were shown in the MENU panel,
- *                  but never on the gallery page itself.
+ * The programme is editable in the admin panel, so both pages paint their
+ * current show from it and list what each house has shown before, each past
+ * show linking to a page of its own.
+ *
+ * What they no longer carry is the curated edit — the product tiles for the
+ * current show. Those describe one show rather than one address, so they
+ * live on that show's page (/pages/event.html?id=) and both venue pages are
+ * now the same four things: a head, a hero, the plates, and the archive.
  */
 
-import { venues, eventsOf } from '../data/events.js';
-import { renderProductCards, bindProductTiles } from '../product-card.js';
-import { hydrateCatalogue } from '#lib/stores/site.svelte.js';
-import { showToast } from '../core/toast.js';
-
-/**
- * The pieces in this venue's current show, as the same tiles the collection
- * grid uses — wishlist, add-to-cart and the options rule included.
- */
-async function renderEdit(venueId, gridId) {
-    const grid = document.getElementById(gridId);
-    if (!grid) return;
-
-    const venue = venues.find(v => v.id === venueId);
-    if (!venue) return;
-
-    // Before the catalogue is here, eventsOf() resolves every curated entry
-    // against an empty product list and hands back an event with nothing in
-    // it — so the await has to come first, not after.
-    await hydrateCatalogue();
-
-    const current = eventsOf(venue)[0];
-    if (!current?.curated?.length) return;
-
-    renderProductCards(grid, current.curated.map(p => [p.cat, p.idx]));
-    bindProductTiles(grid, showToast);
-}
+import { venueById, eventsOf } from '../data/events.js';
+import { hydrateEvents } from '#lib/stores/site.svelte.js';
+import { phonePictureHTML } from '#shared/content/picture.js';
 
 /**
  * Wire every plate on the page to the shared <dialog> viewer.
@@ -122,16 +107,112 @@ export function initLightbox() {
     });
 }
 
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]
+));
+
 /**
- * @param venueId  the id in data/events.js
- * @param gridId   the element the curated tiles render into
+ * Put the panel's current show onto the page.
+ *
+ * The document ships with a show written into it, which is what a visitor
+ * sees before any fetch lands and what a crawler reads. Once the programme
+ * arrives, the fields it actually carries are written over that markup —
+ * field by field, not by replacing the section, so a show that has a title
+ * and dates but no plates yet keeps the plates the page already had rather
+ * than emptying the grid.
  */
-export function initVenuePage({ venueId, gridId }) {
-    // The lightbox first, and only once: the plates are static markup, so
-    // they are all present now, and a click lands while the catalogue is
-    // still in flight. The edit renders .product tiles, which are links to
-    // the product page rather than plates to enlarge, so they are not part
-    // of the viewer's sequence and it does not need rewiring after.
-    initLightbox();
-    return renderEdit(venueId, gridId);
+function paintCurrent(event) {
+    if (!event) return;
+
+    const title = document.querySelector('.g-head .g-title');
+    const meta = document.querySelector('.g-head .g-meta');
+    const statement = document.querySelector('.g-statement');
+    const heroEl = document.querySelector('.g-hero');
+
+    if (title && event.title) title.textContent = event.title;
+    if (meta && event.dates) meta.textContent = event.dates;
+    if (statement && event.statement) statement.textContent = event.statement;
+    // Replaced wholesale rather than having its src reassigned: a phone crop
+    // needs a <picture> around the <img>, and the markup that ships is a bare
+    // <img> because the page does not know yet which show it will lead with.
+    if (heroEl && event.image) {
+        heroEl.innerHTML = phonePictureHTML(event.image, event.imageMobile, {
+            alt: event.alt || event.title,
+            priority: true,
+            escape: esc,
+        });
+    }
+    if (event.title) document.title = `${event.title} — Vayu`;
+
+    // The way into the show. The hero used to jump to a plate section on
+    // this page; the pictures live on the show's own page now, so it points
+    // there instead — an anchor to a section that no longer exists is a
+    // link that silently does nothing.
+    const hero = document.querySelector('a.g-hero');
+    if (hero && event.href) hero.href = event.href;
+}
+
+
+/**
+ * Everything this house has shown before, each linking to its own page.
+ *
+ * A show that closes used to simply disappear — no list, no page, and the
+ * photographs of it gone with it. This is the record: the tiles are the
+ * shows' own hero plates, and they go to /pages/event.html?id=, where the
+ * whole thing is still hanging.
+ */
+function paintPast(past) {
+    const main = document.querySelector('main.wrap');
+    if (!main || !past.length) return;
+
+    const section = document.createElement('section');
+    section.id = 'past';
+    section.setAttribute('aria-labelledby', 'past-title');
+    section.innerHTML = `
+        <div class="g-sec-head">
+          <h2 class="g-sec-title" id="past-title">Previously</h2>
+          <span class="g-sec-note">${past.length} past show${past.length === 1 ? '' : 's'}</span>
+        </div>
+        <div class="g-grid">
+          ${past.map(ev => `
+            <figure class="g-card">
+              <a class="g-card-media" href="${esc(ev.href)}" style="cursor:pointer">
+                <img src="${esc(ev.image)}" alt="${esc(ev.alt || ev.title)}" loading="lazy">
+              </a>
+              <figcaption>
+                <span class="g-card-name">${esc(ev.title)}</span>
+                <span class="g-card-tag">${esc(ev.dates)}</span>
+              </figcaption>
+            </figure>`).join('')}
+        </div>`;
+
+    // Appended INSIDE main, as its last section. It used to be inserted
+    // before the lightbox <dialog> — which sits *outside* main on both venue
+    // pages, so the selector missed, the fallback resolved to main itself,
+    // and insertBefore put the whole archive above the page: a list of
+    // finished shows was the first thing anyone saw, above the breadcrumb
+    // and above what is actually on.
+    main.append(section);
+}
+
+/**
+ * @param venueId  the id of the house, as in data/events.js
+ */
+export async function initVenuePage({ venueId }) {
+    // Only the programme now. The catalogue used to be fetched here too, to
+    // resolve the curated pieces for the edit grid; that grid has gone to the
+    // show's own page, and with it the whole shop on a page that lists none.
+    await hydrateEvents();
+
+    const venue = venueById(venueId);
+    if (!venue) return;
+
+    const list = eventsOf(venue);
+    // `current` is the panel's flag. The shipped fallback has no flag and is
+    // written newest first, so the first entry is the current show there.
+    const current = list.find(e => e.current) || list[0];
+    const past = list.filter(e => e !== current);
+
+    paintCurrent(current);
+    paintPast(past);
 }

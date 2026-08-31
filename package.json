@@ -1,29 +1,35 @@
 {
-  "name": "vayu-site",
+  "name": "vayuindia",
   "version": "1.0.0",
   "private": true,
   "description": "Vayu storefront and admin panel on Cloudflare Workers + D1 + R2",
   "type": "module",
   "scripts": {
-    "build": "sh scripts/build.sh",
-    "dev": "npm run build && wrangler dev",
-    "deploy": "npm run build && wrangler deploy",
-    "verify": "node scripts/verify.mjs",
-    "smoke:admin": "node scripts/admin-smoke.mjs",
-    "smoke:checkout": "node scripts/checkout-oversell-test.mjs",
-    "db:migrate": "wrangler d1 migrations apply vayu-db --local",
-    "db:migrate:remote": "wrangler d1 migrations apply vayu-db --remote",
+    "build": "node scripts/build.mjs",
+    "dev": "npm run build && wrangler dev --ip 0.0.0.0",
+    "//split": "The three-origin split. The storefront is still the monolith (wrangler.jsonc); api, admin and payments are standalone Workers.",
+    "build:workers": "node scripts/build-workers.mjs",
+    "dev:split": "node scripts/build-workers.mjs && wrangler dev -c wrangler.admin.jsonc -c wrangler.api.jsonc -c wrangler.payments.jsonc --port 8793 --local",
+    "deploy:payments": "node scripts/build-workers.mjs payments && wrangler deploy -c wrangler.payments.jsonc",
+    "deploy:api": "node scripts/build-workers.mjs api && node scripts/check-migrations.mjs && wrangler deploy -c wrangler.api.jsonc",
+    "deploy:admin": "node scripts/build-workers.mjs admin && wrangler deploy -c wrangler.admin.jsonc",
+    "deploy": "node scripts/build.mjs && node scripts/check-migrations.mjs && wrangler deploy",
+    "db:migrate": "wrangler d1 migrations apply vayuindia-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply vayuindia-db --remote",
     "db:import": "node scripts/import-db.mjs --local",
     "db:import:remote": "node scripts/import-db.mjs --remote",
+    "db:slugs": "node scripts/backfill-slugs.mjs",
+    "db:check": "node scripts/check-migrations.mjs",
     "fonts": "node scripts/fetch-fonts.mjs",
-    "legacy": "node server.cjs"
+    "//snapshot": "Rewrite the static fallback from the live shop before a deploy, so the prerendered pages ship with the catalogue as it actually is.",
+    "snapshot": "node scripts/snapshot-static.mjs"
   },
   "devDependencies": {
     "@sveltejs/adapter-cloudflare": "^8.0.0-next.6",
     "@sveltejs/kit": "^3.0.0-next.23",
     "@sveltejs/vite-plugin-svelte": "^7.3.0",
     "esbuild": "^0.28.2",
-    "puppeteer-core": "^25.7.0",
+    "sharp": "^0.35.4",
     "svelte": "^5.56.9",
     "typescript": "^6.0.3",
     "vite": "^8.2.1",
@@ -35,7 +41,10 @@
     "zod": "^4.4.3"
   },
   "imports": {
-    "#lib": "./app/lib/index.js",
-    "#lib/*": "./app/lib/*"
+    "#lib/*": "./app/lib/*",
+    "#shared/*": "./shared/*",
+    "#services/*": "./services/*",
+    "#cloudflare/*": "./cloudflare/*",
+    "#apps/*": "./apps/*"
   }
 }

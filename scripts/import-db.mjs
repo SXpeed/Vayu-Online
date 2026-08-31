@@ -25,7 +25,7 @@ const DB_JSON = join(root, 'admin', 'data', 'db.json');
 // Deliberately NOT in migrations/: wrangler treats every .sql file there as
 // a migration, and this is a one-off data load, not a schema step.
 const OUT_SQL = join(root, 'scripts', 'import.generated.sql');
-const DB_NAME = 'vayu-db';
+const DB_NAME = 'vayuindia-db';
 
 /* ---------- SQL helpers ---------- */
 
@@ -374,12 +374,54 @@ for (const a of db.activity || []) {
     + `(${q(iso(a.t))}, ${q(a.admin || '')}, ${q(a.action || '')}, ${q(a.detail || '')});`);
   count('activity');
 }
+/* ---------- search terms ----------
+   A backup taken before 0015 carries `searches`, one row per event. Those
+   are folded into counts here rather than dropped, the same way the
+   migration folds the live table: a restore from an old backup should land
+   in the shape the code now reads, not recreate a table that no longer
+   exists. */
+emit('DELETE FROM "search_terms";');
 
-emit('DELETE FROM "searches";');
+const terms = new Map();
+const term = (raw) => {
+  const key = String(raw ?? '').trim().toLowerCase().replaceAll(/\s+/g, ' ').slice(0, 80);
+  if (!key) return null;
+  if (!terms.has(key)) {
+    terms.set(key, { q: key, searches: 0, zero_hits: 0, results: 0, first_seen: '', last_seen: '' });
+  }
+  return terms.get(key);
+};
+
 for (const s of db.searches || []) {
-  emit(`INSERT INTO "searches" ("q","results","sid","t") VALUES `
-    + `(${q(s.q || '')}, ${q(s.results || 0)}, ${q(s.sid || '')}, ${q(iso(s.t))});`);
-  count('searches');
+  const row = term(s.q);
+  if (!row) continue;
+  const t = iso(s.t);
+  const results = Number(s.results) || 0;
+  row.searches += 1;
+  if (results === 0) row.zero_hits += 1;
+  // Last event wins, so `results` is what the term found most recently.
+  if (!row.last_seen || t >= row.last_seen) { row.last_seen = t; row.results = results; }
+  if (!row.first_seen || t < row.first_seen) row.first_seen = t;
+}
+
+for (const s of db.search_terms || []) {
+  const row = term(s.q);
+  if (!row) continue;
+  row.searches += Number(s.searches) || 0;
+  row.zero_hits += Number(s.zero_hits) || 0;
+  row.results = Number(s.results) || 0;
+  row.first_seen = row.first_seen && row.first_seen < iso(s.first_seen) ? row.first_seen : iso(s.first_seen);
+  row.last_seen = row.last_seen && row.last_seen > iso(s.last_seen) ? row.last_seen : iso(s.last_seen);
+}
+
+for (const row of terms.values()) {
+  insert('search_terms', {
+    ...row,
+    searches: row.searches || 1,
+    first_seen: row.first_seen || row.last_seen || new Date().toISOString(),
+    last_seen: row.last_seen || row.first_seen || new Date().toISOString(),
+  }, ['q']);
+  count('search_terms');
 }
 
 for (const [sid, c] of Object.entries(db.carts || {})) {

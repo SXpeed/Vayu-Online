@@ -21,7 +21,7 @@
 --
 -- Care is per-product free text, so it is simply a column.
 
-CREATE TABLE product_specs (
+CREATE TABLE IF NOT EXISTS product_specs (
   product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   section    TEXT NOT NULL,                  -- 'dimensions' | 'materials'
   label      TEXT NOT NULL,
@@ -29,9 +29,9 @@ CREATE TABLE product_specs (
   sort_order INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (product_id, section, label)
 );
-CREATE INDEX idx_product_specs_product ON product_specs(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_specs_product ON product_specs(product_id);
 
-CREATE TABLE shipping_presets (
+CREATE TABLE IF NOT EXISTS shipping_presets (
   id         TEXT PRIMARY KEY,
   name       TEXT NOT NULL,
   body       TEXT NOT NULL DEFAULT '',

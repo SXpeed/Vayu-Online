@@ -1,4 +1,5 @@
 <script>
+  import Seo from '#lib/components/Seo.svelte';
   // Vayu — /pages/cart.html, ported from public/pages/cart.html.
   import { onMount } from 'svelte';
 
@@ -12,9 +13,12 @@
   });
 </script>
 
-<svelte:head>
-  <title>Your Cart — Vayu</title>
-</svelte:head>
+<Seo
+  title="Your Cart"
+  description="The pieces you are about to take home from Vayu."
+  path="/pages/cart.html"
+  noindex
+/>
 
 {@html pageCss}
 

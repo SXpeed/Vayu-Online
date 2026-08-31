@@ -1,10 +1,13 @@
 <script>
+  import Seo from '#lib/components/Seo.svelte';
   // Vayu — /pages/legal.html, ported from public/pages/legal.html.
 </script>
 
-<svelte:head>
-  <title>Legal Information — Vayu</title>
-</svelte:head>
+<Seo
+  title="Legal Information"
+  description="Terms of service, privacy policy and shipping terms for Vayu — Design For Living, the New Delhi concept boutique for Indian craft and design."
+  path="/pages/legal.html"
+/>
 
 <main class="wrap">
     <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -19,6 +22,7 @@
          which ever rendered — --line is transparent, and the flat-design
          layer forces `border-radius: 2px !important`, which beats an inline
          style. -->    <section class="text-document">
+            <h1 class="doc-title">Legal Information</h1>
             <h3>General Information</h3>
             <p>Welcome to Vayu Online. We are committed to providing you with the highest quality products and services. If you have any questions or concerns regarding your order, our policies, or our craftsmanship, you are in the right place.</p>
             <h3>Shipping & Delivery</h3>

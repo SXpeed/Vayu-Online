@@ -1,0 +1,15 @@
+-- Vayu — the line that closes a show's page, in the shop's own words.
+--
+-- The page ends by saying where to go next, because a finished show is
+-- usually arrived at from an old link or a search result and must not be a
+-- dead end. That line was generated: "Now on at <house>: <show> — <dates>."
+--
+-- Generated is the right default — it cannot go stale, which is the whole
+-- reason the programme moved into the database — but it is not always the
+-- right sentence. A show that toured, one that became a permanent hang, one
+-- the shop wants to say a word about, all want their own ending. This column
+-- holds it, and is empty for the shows that are happy with the automatic one.
+--
+-- Empty string rather than NULL, so the handler and the page both test the
+-- same falsy value and neither has to know which of the two it got.
+ALTER TABLE events ADD COLUMN closing TEXT NOT NULL DEFAULT '';

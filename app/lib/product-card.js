@@ -17,10 +17,35 @@
 import { site } from '#lib/stores/site.svelte.js';
 import { addToCart, toggleWishlist, isInWishlist } from './shop.js';
 import { hasOptions } from './options.js';
+import { pictureHTML } from '#shared/content/picture.js';
 
 const HEART_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>';
 
 const CART_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>';
+
+/**
+ * How wide a tile's photograph actually renders, so the browser can pick a
+ * candidate off the srcset instead of assuming the full viewport.
+ *
+ * These are .prod-grid's three states, in the same order the stylesheet
+ * declares them (app/styles/styles.css, section 07): two up on a phone,
+ * `auto-fill minmax(230px)` in between — three columns at most tablet widths
+ * — and a fixed four up from 1024px, where the content column caps at
+ * 1360px and each tile lands near 340px however wide the window gets.
+ *
+ * It only matters for uploads, which are the pictures the Worker resizes on
+ * demand; a shipped file has one AVIF twin and no ladder to choose from. But
+ * a product photograph is nearly always an upload, so this is precisely the
+ * case worth getting right — and getting it wrong is expensive in the one
+ * direction: omit it and every phone downloads the 1366px candidate for a
+ * 180px box.
+ */
+const TILE_SIZES = '(max-width: 600px) 50vw, (max-width: 1023px) 33vw, min(25vw, 340px)';
+
+/** Attribute-safe text. A product name may carry a quote or an ampersand. */
+const esc = (v) => String(v ?? '').replace(/[&<>"]/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]
+));
 
 /** Resolve a product from the catalogue by category slug and index. */
 export const productAt = (cat, idx) => site.products[cat]?.[idx];
@@ -38,19 +63,40 @@ export function productCardHTML(cat, idx) {
     const p = productAt(cat, idx);
     if (!p) return '';
 
-    const wished = isInWishlist(cat, idx);
+    // By id where the product has one, so the heart agrees with what
+    // pressing it will do: bindProductTiles below toggles by id, and
+    // asking by position alone made a tile show a filled heart that then
+    // added a second entry instead of removing the one it was showing.
+    const wished = isInWishlist(cat, idx, p.id);
     const shots = (p.gallery?.length ? p.gallery : [p.img]).slice(0, 4);
-    // the first shot is what the tile shows at rest, so it is never lazy
+    // The first shot is what the tile shows at rest, so it is never lazy;
+    // the other three are behind a swipe and can wait. Each goes through
+    // pictureHTML, which offers the AVIF twin where one exists and states
+    // the picture's own width and height either way — a tile with no size
+    // on it is a hole the grid closes up when the bytes land.
     const shotsHTML = shots
-        .map((src, i) => `<span class="ph-slide"><img src="${src}" alt="${i ? '' : p.name}"${i ? ' loading="lazy"' : ''}></span>`)
+        .map((src, i) => `<span class="ph-slide">${pictureHTML(src, {
+            alt: i ? '' : p.name,
+            lazy: i > 0,
+            sizes: TILE_SIZES,
+            escape: esc,
+        })}</span>`)
         .join('');
 
-    // Products managed in the admin panel carry a permanent id — link by it
-    // so the URL survives catalogue re-ordering; cat/idx ride along as a
-    // fallback for the static catalogue.
-    const href = p.id
-        ? `/pages/product.html?id=${p.id}&cat=${cat}&idx=${idx}`
-        : `/pages/product.html?cat=${cat}&idx=${idx}`;
+    // The canonical address, when the product has one. Linking straight to
+    // /products/<slug> rather than to the ?id= form that 301s onto it is not
+    // cosmetic: an internal link through a redirect spends a round trip on
+    // every click, and pointing the whole site's internal links at a URL
+    // that immediately forwards is a weaker signal than linking the
+    // canonical one directly.
+    //
+    // The old form stays as the fallback for the static catalogue, whose
+    // products have no row in D1 and therefore no slug.
+    const href = p.slug
+        ? `/products/${p.slug}`
+        : p.id
+            ? `/pages/product.html?id=${p.id}&cat=${cat}&idx=${idx}`
+            : `/pages/product.html?cat=${cat}&idx=${idx}`;
     const priceHTML = p.compareAt
         ? `<span class="price-sale">${p.price}</span> <s class="price-was" style="color:#9b968c;font-weight:400">${p.compareAt}</s>`
         : p.price;
