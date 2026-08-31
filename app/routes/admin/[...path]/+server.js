@@ -26,9 +26,9 @@
  * twelve files), so the only way to read one is through the checks below.
  */
 
-import { error, redirect } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import { Store } from '#lib/server/db.js';
-import { currentAdmin } from '#lib/server/sessions.js';
+import { currentAdmin, adminSessionFromAccess } from '#lib/server/sessions.js';
 import { accessGate } from '#services/auth/access.js';
 import { adminRoute, contentTypeFor, PANEL_CACHE_CONTROL } from '#services/auth/admin-gate.js';
 import optionsSource from '#lib/options.js?raw';
@@ -108,12 +108,37 @@ export async function GET({ request, platform, url }) {
     if (denied) return denied;
 
     const store = new Store(env);
-    const signedIn = await currentAdmin(store, request);
+    let signedIn = await currentAdmin(store, request);
+    let setCookie = null;
+
+    // Google sign-in for the panel. Access has already verified who this is
+    // and that the policy admits them, so a matching `admins` row is the
+    // sign-in — no password form. Returns null unless Access is configured,
+    // which is what keeps the password login working until it is.
+    if (!signedIn) {
+        const minted = await adminSessionFromAccess(env, store, request);
+        if (minted) {
+            signedIn = minted.admin;
+            setCookie = minted.setCookie;
+        }
+    }
 
     // One policy, shared with apps/admin/worker.js — see
     // services/auth/admin-gate.js for what each branch is protecting.
     const route = adminRoute(url.pathname, signedIn);
-    if (route.kind === 'redirect') redirect(302, route.to);
+
+    // Returned rather than thrown, unlike the 404 below: SvelteKit's
+    // redirect() throws, and a thrown redirect carries no headers — so a
+    // session just minted above would be dropped on the one hop that needs
+    // it, and /admin/login would bounce the caller straight back.
+    if (route.kind === 'redirect') {
+        const headers = { Location: route.to };
+        if (setCookie) headers['Set-Cookie'] = setCookie;
+        return new Response(null, { status: 302, headers });
+    }
     if (route.kind === 'notFound') error(404, 'Not found');
-    return send(route.file);
+
+    const response = send(route.file);
+    if (setCookie) response.headers.set('Set-Cookie', setCookie);
+    return response;
 }
