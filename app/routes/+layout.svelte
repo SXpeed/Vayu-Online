@@ -8,7 +8,8 @@
    * a module graph in front of the first paint.
    */
   import { onMount } from 'svelte';
-  import { page } from '$app/state';
+  import { page, updated } from '$app/state';
+  import { beforeNavigate } from '$app/navigation';
   import Header from '#lib/components/Header.svelte';
   import Footer from '#lib/components/Footer.svelte';
   import { site, hydrateNav, hydrateCatalogue, hydrateEvents } from '#lib/stores/site.svelte.js';
@@ -16,6 +17,30 @@
   import '../styles/styles.css';
 
   let { children } = $props();
+
+  /**
+   * Leave a tab that has outlived its deploy, rather than breaking in it.
+   *
+   * Every build hashes its filenames, and a deploy uploads the new set and
+   * removes the old — so the chunks a page loaded an hour ago stop existing
+   * the moment the next deploy lands. A tab still holding that document goes
+   * on believing in them: click a link and the client router tries to import
+   * a URL that is now a 404, and the navigation dies with "Failed to fetch
+   * dynamically imported module" and a console full of missing chunks.
+   *
+   * SvelteKit already knows when this has happened — it watches the
+   * x-sveltekit-version header, rechecks when the tab regains focus, and
+   * polls — and it will fall back to a full page load if a navigation
+   * actually throws. This closes the gap where it does not throw: a full
+   * navigation is forced instead, which fetches a fresh document and with it
+   * the manifest that names chunks which exist.
+   *
+   * willUnload is excluded because the browser is already leaving the page,
+   * and reassigning location during it would fight the navigation in flight.
+   */
+  beforeNavigate(({ willUnload, to }) => {
+    if (updated.current && !willUnload && to?.url) location.href = to.url.href;
+  });
 
   /**
    * Draw the announcement bar and the admin's own hero slides once that copy
