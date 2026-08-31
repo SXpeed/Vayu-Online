@@ -14,7 +14,6 @@
 
 import { verifyPassword, hashPassword, randomToken, now } from '#shared/database/store.js';
 import { json, ok, parseCookies, clientIp, badRequest, methodNotAllowed } from '#shared/utils/http.js';
-import { accessState, verifyAccess } from './access.js';
 
 export const ADMIN_COOKIE = 'vayu_admin_sid';
 export const CUSTOMER_COOKIE = 'vayu_customer_sid';
@@ -194,51 +193,6 @@ export async function adminLogin({ store, request, body }) {
   return json(200, {
     ok: true, name: admin.name, mustChangePassword: !!admin.must_change_password,
   }, { 'Set-Cookie': cookieHeader(ADMIN_COOKIE, token, maxAge, isSecureOrigin(request)) });
-}
-
-/**
- * Sign in from a Cloudflare Access identity — the panel's Google login.
- *
- * Access authenticates with Google and enforces who is allowed through (an
- * "emails ending in @yourdomain" policy). The JWT it stamps carries the
- * address it verified, so by the time this runs the identity is established
- * and there is nothing left for a password to prove. This turns that
- * identity into an ordinary admin session, so everything downstream —
- * currentAdmin(), roleError(), the activity log — is unchanged.
- *
- * Three deliberate limits, because "Access let them in" and "they are an
- * admin here" are different questions:
- *
- *   1. ONLY WHEN ACCESS IS ON. With no ACCESS_* vars this returns null and
- *      the panel is exactly what it was: a password form. That is what makes
- *      it safe to ship before the Zero Trust application exists — turning
- *      Access on is what turns this on.
- *   2. NO AUTO-PROVISIONING. The address must already be a row in `admins`.
- *      Access says "this is gulshan@viveksahnidesign.com"; it does not say
- *      what rank they hold, and a policy that admits a whole domain would
- *      otherwise make every colleague an owner.
- *   3. NO EMAIL, NO SESSION. A service token authenticates as itself and
- *      carries common_name instead, so it is refused here rather than
- *      resolving to whichever admin happens to sort first.
- */
-export async function adminSessionFromAccess(env, store, request) {
-  if (accessState(env) !== 'on') return null;
-
-  const result = await verifyAccess(env, request);
-  if (!result.ok) return null;
-
-  const email = String(result.identity?.email || '').toLowerCase().trim();
-  if (!email) return null;
-
-  const admin = await store.one('SELECT * FROM admins WHERE email = ?', email);
-  if (!admin) return null;
-
-  const { token, maxAge } = await createSession(store, 'admin', admin.id);
-  await store.logActivity(admin.name, 'auth.login', 'Signed in with Google');
-  return {
-    admin,
-    setCookie: cookieHeader(ADMIN_COOKIE, token, maxAge, isSecureOrigin(request)),
-  };
 }
 
 /**
