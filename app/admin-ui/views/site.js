@@ -761,7 +761,27 @@ function addMemberModal(onDone) {
 export async function renderTeam() {
     const { team } = await api('team');
 
-    const rows = team.map(m => `
+    // Requests first, and in their own table. A pending row has no business
+    // in the members list: it has no role to change yet, and showing the
+    // role selector beside somebody who cannot sign in reads as though they
+    // already can.
+    const waiting = team.filter(m => m.status === 'pending');
+    const members = team.filter(m => m.status !== 'pending');
+
+    const pendingRows = waiting.map(m => `
+        <tr data-id="${m.id}">
+            <td><b>${esc(m.name)}</b></td>
+            <td>${esc(m.email)}</td>
+            <td><select class="status-select" data-act="grant">
+                ${ROLES.map(r => `<option ${r === 'staff' ? 'selected' : ''}>${r}</option>`).join('')}</select></td>
+            <td>${dateFmt(m.createdAt)}</td>
+            <td style="white-space:nowrap">
+                <button class="btn small primary" data-act="approve">Approve</button>
+                <button class="btn small danger" data-act="del">Reject</button>
+            </td>
+        </tr>`).join('');
+
+    const rows = members.map(m => `
         <tr data-id="${m.id}">
             <td><b>${esc(m.name)}</b>${m.id === state.meId ? ' <span class="chip">you</span>' : ''}</td>
             <td>${esc(m.email)}</td>
@@ -771,11 +791,23 @@ export async function renderTeam() {
             <td><button class="btn small danger" data-act="del">Remove</button></td>
         </tr>`).join('');
 
+    const pendingCard = waiting.length ? `
+        <div class="card" style="margin-bottom:16px">
+            <h2>Waiting for approval ${waiting.length > 1 ? `(${waiting.length})` : ''}</h2>
+            <p class="sub" style="margin-top:0">Signed in with Google and cannot reach anything yet. Pick
+                what they should be able to do, then approve — or reject, which deletes the request.</p>
+            <div class="table-scroll"><table class="grid">
+                <thead><tr><th>Name</th><th>Email</th><th>Give the role</th><th>Asked</th><th></th></tr></thead>
+                <tbody id="pending-rows">${pendingRows}</tbody>
+            </table></div>
+        </div>` : '';
+
     viewEl.innerHTML = `
         <div class="toolbar">
             <div class="spacer"></div>
             <button class="btn primary" id="new-member">+ Add member</button>
         </div>
+        ${pendingCard}
         <div class="card">
             <p class="sub" style="margin-top:0"><b>owner</b> — everything · <b>manager</b> — everything except team, settings &amp; backups · <b>staff</b> — orders, customers, outbox &amp; analytics only.</p>
             <div class="table-scroll"><table class="grid">
@@ -786,6 +818,31 @@ export async function renderTeam() {
 
     $('#new-member').addEventListener('click', () => addMemberModal(renderTeam));
 
+    // Approve / reject. Sends the role chosen in the same row, so approving
+    // and ranking are one decision rather than two screens.
+    const pendingEl = $('#pending-rows');
+    if (pendingEl) {
+        pendingEl.addEventListener('click', async (e) => {
+            const btn = e.target.closest('button[data-act]');
+            if (!btn) return;
+            const tr = btn.closest('tr');
+            const id = tr.dataset.id;
+            const member = waiting.find(m => m.id === id);
+
+            if (btn.dataset.act === 'approve') {
+                const role = tr.querySelector('select[data-act=grant]').value;
+                await guard(
+                    () => api(`team/${id}`, 'PUT', { email: member.email, role, status: 'active' }),
+                    'Approved',
+                );
+                renderTeam();
+                return;
+            }
+            if (!confirm(`Reject ${member.email}? They can ask again by signing in.`)) return;
+            if (await guard(() => api(`team/${id}`, 'DELETE'), 'Request rejected')) renderTeam();
+        });
+    }
+
     const rowsEl = $('#team-rows');
     rowsEl.addEventListener('change', async (e) => {
         const sel = e.target.closest('select[data-act=role]');
@@ -793,7 +850,11 @@ export async function renderTeam() {
         const id = sel.closest('tr').dataset.id;
         // On failure the row still shows the new value, so re-render to
         // put the select back to what the server actually has.
-        if (!await guard(() => api(`team/${id}`, 'PUT', { role: sel.value }), 'Role updated')) renderTeam();
+        const member = members.find(m => m.id === id);
+        if (!await guard(
+            () => api(`team/${id}`, 'PUT', { email: member.email, role: sel.value }),
+            'Role updated',
+        )) renderTeam();
     });
     rowsEl.addEventListener('click', async (e) => {
         const btn = e.target.closest('button[data-act=del]');

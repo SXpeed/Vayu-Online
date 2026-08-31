@@ -331,6 +331,10 @@ export const teamMember = z.object({
     email: z.string().trim().email().max(254),
     name: text(120).optional(),
     role: z.enum(['staff', 'manager', 'owner']),
+    // Approving a pending Google request. Only 'active' is accepted — the
+    // handler will not move anyone the other way, and offering 'pending'
+    // here would suggest it could.
+    status: z.literal('active').optional(),
 }).passthrough();
 
 export const settings = z.object({

@@ -68,7 +68,19 @@
   // Sitemap: line in robots.txt and the base of the Google OAuth callback.
   // No trailing slash.
   "vars": {
-    "PUBLIC_ORIGIN": "https://vayuindia.com"
+    "PUBLIC_ORIGIN": "https://vayuindia.com",
+
+    // Who may claim the admin panel while it has no owner.
+    //
+    // The FIRST person to sign in with Google becomes the owner, and this is
+    // the fence around that: their address must sit in this domain. Everyone
+    // after them lands as 'pending' whatever their address, and an existing
+    // owner approves or rejects them from Team — so this value matters for
+    // exactly one sign-in in the life of the shop, and is inert afterwards.
+    //
+    // It is not a secret and it is not a permission. Being at this domain
+    // grants nothing once an owner exists.
+    "ADMIN_BOOTSTRAP_DOMAIN": "viveksahnidesign.com"
 
     // ---- ZERO TRUST (optional, and OFF right now) -------------------
     // Cloudflare Access in front of the admin panel, so a stranger never

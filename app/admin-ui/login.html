@@ -9,6 +9,42 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/admin/admin.css">
+    <style>
+        /* Google's own mark and wording, per their branding guidance: the
+           full-colour G on white, "Sign in with Google", never restyled into
+           the site's palette. */
+        .g-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            padding: 12px 16px;
+            margin-top: 4px;
+            background: #fff;
+            border: 1px solid #DADCE0;
+            border-radius: 4px;
+            font-family: 'Jost', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: #3C4043;
+            cursor: pointer;
+            transition: background 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .g-btn:hover {
+            background: #F8F9FA;
+            box-shadow: 0 1px 3px rgba(60, 64, 67, 0.16);
+        }
+
+        .login-note {
+            margin-top: 18px;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #8A8681;
+            text-align: center;
+        }
+    </style>
 </head>
 
 <body>
@@ -16,41 +52,44 @@
         <div class="login-card">
             <div class="login-brand">Vayu</div>
             <div class="login-sub">Design For Living</div>
-            <form id="login-form">
-                <div>
-                    <label for="email">Email</label>
-                    <input type="email" id="email" autocomplete="username" required autofocus>
-                </div>
-                <div>
-                    <label for="password">Password</label>
-                    <input type="password" id="password" autocomplete="current-password" required>
-                </div>
-                <div class="login-error" id="err"></div>
-                <button type="submit" class="login-btn">Sign In</button>
-            </form>
+
+            <!-- The only way in. There is no password field on purpose: the
+                 form that used to be here sat on the open internet and the
+                 throttle behind it is per-isolate, so it slowed a guesser
+                 without capping them. Google holds the secret now. -->
+            <div class="login-error" id="err"></div>
+            <a class="g-btn" href="/admin/google">
+                <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                    <path fill="#4285F4"
+                        d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62Z" />
+                    <path fill="#34A853"
+                        d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18Z" />
+                    <path fill="#FBBC05"
+                        d="M3.97 10.72a5.41 5.41 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33Z" />
+                    <path fill="#EA4335"
+                        d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58Z" />
+                </svg>
+                Sign in with Google
+            </a>
+
+            <p class="login-note">
+                Access is by invitation. Sign in and an owner will be asked to
+                approve you.
+            </p>
         </div>
     </div>
     <script>
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const err = document.getElementById('err');
-            err.textContent = '';
-            try {
-                const res = await fetch('/api/admin/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        email: document.getElementById('email').value,
-                        password: document.getElementById('password').value,
-                    }),
-                });
-                const data = await res.json();
-                if (!res.ok) { err.textContent = data.error || 'Sign in failed'; return; }
-                location.href = '/admin' + (data.mustChangePassword ? '#/settings' : '');
-            } catch {
-                err.textContent = 'Could not reach the server';
-            }
-        });
+        // The callback bounces back here with ?error=… when it refuses —
+        // wrong domain for the first owner, or an account still waiting to be
+        // approved. Read it into the same slot the form used to write to.
+        //
+        // textContent, never innerHTML: this string arrives in the URL and is
+        // therefore attacker-controlled, and writing it as markup would make
+        // the sign-in page an XSS vector for anyone who can get a link
+        // clicked.
+        const params = new URLSearchParams(location.search);
+        const message = params.get('error');
+        if (message) document.getElementById('err').textContent = message;
     </script>
 </body>
 

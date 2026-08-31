@@ -28,7 +28,8 @@
 
 import { error, redirect } from '@sveltejs/kit';
 import { Store } from '#lib/server/db.js';
-import { currentAdmin } from '#lib/server/sessions.js';
+import { currentAdmin, issueAdminSession } from '#lib/server/sessions.js';
+import { resolveGoogleAdmin, refusalMessage } from '#services/auth/admin-google.js';
 import { accessGate } from '#services/auth/access.js';
 import { adminRoute, contentTypeFor, PANEL_CACHE_CONTROL } from '#services/auth/admin-gate.js';
 import optionsSource from '#lib/options.js?raw';
@@ -108,6 +109,44 @@ export async function GET({ request, platform, url }) {
     if (denied) return denied;
 
     const store = new Store(env);
+
+    // ---- Google sign-in -------------------------------------------------
+    // Two paths, both before the file router, because neither is a file.
+    //
+    // /admin/google hands off to Better Auth's social flow rather than
+    // talking to Google here: that flow already owns the client id, the
+    // state parameter, PKCE and the token exchange, and a second
+    // implementation of it would be a second thing to get wrong.
+    if (url.pathname === '/admin/google') {
+        const next = encodeURIComponent('/admin/google/callback');
+        return new Response(null, {
+            status: 302,
+            headers: { Location: `/api/auth/sign-in/social?provider=google&callbackURL=${next}` },
+        });
+    }
+
+    // Google has answered and Better Auth has set its own session. Turn that
+    // into an admin session — or do not, and say why on the sign-in page.
+    if (url.pathname === '/admin/google/callback') {
+        const result = await resolveGoogleAdmin(env, store, request);
+        if (!result.ok) {
+            console.log(`admin google refused: ${result.reason}`);
+            const why = encodeURIComponent(refusalMessage(result.reason, env));
+            return new Response(null, {
+                status: 302,
+                headers: { Location: `/admin/login?error=${why}` },
+            });
+        }
+        return new Response(null, {
+            status: 302,
+            headers: {
+                Location: '/admin',
+                'Set-Cookie': await issueAdminSession(store, request, result.admin),
+            },
+        });
+    }
+    // ---------------------------------------------------------------------
+
     const signedIn = await currentAdmin(store, request);
 
     // One policy, shared with apps/admin/worker.js — see

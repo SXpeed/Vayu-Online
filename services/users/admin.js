@@ -276,6 +276,11 @@ export async function settings({ store, method, admin, body }) {
 
 const publicAdmin = (a) => ({
   id: a.id, name: a.name, email: a.email, role: a.role, createdAt: a.created_at,
+  // 'pending' is somebody Google has identified and nobody has approved.
+  // The panel needs to tell the two apart to offer Approve rather than the
+  // role selector, so it is part of the public shape rather than inferred.
+  status: a.status || 'active',
+  provider: a.auth_provider || 'password',
 });
 
 export function team(ctx) {
@@ -323,10 +328,24 @@ export function team(ctx) {
       const patch = {};
       if (body.role && ROLES.includes(body.role)) patch.role = body.role;
       if (body.name) patch.name = String(body.name);
+      // Approval, and deliberately one-way: a request can be turned into an
+      // active member, but nothing here can push an active member back to
+      // 'pending'. Withdrawing access is DELETE, which also revokes their
+      // sessions — suspending someone by flipping a column would leave them
+      // signed in with the cookie they already hold.
+      if (body.status === 'active' && member.status === 'pending') {
+        patch.status = 'active';
+      }
       await store.update('admins', 'id', member.id, patch);
 
       const fresh = await store.row('admins', 'id', member.id);
-      await store.logActivity(admin.name, 'team.update', `Updated ${fresh.name} (${fresh.role})`);
+      await store.logActivity(
+        admin.name,
+        patch.status === 'active' ? 'team.approve' : 'team.update',
+        patch.status === 'active'
+          ? `Approved ${fresh.email} as ${fresh.role}`
+          : `Updated ${fresh.name} (${fresh.role})`,
+      );
       return json(200, { member: publicAdmin(fresh) });
     },
 

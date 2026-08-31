@@ -196,6 +196,20 @@ export async function adminLogin({ store, request, body }) {
 }
 
 /**
+ * Issue an admin session for a row that has already been authenticated some
+ * other way — today, by Google (see services/auth/admin-google.js).
+ *
+ * Deliberately takes the row rather than an address: deciding WHO this is,
+ * and whether they are allowed, belongs to the caller. This only mints the
+ * cookie, so every admin session in the system is the same kind of thing and
+ * currentAdmin(), roleError() and the activity log carry on unchanged.
+ */
+export async function issueAdminSession(store, request, admin) {
+  const { token, maxAge } = await createSession(store, 'admin', admin.id);
+  return cookieHeader(ADMIN_COOKIE, token, maxAge, isSecureOrigin(request));
+}
+
+/**
  * POST only. The session cookie is SameSite=Lax, which stops a cross-site
  * POST but deliberately still sends the cookie on a top-level GET navigation
  * — so while this answered to GET, any page an admin visited could sign them
