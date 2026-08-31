@@ -35,8 +35,51 @@ const force = args.includes('--force');
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const wrangler = join(root, 'node_modules', 'wrangler', 'bin', 'wrangler.js');
 
-/** Run one SQL file and return wrangler's parsed rows. */
-function d1(sql) {
+/**
+ * Run one statement and return the rows it matched.
+ *
+ * --command, NOT --file, and the distinction is not cosmetic. Given --file,
+ * wrangler answers a SELECT with a summary of the run rather than the rows:
+ *
+ *     [{ results: [{ "Total queries executed": 1, "Rows read": 0, ... }] }]
+ *
+ * Read through the old helper, that made `SELECT COUNT(*) AS n` produce an
+ * object with no `n`, so `existing` fell to 0 and the guard below — the one
+ * that refuses to overwrite coverage somebody edited in the panel — could
+ * never fire. It also made the confirmation at the end print one line of
+ * wrangler statistics instead of the pieces actually seeded.
+ *
+ * Writes stay on --file (d1Exec): a multi-row INSERT is long, and a file has
+ * no argv length limit to worry about.
+ */
+function d1Rows(sql) {
+    let out;
+    try {
+        out = execFileSync(
+            process.execPath,
+            [wrangler, 'd1', 'execute', 'vayuindia-db', remote ? '--remote' : '--local', '--command', sql],
+            { encoding: 'utf8' },
+        );
+    } catch (err) {
+        console.error('wrangler failed:\n' + (err.stdout || err.message));
+        process.exit(1);
+    }
+    let rows;
+    try {
+        rows = JSON.parse(out.slice(out.indexOf('[')))[0]?.results ?? [];
+    } catch {
+        console.error('Could not read wrangler output:\n' + out);
+        process.exit(1);
+    }
+    if (rows.some(r => r && Object.hasOwn(r, 'Total queries executed'))) {
+        console.error('wrangler returned a run summary instead of rows — refusing to guess at the table state.');
+        process.exit(1);
+    }
+    return rows;
+}
+
+/** Run one SQL file. For writes, where the statement may be long. */
+function d1Exec(sql) {
     const path = join(tmpdir(), `vayu-press-${randomBytes(6).toString('hex')}.sql`);
     writeFileSync(path, sql, { mode: 0o600 });
     try {
@@ -92,7 +135,7 @@ if (!press.length) {
     process.exit(1);
 }
 
-const existing = Number(d1('SELECT COUNT(*) AS n FROM press;')[0]?.n ?? 0);
+const existing = Number(d1Rows('SELECT COUNT(*) AS n FROM press;')[0]?.n ?? 0);
 if (existing && !force) {
     console.error(
         `The ${remote ? 'remote' : 'local'} press table already holds ${existing} `
@@ -140,9 +183,9 @@ const sql = force
     ? `DELETE FROM press;\nINSERT INTO press\n  ${COLUMNS}\nVALUES\n${values.join(',\n')};`
     : `INSERT INTO press\n  ${COLUMNS}\nVALUES\n${values.join(',\n')};`;
 
-d1(sql);
+d1Exec(sql);
 
-const after = d1('SELECT id, featured, verified, source, sort_order FROM press ORDER BY sort_order;');
+const after = d1Rows('SELECT id, featured, verified, source, sort_order FROM press ORDER BY sort_order;');
 console.error(`Seeded ${after.length} pieces into the ${remote ? 'remote' : 'local'} press table:`);
 for (const r of after) {
     console.error(
