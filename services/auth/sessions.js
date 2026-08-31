@@ -82,6 +82,51 @@ export async function currentAdmin(store, request) {
  * token outliving a revoked account.
  */
 /**
+ * Carry the Google profile onto the customer row.
+ *
+ * Better Auth fetches it and keeps it on `user` — the display name and the
+ * avatar URL, from the openid/profile scopes the sign-in already asks for.
+ * The storefront reads neither: it reads `customers`, and publicCustomer()
+ * has always returned `picture: customer.picture`.
+ *
+ * That column used to be filled by the hand-rolled Google flow. When that
+ * flow was deleted nothing took over the copying, so the picture went null
+ * for every account and the avatar on the account page — which is written
+ * and works — was hidden on every visit, with the data sitting one table
+ * away the whole time.
+ *
+ * Written on every resolve rather than once at signup, because a profile
+ * picture is not a fact about the past: someone who changes their Google
+ * photo should see the new one here. Only when it actually differs, so an
+ * ordinary page view stays a read.
+ *
+ * Never fatal. A failed profile sync must not cost someone their session.
+ */
+async function syncProfile(store, row, user) {
+  if (!row || !user) return row;
+
+  const picture = String(user.image || '').trim();
+  const name = String(user.name || '').trim();
+
+  const patch = {};
+  if (picture && picture !== row.picture) patch.picture = picture;
+  // Only fills a blank. Someone who edited their name on the account page
+  // means it, and having Google overwrite it on the next sign-in would read
+  // as the site forgetting.
+  if (name && !row.name) patch.name = name;
+  if (!Object.keys(patch).length) return row;
+
+  try {
+    const sets = Object.keys(patch).map(k => `${k} = ?`).join(', ');
+    await store.run(`UPDATE customers SET ${sets} WHERE id = ?`, ...Object.values(patch), row.id);
+    return { ...row, ...patch };
+  } catch (err) {
+    console.error('[vayu] profile sync failed', err);
+    return row;
+  }
+}
+
+/**
  * Who is signed in, as a row from the legacy `customers` table.
  *
  * Better Auth owns sessions now, but the rest of the storefront does not:
@@ -104,7 +149,7 @@ export async function currentCustomer(store, request, env) {
 
       if (legacyId) {
         const row = await store.one('SELECT * FROM customers WHERE id = ?', legacyId);
-        if (row) return row;
+        if (row) return syncProfile(store, row, session.user);
       }
 
       // Registered through Better Auth after the migration, so there is no
@@ -119,7 +164,7 @@ export async function currentCustomer(store, request, env) {
           new Date().toISOString(), new Date().toISOString(), new Date().toISOString(),
         );
         await store.run('UPDATE user SET legacyId = ? WHERE id = ?', id, session.user.id);
-        return store.one('SELECT * FROM customers WHERE id = ?', id);
+        return syncProfile(store, await store.one('SELECT * FROM customers WHERE id = ?', id), session.user);
       }
     } catch (err) {
       console.error('[vayu] Better Auth session lookup failed', err);
@@ -231,6 +276,10 @@ export function adminMe({ admin }) {
     email: admin.email,
     role: admin.role || 'owner',
     mustChangePassword: !!admin.must_change_password,
+    // The Google picture, for the panel header. '' for a password admin and
+    // for anyone who has not signed in since it started being captured, so
+    // the panel falls back to initials rather than a broken image.
+    avatar: admin.avatar || '',
   });
 }
 

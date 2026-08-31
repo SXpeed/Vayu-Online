@@ -1,0 +1,16 @@
+-- The Google profile picture, for admins.
+--
+-- Better Auth already fetches it at sign-in and keeps it on `user.image`,
+-- from the profile scope the OAuth flow asks for anyway. The panel reads
+-- `admins`, though, and had nowhere to put it — so the Team screen listed
+-- people by name and email with the picture sitting one table away.
+--
+-- Copied onto the row rather than joined at read time, for two reasons. An
+-- admin is not necessarily a Better Auth user at all (scripts/create-admin.mjs
+-- writes a password owner that has no `user` row to join to), and the join
+-- would be on email, which is the one column both tables let you edit.
+--
+-- Empty for everyone who already exists, including password admins, and the
+-- UI falls back to initials — so this changes nothing until somebody signs in
+-- with Google and it fills itself in.
+ALTER TABLE admins ADD COLUMN avatar TEXT NOT NULL DEFAULT '';

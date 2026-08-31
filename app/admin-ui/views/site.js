@@ -761,6 +761,20 @@ function addMemberModal(onDone) {
     });
 }
 
+/**
+ * A member's picture and name in one cell.
+ *
+ * Initials when there is no picture — a password admin, or a Google one who
+ * has not signed in since the avatar started being captured. onerror hides a
+ * URL that has stopped resolving, because Google rotates these and a torn
+ * image reads as a broken panel rather than a missing photo.
+ */
+const who = (m) => `
+    <span class="who">${m.avatar
+        ? `<img class="avatar" src="${esc(m.avatar)}" alt="" onerror="this.remove()">`
+        : `<span class="avatar initials">${esc((m.name || m.email || '?').trim().charAt(0).toUpperCase())}</span>`}
+        <b>${esc(m.name)}</b></span>`;
+
 export async function renderTeam() {
     const { team } = await api('team');
 
@@ -773,7 +787,7 @@ export async function renderTeam() {
 
     const pendingRows = waiting.map(m => `
         <tr data-id="${m.id}">
-            <td><b>${esc(m.name)}</b></td>
+            <td>${who(m)}</td>
             <td>${esc(m.email)}</td>
             <td><select class="status-select" data-act="grant">
                 ${ROLES.map(r => `<option ${r === 'staff' ? 'selected' : ''}>${r}</option>`).join('')}</select></td>
@@ -786,7 +800,7 @@ export async function renderTeam() {
 
     const rows = members.map(m => `
         <tr data-id="${m.id}">
-            <td><b>${esc(m.name)}</b>${m.id === state.meId ? ' <span class="chip">you</span>' : ''}</td>
+            <td>${who(m)}${m.id === state.meId ? ' <span class="chip">you</span>' : ''}</td>
             <td>${esc(m.email)}</td>
             <td><select class="status-select" data-act="role">
                 ${ROLES.map(r => `<option ${m.role === r ? 'selected' : ''}>${r}</option>`).join('')}</select></td>

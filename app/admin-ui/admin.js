@@ -90,6 +90,16 @@ async function boot() {
     state.me = await api('me');
     state.meId = state.me.id;
     $('#admin-name').textContent = `${state.me.name} · ${state.me.role}`;
+
+    // Google's picture, where there is one. Hidden rather than shown broken
+    // for a password admin, and hidden again if the URL 404s — Google rotates
+    // these and an old one should leave a gap, not a torn-image icon.
+    const avatar = $('#admin-avatar');
+    if (state.me.avatar) {
+        avatar.src = state.me.avatar;
+        avatar.hidden = false;
+        avatar.addEventListener('error', () => { avatar.hidden = true; }, { once: true });
+    }
     applyRoleToNav(state.me.role);
 
     if (state.me.mustChangePassword && !location.hash) location.hash = '#/settings';

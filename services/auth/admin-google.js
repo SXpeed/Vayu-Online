@@ -87,13 +87,26 @@ export async function resolveGoogleAdmin(env, store, request) {
   );
   if (!viaGoogle) return { ok: false, reason: 'not-google' };
 
+  const avatar = String(session.user.image || '').trim().slice(0, 500);
+  const name = String(session.user.name || email.split('@')[0]).slice(0, 80);
+
   const existing = await store.one('SELECT * FROM admins WHERE email = ?', email);
   if (existing) {
     if (existing.status !== 'active') return { ok: false, reason: 'pending' };
+    // Refreshed on the way in, not frozen at whatever it was the day they
+    // first signed in — a changed Google photo should follow them here.
+    // Never fatal: a picture is not worth failing a sign-in over.
+    if (avatar && avatar !== existing.avatar) {
+      try {
+        await store.run('UPDATE admins SET avatar = ? WHERE id = ?', avatar, existing.id);
+        existing.avatar = avatar;
+      } catch (err) {
+        console.error('[vayu] admin avatar refresh failed', err);
+      }
+    }
     return { ok: true, admin: existing, bootstrapped: false };
   }
 
-  const name = String(session.user.name || email.split('@')[0]).slice(0, 80);
   const count = await store.value('SELECT COUNT(*) FROM admins');
 
   // 1. The empty table. First in, and only from the bootstrap domain.
@@ -101,14 +114,14 @@ export async function resolveGoogleAdmin(env, store, request) {
     if (!emailInDomain(email, bootstrapDomain(env))) {
       return { ok: false, reason: 'domain' };
     }
-    const admin = await insertAdmin(store, { email, name, role: 'owner', status: 'active' });
+    const admin = await insertAdmin(store, { email, name, avatar, role: 'owner', status: 'active' });
     await store.logActivity(name, 'team.add', `${email} claimed the empty panel as owner`);
     return { ok: true, admin, bootstrapped: true };
   }
 
   // 3. Everyone else waits. 'staff' is the floor, so approving is a
   //    deliberate promotion rather than the absence of a demotion.
-  const pending = await insertAdmin(store, { email, name, role: 'staff', status: 'pending' });
+  const pending = await insertAdmin(store, { email, name, avatar, role: 'staff', status: 'pending' });
   await store.logActivity(name, 'team.request', `${email} asked for access`);
   return { ok: false, reason: 'requested', admin: pending };
 }
@@ -120,15 +133,18 @@ export async function resolveGoogleAdmin(env, store, request) {
  * (migration 0001), and empty is the value verifyPassword() refuses outright
  * — so this row cannot be signed into with any password whatsoever.
  */
-async function insertAdmin(store, { email, name, role, status }) {
+async function insertAdmin(store, { email, name, avatar = '', role, status }) {
   const id = await store.nextId('adm');
   const created_at = now();
   await store.run(
-    `INSERT INTO admins (id, email, name, salt, hash, role, must_change_password, created_at, status, auth_provider)
-     VALUES (?, ?, ?, '', '', ?, 0, ?, ?, 'google')`,
-    id, email, name, role, created_at, status,
+    `INSERT INTO admins (id, email, name, avatar, salt, hash, role, must_change_password, created_at, status, auth_provider)
+     VALUES (?, ?, ?, ?, '', '', ?, 0, ?, ?, 'google')`,
+    id, email, name, avatar, role, created_at, status,
   );
-  return { id, email, name, role, status, auth_provider: 'google', created_at, salt: '', hash: '' };
+  return {
+    id, email, name, avatar, role, status,
+    auth_provider: 'google', created_at, salt: '', hash: '',
+  };
 }
 
 /** What the sign-in page tells someone who was turned away. */

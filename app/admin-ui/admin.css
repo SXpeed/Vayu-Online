@@ -788,3 +788,56 @@ select.status-select { padding: 5px 8px; border-radius: 7px; border: 1px solid v
 }
 
 .seo-editor textarea { resize: vertical; min-height: 52px; }
+
+/* ---------- avatars ----------
+   The Google picture, in the topbar and the Team list. Square-cropped with
+   object-fit rather than letterboxed: Google returns these at s96-c, already
+   square, but a self-hosted or resized one may not be and a squashed face is
+   worse than a tight crop.
+
+   `.initials` is the fallback for a password admin, or a Google one who has
+   not signed in since the avatar started being captured. It is the same size
+   and shape as the image so a mixed list does not jump. */
+.avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex: 0 0 auto;
+    background: var(--line, #EFEAE1);
+}
+
+.avatar.initials {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--muted, #8A8681);
+}
+
+.who {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.top-user .avatar {
+    width: 24px;
+    height: 24px;
+}
+
+/* The picture sits beside the name rather than above it: .top-user b is a
+   block, so without this the avatar would take a line of its own and push
+   the name and Sign out down. The text keeps its own right alignment. */
+.top-user {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.top-user-text {
+    text-align: right;
+}

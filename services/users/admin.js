@@ -281,6 +281,9 @@ const publicAdmin = (a) => ({
   // role selector, so it is part of the public shape rather than inferred.
   status: a.status || 'active',
   provider: a.auth_provider || 'password',
+  // '' for a password admin, and for anyone who has not signed in since this
+  // landed. The panel falls back to initials rather than a broken image.
+  avatar: a.avatar || '',
 });
 
 export function team(ctx) {
