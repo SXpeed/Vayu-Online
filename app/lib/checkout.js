@@ -70,7 +70,8 @@ function summaryHTML(details) {
         details.phone,
         [details.address, details.city, details.pin].filter(Boolean).join(', '),
     ].filter(Boolean);
-    return `<div class="co-summary">${lines.map(l => `<div>${escapeHtml(l)}</div>`).join('')}</div>`;
+    const rows = lines.map(l => `<div>${escapeHtml(l)}</div>`).join('');
+    return `<div class="co-summary">${rows}</div>`;
 }
 
 function addressPickerHTML(addresses, selectedId) {

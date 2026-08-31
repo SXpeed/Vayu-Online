@@ -19,7 +19,7 @@
  */
 
 import { now } from '#shared/database/store.js';
-import { json, badRequest, methodNotAllowed } from '#shared/utils/http.js';
+import { json, methodNotAllowed } from '#shared/utils/http.js';
 import { productById } from '#services/products/catalogue.js';
 
 /** Cap a guest key so a stolen/corrupted value cannot index-scan the table. */
@@ -51,6 +51,18 @@ async function hydrate(store, row) {
     ? (product.variants || []).find(v => v.id === row.variant_id || v.combo === row.variant_id)
     : null;
 
+  /**
+   * Stock, and the `!product` arm is load-bearing: a deleted product is the
+   * case this whole function is built around — it falls back to the snapshot
+   * saved with the row — and reading .stock off that null is a 500 on every
+   * wishlist holding a piece the shop has since removed.
+   */
+  const inStock = !product
+    ? false
+    : variant
+      ? variant.stock > 0
+      : product.stock === undefined || product.stock > 0;
+
   return {
     id: row.id,
     productId: row.product_id,
@@ -63,7 +75,7 @@ async function hydrate(store, row) {
     img: product ? (variant?.image || product.img) : (row.img || ''),
     cat: product?.categories?.[0]?.slug || row.cat || '',
     idx: product ? product.idx ?? row.idx : row.idx,
-    inStock: product ? (variant ? variant.stock > 0 : (product.stock === undefined || product.stock > 0)) : false,
+    inStock,
     available: !!product,
   };
 }
@@ -203,6 +215,93 @@ export async function mergeGuestWishlist(store, customerId, guestKey) {
  * the row to. A signed-in shopper's guestKey is ignored, so a row saved
  * pre-login is never orphaned.
  */
+/**
+ * Resolve the wishlist owner for a plain (non-merge, non-clear) request.
+ * A signed-in customer always wins over a posted guestKey; a guest needs a
+ * guestKey to own anything, so without one there is no owner and the caller
+ * must reject.
+ */
+function resolveOwner(customer, guestKey) {
+  if (customer) return { customerId: customer.id };
+  return guestKey ? { guestKey } : null;
+}
+
+/** The merge action: promote a guest wishlist onto the signed-in account. */
+async function mergeIntoAccount(store, customer, guestKey) {
+  if (!customer) return json(401, { error: 'Please sign in to merge a wishlist' });
+  const merged = await mergeGuestWishlist(store, customer.id, guestKey);
+  return json(200, {
+    ok: true, merged,
+    wishlist: await listWishlist(store, { customerId: customer.id }),
+  });
+}
+
+/**
+ * A POST to /clear lets a browser that cannot send a real DELETE still
+ * wipe the wishlist (some older clients and beacon-based calls).
+ */
+async function clearAll(store, customer, guestKey) {
+  if (!customer && !guestKey) return json(400, { error: 'Sign in or allow storage to save a wishlist' });
+  const owner = customer ? { customerId: customer.id } : { guestKey };
+  await clearWishlist(store, owner);
+  return json(200, { ok: true, count: 0, wishlist: [] });
+}
+
+/** The full wishlist for one owner, for GET. */
+async function listOwnerWishlist(store, owner) {
+  return json(200, {
+    wishlist: await listWishlist(store, owner),
+    count: await wishlistCount(store, owner),
+  });
+}
+
+/** Add one line to the wishlist, for POST. */
+async function addLine(store, owner, body) {
+  if (!body?.productId) return json(400, { error: 'Which product do you want to save?' });
+  const product = await productById(store, body.productId);
+  if (!product) return json(404, { error: 'That product is no longer available' });
+  const line = {
+    productId: product.id,
+    variantId: body.variantId || null,
+    note: body.note || '',
+    cat: product.categories?.[0]?.slug || '',
+    idx: null,
+    name: product.name,
+    price: product.price,
+    img: body.variantId
+      ? (product.variants || []).find(v => v.id === body.variantId || v.combo === body.variantId)?.image || product.img
+      : product.img,
+  };
+  const count = await addWishlist(store, owner, line);
+  return json(201, { ok: true, count, wishlist: await listWishlist(store, owner) });
+}
+
+/** Remove one row, or the whole wishlist when no id is given, for DELETE. */
+async function removeRows(store, owner, id) {
+  if (id) {
+    const count = await removeWishlist(store, owner, id);
+    return json(200, { ok: true, count, wishlist: await listWishlist(store, owner) });
+  }
+  await clearWishlist(store, owner);
+  return json(200, { ok: true, count: 0, wishlist: [] });
+}
+
+/**
+ * The /api/account/wishlist route handler.
+ *
+ *   GET    /api/account/wishlist          → list for the current owner
+ *   POST   /api/account/wishlist          → add { productId, variantId?, note?, guestKey? }
+ *   DELETE /api/account/wishlist           → clear all (guest or customer)
+ *   DELETE /api/account/wishlist/<id>      → remove one row
+ *   POST   /api/account/wishlist/merge     → merge a guest wishlist onto the
+ *                                            signed-in account { guestKey }
+ *
+ * Owner resolution: a signed-in customer owns by customer_id; a guest owns
+ * by guestKey (the `vayu_sid` the browser already mints for analytics). A
+ * guest POST without a guestKey is rejected — there is no owner to attach
+ * the row to. A signed-in shopper's guestKey is ignored, so a row saved
+ * pre-login is never orphaned.
+ */
 export async function handleWishlist(ctx) {
   const { store, method, body, customer, parts, query } = ctx;
   const [sub, id] = parts;
@@ -210,73 +309,18 @@ export async function handleWishlist(ctx) {
   // GET and DELETE carry no body (the dispatcher only parses one for
   // POST/PUT/PATCH), so a guest's key arrives as ?guestKey= on those
   // methods and in the body on POST. Normalise both into one value.
-  const guestKey = body?.guestKey || (query && query.get('guestKey')) || '';
+  const guestKey = body?.guestKey || query?.get('guestKey') || '';
 
-  // The merge action is customer-only: promote a guest wishlist onto the
-  // signed-in account. Routed before the owner guard because it needs the
-  // customer, not a guest key.
-  if (sub === 'merge' && method === 'POST') {
-    if (!customer) return json(401, { error: 'Please sign in to merge a wishlist' });
-    const merged = await mergeGuestWishlist(store, customer.id, guestKey);
-    return json(200, {
-      ok: true, merged,
-      wishlist: await listWishlist(store, { customerId: customer.id }),
-    });
-  }
+  // The merge and clear actions are routed before the owner guard: merge
+  // needs the customer rather than a guest key, and clear is its own shape.
+  if (sub === 'merge' && method === 'POST') return mergeIntoAccount(store, customer, guestKey);
+  if (sub === 'clear' && method === 'POST') return clearAll(store, customer, guestKey);
 
-  // A POST to /clear lets a browser that cannot send a real DELETE still
-  // wipe the wishlist (some older clients and beacon-based calls).
-  if (sub === 'clear' && method === 'POST') {
-    const owner = customer ? { customerId: customer.id } : { guestKey };
-    if (!customer && !guestKey) return json(400, { error: 'Sign in or allow storage to save a wishlist' });
-    await clearWishlist(store, owner);
-    return json(200, { ok: true, count: 0, wishlist: [] });
-  }
+  const owner = resolveOwner(customer, guestKey);
+  if (!owner) return json(400, { error: 'Sign in or allow storage to save a wishlist' });
 
-  // Resolve the owner. A customer always wins over a posted guestKey.
-  const owner = customer ? { customerId: customer.id } : { guestKey };
-
-  // A guest needs a guestKey to own anything; without it there is nothing to
-  // list, add to, or clear.
-  if (!customer && !guestKey) {
-    return json(400, { error: 'Sign in or allow storage to save a wishlist' });
-  }
-
-  if (method === 'GET') {
-    return json(200, {
-      wishlist: await listWishlist(store, owner),
-      count: await wishlistCount(store, owner),
-    });
-  }
-
-  if (method === 'POST') {
-    if (!body?.productId) return json(400, { error: 'Which product do you want to save?' });
-    const product = await productById(store, body.productId);
-    if (!product) return json(404, { error: 'That product is no longer available' });
-    const line = {
-      productId: product.id,
-      variantId: body.variantId || null,
-      note: body.note || '',
-      cat: product.categories?.[0]?.slug || '',
-      idx: null,
-      name: product.name,
-      price: product.price,
-      img: body.variantId
-        ? (product.variants || []).find(v => v.id === body.variantId || v.combo === body.variantId)?.image || product.img
-        : product.img,
-    };
-    const count = await addWishlist(store, owner, line);
-    return json(201, { ok: true, count, wishlist: await listWishlist(store, owner) });
-  }
-
-  if (method === 'DELETE') {
-    if (id) {
-      const count = await removeWishlist(store, owner, id);
-      return json(200, { ok: true, count, wishlist: await listWishlist(store, owner) });
-    }
-    await clearWishlist(store, owner);
-    return json(200, { ok: true, count: 0, wishlist: [] });
-  }
-
+  if (method === 'GET') return listOwnerWishlist(store, owner);
+  if (method === 'POST') return addLine(store, owner, body);
+  if (method === 'DELETE') return removeRows(store, owner, id);
   return methodNotAllowed(['GET', 'POST', 'DELETE']);
 }

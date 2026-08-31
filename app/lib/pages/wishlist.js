@@ -61,6 +61,17 @@ function locate(item) {
 }
 
 /**
+ * Said rather than swallowed: the pieces are still saved, and a grid that
+ * silently comes back shorter than the badge in the header reads as a bug
+ * in the page.
+ */
+function missingNote(missing) {
+    if (!missing) return '';
+    const verb = missing === 1 ? 'piece is' : 'pieces are';
+    return `<p style="margin:22px 0 0;font-size:13px;color:var(--body);letter-spacing:0.02em">${missing} saved ${verb} no longer in the catalogue.</p>`;
+}
+
+/**
  * Re-entry guard.
  *
  * Rendering this page *writes*: syncWishlistFromServer saves what the
@@ -96,14 +107,7 @@ async function renderWishlist() {
             return;
         }
 
-        wishContent.innerHTML = `<div class="prod-grid" id="wishGrid"></div>${
-            // Said rather than swallowed: the pieces are still saved, and a
-            // grid that silently comes back shorter than the badge in the
-            // header reads as a bug in the page.
-            missing
-                ? `<p style="margin:22px 0 0;font-size:13px;color:var(--body);letter-spacing:0.02em">${
-                    missing} saved ${missing === 1 ? 'piece is' : 'pieces are'} no longer in the catalogue.</p>`
-                : ''}`;
+        wishContent.innerHTML = `<div class="prod-grid" id="wishGrid"></div>${missingNote(missing)}`;
 
         const grid = document.getElementById('wishGrid');
         renderProductCards(grid, pairs);
@@ -117,6 +121,9 @@ async function renderWishlist() {
     }
 }
 
-renderWishlist();
-
+// The listener goes on before the first render so a change fired mid-render
+// (syncWishlistFromServer → saveWishlist) is never missed; the re-entry
+// guard keeps the overlapping call from doing double work.
 window.addEventListener('vayu:wishlist-changed', renderWishlist);
+
+await renderWishlist();

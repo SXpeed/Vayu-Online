@@ -9,12 +9,19 @@
 
 const SID_KEY = 'vayu_sid';
 
+/** Six random bytes as hex, from the platform CSPRNG (not Math.random). */
+function randomHex() {
+    const bytes = new Uint8Array(6);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+}
+
 /** A per-browser id, created on first use. '' when storage is blocked. */
 export function sessionId() {
     try {
         let sid = localStorage.getItem(SID_KEY);
         if (!sid) {
-            sid = 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+            sid = 'v' + Date.now().toString(36) + randomHex();
             localStorage.setItem(SID_KEY, sid);
         }
         // Also set as a cookie so the server can read it for wishlist guest

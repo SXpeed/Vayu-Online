@@ -43,7 +43,7 @@ function setCookie(name, value, days = 365) {
 /** Read a cookie by name, or '' if it is not set. */
 function getCookie(name) {
     try {
-        const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+        const match = new RegExp(`(?:^|; )${name}=([^;]*)`).exec(document.cookie);
         return match ? decodeURIComponent(match[1]) : '';
     } catch { return ''; }
 }
@@ -116,7 +116,7 @@ export function saveCart(items) {
 }
 
 /** Stable key for one cart line: product identity + chosen variant. */
-export const lineKey = (p) => `${p.id || `${p.cat}|${p.idx}`}::${p.variant || ''}`;
+export const lineKey = (p) => `${p.id || (p.cat + '|' + p.idx)}::${p.variant || ''}`;
 
 /**
  * Add a product to the cart. If the same product+variant is already there,
@@ -208,20 +208,18 @@ export function toggleWishlist(product) {
     const list = getWishlist();
     const existing = list.findIndex(p =>
         (product.id && p.id ? p.id === product.id : p.cat === product.cat && p.idx === product.idx));
-    let added = false;
-    if (existing > -1) {
-        list.splice(existing, 1);
-        added = false;
-        apiWishlist('DELETE', {
-            productId: product.id || null, cat: product.cat, idx: product.idx,
-            variantId: product.variant || null,
-        });
-    } else {
+    const added = existing === -1;
+    if (added) {
         list.push(product);
-        added = true;
         apiWishlist('POST', {
             productId: product.id || null, cat: product.cat, idx: product.idx,
             name: product.name || '', price: String(product.price || ''), img: product.img || '',
+            variantId: product.variant || null,
+        });
+    } else {
+        list.splice(existing, 1);
+        apiWishlist('DELETE', {
+            productId: product.id || null, cat: product.cat, idx: product.idx,
             variantId: product.variant || null,
         });
     }
