@@ -2,6 +2,11 @@
   import Seo from '#lib/components/Seo.svelte';
   // Vayu — /pages/press.html, ported from public/pages/press.html.
   import { onMount } from 'svelte';
+  import { site } from '#lib/stores/site.svelte.js';
+  import { contactEffective, telHref, mailHref } from '#shared/content/contact.js';
+
+  /** The shop's contact details as the panel has them; shipped until then. */
+  const contact = $derived(contactEffective(site.content?.contact));
 
   // Emitted through {@html} rather than written as a component <style>:
   // Svelte scopes component styles, and these selectors target markup
@@ -63,9 +68,9 @@
         and we will come back to you.
       </p>
       <p class="pr-contact-text">
-        <a href="mailto:info@vayuonline.com">info@vayuonline.com</a>
+        <a href={mailHref(contact.email)}>{contact.email}</a>
         &nbsp;·&nbsp;
-        <a href="tel:+918595977845">+91 8595977845</a>
+        <a href={telHref(contact.phone)}>{contact.phone}</a>
       </p>
     </section>
 

@@ -283,6 +283,24 @@ export const siteContent = z.object({
         alt: text(300).optional(),
         href: text(400).optional(),
     }).partial().optional(),
+    // How to reach the shop, printed in both footers and on the press page.
+    // Everything optional and everything a plain string: the phone is stored
+    // as the shop writes it for people to read ("+91 8595977845") and the
+    // tel: href is derived from it, so this must not be narrowed to digits.
+    //
+    // The social URLs are NOT validated to a pattern here. The server maps
+    // anything that is not http(s) to an empty string rather than rejecting
+    // the whole save (see sanitizeContact in services/users/admin.js) —
+    // refusing the form because one of four optional links has a typo would
+    // lose the other three edits with it.
+    contact: z.object({
+        phone: text(40).optional(),
+        email: text(254).optional(),
+        instagram: text(400).optional(),
+        facebook: text(400).optional(),
+        pinterest: text(400).optional(),
+        youtube: text(400).optional(),
+    }).partial().optional(),
     // Shop-wide look of the product tiles. false strips the white plate and
     // its hairline so the photograph sits directly on the page.
     productTileBox: z.boolean().optional(),

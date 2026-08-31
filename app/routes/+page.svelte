@@ -7,6 +7,24 @@
   import { INSIDE_VAYU_SHIPPED } from '#shared/content/inside-vayu.js';
   import { ARTIST_BAND_SHIPPED } from '#shared/content/home-artist.js';
   import { imageSize, deliverySrc } from '#shared/content/picture.js';
+  import { site } from '#lib/stores/site.svelte.js';
+  import { contactEffective, socialLinks } from '#shared/content/contact.js';
+
+  /**
+   * The shop's contact details as the panel has them.
+   *
+   * This markup is prerendered, so what a crawler sees before it runs any
+   * script is the SHIPPED number and email — which is why brand.js sources
+   * those from the same module. The baked copy is never a different number,
+   * only an older one, and it is corrected in the DOM as soon as /api/nav
+   * answers.
+   *
+   * So a crawler that runs JavaScript reads the shop's real number; one that
+   * does not reads the shipped one. `npm run snapshot` does NOT change this
+   * — it rewrites the static catalogue and taxonomy only. Changing what the
+   * baked copy says means editing CONTACT_SHIPPED and deploying.
+   */
+  const contact = $derived(contactEffective(site.content?.contact));
 
   /**
    * A picture's own dimensions, from the manifest scripts/images.mjs writes.
@@ -24,7 +42,7 @@
    * taken from. Both name the brand identically — a disagreement between
    * them is how a result ends up titled "vayuindia.com" instead.
    */
-  const siteLd = JSON.stringify({
+  const siteLd = $derived(JSON.stringify({
     '@context': 'https://schema.org',
     '@graph': [
       {
@@ -43,8 +61,8 @@
         description: SITE_DESCRIPTION,
         logo: absolute('/assets/og/hero.jpg'),
         image: absolute('/assets/og/hero.jpg'),
-        telephone: STORE.telephone,
-        email: STORE.email,
+        telephone: contact.phone,
+        email: contact.email,
         currenciesAccepted: 'INR',
         areaServed: 'IN',
         address: {
@@ -55,9 +73,11 @@
           postalCode: STORE.postalCode,
           addressCountry: STORE.country,
         },
-        // The Maps place the footer's GET DIRECTIONS already points at. This
-        // is what joins the markup to the Google Business Profile.
-        sameAs: [STORE.maps],
+        // The Maps place the footer's GET DIRECTIONS already points at,
+        // plus every social profile the shop has filled in. sameAs is the
+        // property those accounts are claimed with, and the footer already
+        // knows them — leaving it at the map alone threw them away.
+        sameAs: [STORE.maps, ...socialLinks(contact).map(n => n.href)],
       },
       {
         '@type': 'WebSite',
@@ -70,7 +90,7 @@
     ],
     // Escaped the same way the product page escapes its own block: a '<'
     // inside a JSON string would otherwise close the script element early.
-  }).replace(/</g, '\u003c');
+  }).replace(/</g, '\u003c'));
 
   const ldTag = (json) => '<script type="application/ld+json">' + json + '<\/script>';
 

@@ -1,6 +1,11 @@
 <script>
   import Seo from '#lib/components/Seo.svelte';
   // Vayu — /pages/legal.html, ported from public/pages/legal.html.
+  import { site } from '#lib/stores/site.svelte.js';
+  import { contactEffective, telHref, mailHref } from '#shared/content/contact.js';
+
+  /** The shop's contact details as the panel has them; shipped until then. */
+  const contact = $derived(contactEffective(site.content?.contact));
 </script>
 
 <Seo
@@ -28,6 +33,6 @@
             <h3>Shipping & Delivery</h3>
             <p>We offer complimentary pan-India shipping on all orders above ₹10,000. For orders below this value, standard shipping rates apply. Made-to-order furniture typically ships within 3-5 weeks, while smaller in-stock items are dispatched within 3-5 business days. International shipping is available upon request; please contact our support team for a custom quote.</p>
             <h3>Returns & Exchanges</h3>
-            <p>We accept returns on unused, non-custom items within 7 days of delivery. The items must be returned in their original packaging. Please note that bespoke, made-to-order furniture pieces are not eligible for returns, but can be exchanged if they arrive damaged or defective. To initiate a return, please reach out to hello@vayu.design.</p>
+            <p>We accept returns on unused, non-custom items within 7 days of delivery. The items must be returned in their original packaging. Please note that bespoke, made-to-order furniture pieces are not eligible for returns, but can be exchanged if they arrive damaged or defective. To initiate a return, please reach out to {contact.email}.</p>
         </section>
         </main>

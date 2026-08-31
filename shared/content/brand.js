@@ -12,6 +12,8 @@
  * the crawler happened to find in the markup first.
  */
 
+import { CONTACT_SHIPPED } from './contact.js';
+
 /** The full brand, as it should read as a headline. */
 export const BRAND = 'Vayu — Design For Living';
 
@@ -67,7 +69,12 @@ export const STORE = {
     region: 'Delhi',
     postalCode: '110003',
     country: 'IN',
-    telephone: '+91 8595977845',
-    email: 'info@vayuonline.com',
+    // Sourced, not repeated. The visible footer and this markup have to be
+    // the same characters or Google reads them as two different businesses —
+    // and the footer is editable from the panel now, so these are the
+    // SHIPPED values and the home page overlays the saved ones at runtime.
+    // See shared/content/contact.js and app/routes/+page.svelte.
+    telephone: CONTACT_SHIPPED.phone,
+    email: CONTACT_SHIPPED.email,
     maps: 'https://maps.app.goo.gl/GdmtApHnAYBem1Cr8',
 };

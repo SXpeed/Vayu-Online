@@ -36,6 +36,7 @@ import curatedSource from '#shared/content/curated-spaces.js?raw';
 import insideSource from '#shared/content/inside-vayu.js?raw';
 import artistSource from '#shared/content/home-artist.js?raw';
 import artistPageSource from '#shared/content/artist-page.js?raw';
+import contactSource from '#shared/content/contact.js?raw';
 
 /**
  * Eagerly bundled: a Worker cannot read from disk, and lazy chunks would be
@@ -74,6 +75,12 @@ const SHARED = {
     // The artist index page's own copy, so the Artists screen can show the
     // shop what is on that page rather than a set of empty fields.
     'shared/artist-page.js': artistPageSource,
+    // The phone, the email and the four social links, plus the shipped
+    // defaults behind them. Both sides need contactEffective(): the footer
+    // paints by it and the panel's card fills its fields from it, so the
+    // shop is shown the values the page is actually printing rather than
+    // empty boxes it has to guess the meaning of.
+    'shared/contact.js': contactSource,
 };
 
 function send(file) {

@@ -21,6 +21,7 @@ import {
   encodeList, encodeBool, encodeCategories, encodeSpecs, encodeOptions, encodeVariants,
 } from '#shared/utils/product-csv.js';
 import { sanitizeSpecs } from '#services/products/admin.js';
+import { SOCIAL_KEYS } from '#shared/content/contact.js';
 
 const ROLES = ['owner', 'manager', 'staff'];
 const EMAIL_RE = /^[^@\s]+@[^@\s.]+(\.[^@\s.]+)+$/;
@@ -160,6 +161,9 @@ export async function content({ store, method, admin, body }) {
   if (body.artistPage && typeof body.artistPage === 'object') {
     writes.push(store.putConfig('content', 'artistPage', sanitizeArtistPage(body.artistPage)));
   }
+  if (body.contact && typeof body.contact === 'object') {
+    writes.push(store.putConfig('content', 'contact', sanitizeContact(body.contact)));
+  }
   if (body.artist && typeof body.artist === 'object') {
     writes.push(store.putConfig('content', 'artist', sanitizeArtist(body.artist)));
   }
@@ -175,6 +179,49 @@ export async function content({ store, method, admin, body }) {
   await store.logActivity(admin.name, 'content.update', 'Updated site content');
 
   return json(200, { content: await store.config('content') });
+}
+
+/**
+ * Contact details: the phone number, the email address and the four social
+ * profiles printed in both footers.
+ *
+ * Only the keys the panel actually sent are written, the same rule the
+ * curated page follows — a future form that edits the phone alone must not
+ * blank the email by omission.
+ *
+ * The social URLs go through `externalUrl`. They are the only values in the
+ * whole content document that end up as an `href` pointing off-site, on
+ * every page of the shop, and an admin account is not the same thing as a
+ * trusted one: a stored `javascript:` URL in the footer would run on every
+ * page anyone opened. http(s) only, and anything else is stored empty, which
+ * the footer then draws as "this network is not shown" rather than as a mark
+ * that goes somewhere unexpected.
+ *
+ * An empty social value is kept as an empty string rather than dropped,
+ * because empty is meaningful here: it is how the shop says "we are not on
+ * Pinterest" and takes the icon off the footer. See contactEffective().
+ */
+const externalUrl = (value) => {
+  const raw = String(value || '').trim().slice(0, 400);
+  if (!raw) return '';
+  try {
+    const { protocol } = new URL(raw);
+    return protocol === 'http:' || protocol === 'https:' ? raw : '';
+  } catch {
+    // Not a URL at all — a bare "instagram.com/vayu" is the likely typo, and
+    // guessing a scheme for it would be inventing a destination.
+    return '';
+  }
+};
+
+function sanitizeContact(body) {
+  const out = {};
+  if (body.phone !== undefined) out.phone = String(body.phone || '').trim().slice(0, 40);
+  if (body.email !== undefined) out.email = String(body.email || '').trim().slice(0, 254);
+  for (const key of SOCIAL_KEYS) {
+    if (body[key] !== undefined) out[key] = externalUrl(body[key]);
+  }
+  return out;
 }
 
 /* ================= store settings ================= */

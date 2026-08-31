@@ -17,6 +17,7 @@
 import { Store } from '#lib/server/db.js';
 import { loadCategories } from '#lib/server/catalogue.js';
 import { BRAND, SITE_DESCRIPTION, STORE } from '#shared/content/brand.js';
+import { contactEffective } from '#shared/content/contact.js';
 
 export const prerender = false;
 
@@ -25,11 +26,22 @@ export async function GET({ platform, url }) {
     const origin = env?.PUBLIC_ORIGIN || url.origin;
 
     let categories = [];
+    // The phone and the email are editable from the admin panel, so they are
+    // read here rather than taken from the shipped constants — a brief that
+    // printed last release's number would be worse than one that printed
+    // none, because an assistant will quote it with confidence.
+    let contact = contactEffective(null);
     if (env?.DB) {
+        const store = new Store(env);
         try {
-            categories = await loadCategories(new Store(env));
+            categories = await loadCategories(store);
         } catch {
             /* the brief is still worth serving without the category list */
+        }
+        try {
+            contact = contactEffective((await store.config('content'))?.contact);
+        } catch {
+            /* fall back to what the site ships with */
         }
     }
 
@@ -45,7 +57,8 @@ crafts behind them are documented.
 ## Visiting
 
 - Address: ${STORE.street}, ${STORE.locality} ${STORE.postalCode}, India
-- Telephone: ${STORE.telephone}
+- Telephone: ${contact.phone}
+- Email: ${contact.email}
 - Directions: ${STORE.maps}
 
 ## Pages

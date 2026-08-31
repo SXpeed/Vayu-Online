@@ -14,6 +14,10 @@ import {
     INSIDE_VAYU_SHIPPED, insideVayuEffective, currentShow, sameTiles,
 } from '../shared/inside-vayu.js';
 import { ARTIST_BAND_SHIPPED, artistBandEffective } from '../shared/home-artist.js';
+// The phone, the email and the social links, with the values the footer
+// falls back to. Filled in below rather than left as empty boxes: the card
+// has to be able to answer "what does the site say now?".
+import { CONTACT_SHIPPED, SOCIAL_NETWORKS, contactEffective } from '../shared/contact.js';
 
 /* ================= storefront content ================= */
 
@@ -152,6 +156,12 @@ export async function renderContent() {
     // that has never chosen, which is what the panel does with no setting.
     const menuShows = Math.min(6, Math.max(1, Math.trunc(Number(content.menuShows)) || 1));
 
+    // Contact details, shown as the footer is printing them. Unlike Inside
+    // Vayu above there is nothing to keep following here — the fallback is a
+    // fixed string, not a programme — so the fields are filled and saved as
+    // they stand, and no `pin` dance is needed.
+    const contact = contactEffective(content.contact);
+
     viewEl.innerHTML = `
         <div class="card" style="max-width:760px;margin-bottom:16px">
             <h2>Announcement bar</h2>
@@ -159,6 +169,31 @@ export async function renderContent() {
             <div class="field">
                 <input id="ct-ann" value="${esc(content.announcement)}" placeholder="e.g. Free shipping above ₹5,000 · Diwali dispatch till 18 Oct">
             </div>
+        </div>
+        <div class="card" style="max-width:760px;margin-bottom:16px">
+            <h2>Contact &amp; social</h2>
+            <p class="sub">Printed in the footer of every page, and on the press page. Changing the
+                number here changes it everywhere it appears, including the shop details search
+                engines read.</p>
+            <div class="slide-two">
+                <div class="field"><label>Phone</label>
+                    <input id="ct-phone" value="${esc(contact.phone)}" placeholder="${esc(CONTACT_SHIPPED.phone)}">
+                    <div class="help">Write it the way it should read. The tap-to-dial link is
+                        built from the digits, so spaces and the +91 are fine.</div></div>
+                <div class="field"><label>Email</label>
+                    <input id="ct-email" type="email" value="${esc(contact.email)}" placeholder="${esc(CONTACT_SHIPPED.email)}"></div>
+            </div>
+            <p class="sub" style="margin-top:14px">Social profiles — the full address of each one.
+                <strong>Empty takes that icon off the footer</strong>, which is how a network the
+                shop is not on is removed.</p>
+            <div class="slide-two">
+                ${SOCIAL_NETWORKS.map(n => `
+                <div class="field"><label>${n.label}</label>
+                    <input id="ct-soc-${n.key}" value="${esc(contact[n.key])}" placeholder="${esc(CONTACT_SHIPPED[n.key])}"></div>`).join('')}
+            </div>
+            <div class="help">These also tell Google which accounts belong to the shop, so they
+                are worth filling in even for a profile that is rarely posted to. Anything that is
+                not a http:// or https:// address is stored empty.</div>
         </div>
         <div class="card" style="max-width:760px;margin-bottom:16px">
             <h2>What&rsquo;s On in the menu</h2>
@@ -439,6 +474,16 @@ export async function renderContent() {
                     heroAlt: pin($('#iv-heroalt').value.trim(), derived.heroAlt),
                     heroHref: pin($('#iv-herohref').value.trim(), derived.heroHref),
                     tiles: sameTiles(rowTiles, derived.tiles) ? [] : rowTiles,
+                },
+                contact: {
+                    phone: $('#ct-phone').value.trim(),
+                    email: $('#ct-email').value.trim(),
+                    // Built from the same list the fields were drawn from, so
+                    // a network added to SOCIAL_NETWORKS cannot end up with an
+                    // input the save silently ignores.
+                    ...Object.fromEntries(SOCIAL_NETWORKS.map(
+                        n => [n.key, $(`#ct-soc-${n.key}`).value.trim()],
+                    )),
                 },
                 artist: {
                     img: pin($('#ar-img').value.trim(), ARTIST_BAND_SHIPPED.img),

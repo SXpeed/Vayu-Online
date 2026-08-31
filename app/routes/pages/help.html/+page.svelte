@@ -14,8 +14,16 @@
   // are both built from it, so an edited answer cannot appear in one and not
   // the other.
   import Seo from '#lib/components/Seo.svelte';
+  import { site } from '#lib/stores/site.svelte.js';
+  import { contactEffective, telHref, mailHref } from '#shared/content/contact.js';
 
-  const FAQ = [
+  /** The shop's contact details as the panel has them; shipped until then. */
+  const contact = $derived(contactEffective(site.content?.contact));
+
+  // $derived, not a plain array: the last answer prints the shop's email,
+  // and that is editable from the panel. The markup and the FAQPage
+  // structured data are both built from this list, so both follow it.
+  const FAQ = $derived([
     {
       q: 'What does shipping cost?',
       a: 'We offer complimentary pan-India shipping on all orders above ₹10,000. '
@@ -43,11 +51,11 @@
     },
     {
       q: 'How do I start a return?',
-      a: 'To initiate a return, please reach out to hello@vayu.design.',
+      a: `To initiate a return, please reach out to ${contact.email}.`,
     },
-  ];
+  ]);
 
-  const faqLd = JSON.stringify({
+  const faqLd = $derived(JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
     mainEntity: FAQ.map(({ q, a }) => ({
@@ -55,7 +63,7 @@
       name: q,
       acceptedAnswer: { '@type': 'Answer', text: a },
     })),
-  }).replace(/</g, '\u003c');
+  }).replace(/</g, '\u003c'));
 
   const ldTag = (json) => '<script type="application/ld+json">' + json + '<\/script>';
 </script>

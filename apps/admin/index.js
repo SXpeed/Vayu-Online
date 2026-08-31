@@ -18,6 +18,7 @@ import { error, redirect } from '@sveltejs/kit';
 import { Store } from '#shared/database/store.js';
 import { currentAdmin } from '#services/auth/sessions.js';
 import optionsSource from '#lib/options.js?raw';
+import contactSource from '#shared/content/contact.js?raw';
 
 /** Eagerly bundled: a Worker cannot lazy-load a file at request time. */
 const FILES = import.meta.glob('/app/admin-ui/**/*', {
@@ -27,7 +28,10 @@ const FILES = import.meta.glob('/app/admin-ui/**/*', {
 });
 
 /** Modules the panel shares with the storefront, re-exposed under /admin/shared/. */
-const SHARED = { 'shared/options.js': optionsSource };
+const SHARED = {
+  'shared/options.js': optionsSource,
+  'shared/contact.js': contactSource,
+};
 
 const TYPES = {
   html: 'text/html; charset=utf-8',
