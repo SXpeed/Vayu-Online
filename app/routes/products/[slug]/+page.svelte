@@ -483,7 +483,11 @@
      this and the cap would do nothing. */
   @media (min-width: 1024px) {
     .pd-gallery {
-      max-width: 560px;
+      /* 728 = 560 + 30%. The cap only binds from about 1400px up; below
+         that the row is too narrow to reach it and the photograph simply
+         takes what the row has, which is still more than it had before —
+         see the info column below, which is what freed the width. */
+      max-width: 728px;
     }
   }
 
@@ -946,7 +950,15 @@
          share of a 1440px window and most of a 1024px one, where it would
          leave the photograph a stamp. 40vw tracks the window between the two
          bounds. */
-      grid-template-columns: minmax(0, 1fr) clamp(440px, 40vw, 580px);
+      /* 500, down from 580. The upper bound was slack: the note above says
+         the panel's content wants about 460, and the extra 120 was width the
+         photograph could not have. Lowering it is what lets the 728 cap
+         actually bind at 1440 rather than the row running out first — at
+         580 the widest the image could ever be there was 656.
+
+         The lower bound and the 40vw track are unchanged, so nothing moves
+         on the narrow end where the panel already needs every pixel. */
+      grid-template-columns: minmax(0, 1fr) clamp(440px, 40vw, 500px);
     }
   }
 
