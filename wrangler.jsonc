@@ -70,18 +70,48 @@
   "vars": {
     "PUBLIC_ORIGIN": "https://vayuindia.com"
 
-    // ---- ZERO TRUST (optional) -------------------------------------
-    // This Worker also mounts the admin panel at vayuindia.com/admin — the
-    // second of the two doors into it. Putting Cloudflare Access on
-    // admin.vayuindia.com and not here would lock one of them and leave
-    // this one open, so if the Access application covers both hostnames,
-    // set the same two values here as in wrangler.admin.jsonc:
+    // ---- ZERO TRUST (optional, and OFF right now) -------------------
+    // Cloudflare Access in front of the admin panel, so a stranger never
+    // reaches even the sign-in form. The panel is already gated by the admin
+    // session — this is a second, earlier door, not a replacement.
+    //
+    // Uncomment BOTH lines and fill them in from the Zero Trust dashboard:
     //
     //   "ACCESS_TEAM_DOMAIN": "your-team",
     //   "ACCESS_AUD": "<the application's Audience tag>"
     //
-    // Both or neither. Exactly one makes every /admin request 503 on
-    // purpose — see services/auth/access.js and README-cloudflare.md.
+    // ACCESS_TEAM_DOMAIN  the team name from Zero Trust -> Settings ->
+    //                     Custom Pages (the <team>.cloudflareaccess.com one).
+    //                     The bare name, the hostname or the full URL all
+    //                     work — see teamDomain() in services/auth/access.js.
+    // ACCESS_AUD          the Application Audience tag, a 64-char hex string
+    //                     on the Access application's Overview tab.
+    //
+    // BOTH OR NEITHER. Exactly one makes every /admin and /api/admin request
+    // 503 on purpose, because a half-configured Zero Trust gate that waves
+    // everyone through is the worst of the three states and the easiest to
+    // ship by accident (accessState() calls it 'half').
+    //
+    // The Access application must cover every hostname that serves the panel,
+    // and for this deployment that is THREE:
+    //
+    //   vayuindia.com/admin
+    //   www.vayuindia.com/admin
+    //   vayuindia.<subdomain>.workers.dev/admin      <- easy to forget
+    //
+    // The workers.dev one is why the Worker verifies the JWT itself rather
+    // than trusting that Access turned everyone away: an Access policy binds
+    // to a hostname, and workers_dev is true below, so a policy on the custom
+    // domain alone would lock the front door and leave that one open. With
+    // these vars set the in-Worker check rejects any request without a valid
+    // token whatever address it arrived at — including workers.dev, which
+    // Access cannot cover at all. Setting workers_dev to false is the other
+    // way to close it.
+    //
+    // The dashboard side cannot be done from this repo: create a
+    // self-hosted Access application over those paths, add a policy, then
+    // paste the two values here and redeploy. README-cloudflare.md has the
+    // walkthrough.
     // ----------------------------------------------------------------
   },
 

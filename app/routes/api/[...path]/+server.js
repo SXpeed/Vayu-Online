@@ -16,6 +16,7 @@ import { json as sveltejson, error } from '@sveltejs/kit';
 import { Store } from '#lib/server/db.js';
 import { json, notFound, unauthorized, readJson } from '#lib/server/http.js';
 import { currentAdmin, roleError } from '#lib/server/sessions.js';
+import { accessGate } from '#services/auth/access.js';
 import { cachedResponse, storeResponse, purgeCatalogueCache } from '#lib/server/cache.js';
 import { PUBLIC_ROUTES, ADMIN_ROUTES } from '#lib/server/routes.js';
 import * as accounts from '#lib/server/accounts.js';
@@ -63,6 +64,25 @@ async function dispatch(event) {
     }
 
     if (!path.startsWith('/api/admin/')) return notFound();
+
+    // Zero Trust in front of the admin API, not only the panel that calls it.
+    // Without this, turning Access on would gate /admin/* — the HTML and the
+    // scripts — while every endpoint they drive stayed reachable on the
+    // session cookie alone, which is half a perimeter.
+    //
+    // Same-origin, so the browser sends Access's CF_Authorization cookie here
+    // exactly as it does to the panel. Inert until Access is configured:
+    // accessGate returns null when ACCESS_TEAM_DOMAIN and ACCESS_AUD are both
+    // unset, so this changes nothing on a deployment that is not using it.
+    //
+    // Deliberately NOT added to cloudflare/routes/admin.js: that dispatcher
+    // runs on the split api Worker, which apps/admin/worker.js reaches over a
+    // service binding. Such a call carries no hostname and no Access JWT, so
+    // the same gate there would reject the panel's own traffic.
+    const forbidden = await accessGate(env, request, (reason) => {
+        console.log(`access denied: ${reason} ${method} ${path}`);
+    });
+    if (forbidden) return forbidden;
 
     const admin = await currentAdmin(store, request);
     if (!admin) return unauthorized();

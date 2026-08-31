@@ -428,20 +428,41 @@ shop is one password and the soft throttle above. With it, an unauthenticated
 visitor never reaches the login form at all — Access challenges them at the
 edge, and the Worker refuses anything that did not come through.
 
-The code half is done and lives in `services/auth/access.js`. It runs on both
-mounts of the panel (`admin.vayuindia.com` and `vayuindia.com/admin`) and
-verifies the JWT itself rather than trusting that Access ran — which is what
-stops a Worker's own `.workers.dev` hostname being a way around the policy.
+The code half is done and lives in `services/auth/access.js`. It gates the
+panel (`/admin/*`) **and the API behind it** (`/api/admin/*`), and it verifies
+the JWT itself rather than trusting that Access ran — which is what stops a
+Worker's own `.workers.dev` hostname being a way around the policy.
+
+Gating the API too is not belt-and-braces. Access binds to paths, and an
+application over `/admin` alone would leave every endpoint the panel drives
+answering on the session cookie by itself — half a perimeter. The one place
+the gate is deliberately absent is `cloudflare/routes/admin.js`, the split
+`api` Worker's dispatcher: `apps/admin/worker.js` reaches it over a service
+binding, and such a call carries no hostname and no Access JWT, so the same
+check there would reject the panel's own traffic.
 
 The dashboard half cannot be done from this repository:
 
 1. **Zero Trust → Access → Applications → Add an application → Self-hosted.**
-   Give it both hostnames the panel answers on:
+   Give it every hostname the panel answers on. For the monolith deployment
+   — one Worker, no split — that is:
 
    ```
-   admin.vayuindia.com
    vayuindia.com/admin
+   vayuindia.com/api/admin
+   www.vayuindia.com/admin
+   www.vayuindia.com/api/admin
    ```
+
+   `admin.vayuindia.com` belongs to the split `admin` Worker and only needs
+   listing if that is deployed.
+
+   The Worker's own `vayuindia.<subdomain>.workers.dev` cannot be covered by
+   an Access application at all, and `workers_dev` is currently `true`, so
+   that hostname serves the same panel. The in-Worker JWT check is what
+   closes it: once these vars are set, a request without a valid token is
+   refused whatever address it arrived at. Setting `workers_dev` to `false`
+   in `wrangler.jsonc` is the other way to close it.
 
 2. **Add a policy.** Action *Allow*, and a rule that names who gets in —
    `Emails` with the shop's admins listed is the simplest, and *Emails ending
@@ -455,8 +476,9 @@ The dashboard half cannot be done from this repository:
    Overview, and note your team name from *Settings → Custom Pages* (the
    subdomain in `https://<team>.cloudflareaccess.com`).
 
-5. **Set both values in `wrangler.jsonc` and `wrangler.admin.jsonc`**, where
-   each config already has the block commented out:
+5. **Set both values in `wrangler.jsonc`** (and `wrangler.admin.jsonc` too,
+   if the split admin Worker is deployed), where the block is already there
+   commented out:
 
    ```jsonc
    "vars": {
