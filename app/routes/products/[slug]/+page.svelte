@@ -462,7 +462,7 @@
        Wider than that, the info column is pinned to its measure and the
        photograph takes the rest — see the min-width rule below. */
     grid-template-columns: 1fr 1fr;
-    gap: 40px;
+    gap: 64px;
     margin: 8px 0 60px;
     align-items: start;
   }
@@ -470,6 +470,21 @@
   .pd-gallery {
     position: sticky;
     top: calc(var(--hdr-h, 58px) + 16px);
+  }
+
+  /* The photograph is capped rather than left to fill its column.
+     .pd-main is a 1/1 box, so the column's width IS the image's height: at
+     1440px the gallery half came to ~680px and the picture was a 680px
+     square, tall enough that the name and the price beside it sat alone
+     against a long edge. Capping the width shortens the image in both
+     directions at once, and the width the cap gives up falls between the
+     two columns — which is the separation this pairs with the wider gap to
+     get. Only above 1024px: below it the column is already narrower than
+     this and the cap would do nothing. */
+  @media (min-width: 1024px) {
+    .pd-gallery {
+      max-width: 560px;
+    }
   }
 
   /* Drops the name and price below the top of the photograph, so the column
