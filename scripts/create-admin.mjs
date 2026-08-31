@@ -29,8 +29,6 @@
 import { scryptSync, randomBytes } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { createInterface } from 'node:readline/promises';
-import { writeFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -70,24 +68,55 @@ if (!googleOnly) {
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const wrangler = join(root, 'node_modules', 'wrangler', 'bin', 'wrangler.js');
 
-/** Run one statement and return wrangler's parsed result rows. */
+/**
+ * Run one statement and return wrangler's parsed result rows.
+ *
+ * --command, NOT --file, and that is load-bearing. Given --file, wrangler
+ * does not return the rows a SELECT matched; it returns a run summary:
+ *
+ *     [{ results: [{ "Total queries executed": 1, "Rows read": 0, ... }] }]
+ *
+ * One object, always, however many rows matched. Every caller below reads
+ * that array, so with --file the duplicate check saw length 1 for an address
+ * that did not exist and this script refused to create ANY admin, on any
+ * database, with "<email> is already an admin". A fresh deployment could not
+ * be given its first owner at all, and the message pointed at the one script
+ * that cannot help: reset-admin-password refuses an address with no row.
+ * (--json does not change this. The shape is the same.)
+ *
+ * The comment that used to be here said --file existed so cmd.exe could not
+ * split a long statement on its spaces. That was guarding against nothing:
+ * execFileSync spawns node directly with an argv array and no shell, so no
+ * command line is ever parsed. Verified with a statement full of spaces.
+ */
 function d1(sql) {
-    const sqlPath = join(tmpdir(), `vayu-create-admin-${randomBytes(6).toString('hex')}.sql`);
-    writeFileSync(sqlPath, sql, { mode: 0o600 });
+    let out;
     try {
-        const out = execFileSync(
+        out = execFileSync(
             process.execPath,
-            [wrangler, 'd1', 'execute', 'vayuindia-db', remote ? '--remote' : '--local', '--file', sqlPath],
+            [wrangler, 'd1', 'execute', 'vayuindia-db', remote ? '--remote' : '--local', '--command', sql],
             { encoding: 'utf8' },
         );
-        const json = out.slice(out.indexOf('['));
-        return JSON.parse(json)[0]?.results ?? [];
     } catch (err) {
         console.error('wrangler failed:\n' + (err.stdout || err.message));
         process.exit(1);
-    } finally {
-        rmSync(sqlPath, { force: true });
     }
+
+    let rows;
+    try {
+        rows = JSON.parse(out.slice(out.indexOf('[')))[0]?.results ?? [];
+    } catch {
+        console.error('Could not read wrangler output:\n' + out);
+        process.exit(1);
+    }
+
+    // Fail loudly rather than misread a summary as a row, should a future
+    // wrangler return one here too. Reading it silently is the bug above.
+    if (rows.some(r => r && Object.hasOwn(r, 'Total queries executed'))) {
+        console.error('wrangler returned a run summary instead of rows — cannot verify state safely.');
+        process.exit(1);
+    }
+    return rows;
 }
 
 // Adding a second owner is fine; silently overwriting an existing one is not.
