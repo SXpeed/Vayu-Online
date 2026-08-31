@@ -63,10 +63,23 @@ INTERNAL_SECRET=
 # Credentials → OAuth 2.0 Client ID (type: Web application).
 #
 # The Authorised redirect URI must be registered there exactly as:
-#   <PUBLIC_ORIGIN>/api/account/google/callback
+#   <PUBLIC_ORIGIN>/api/auth/callback/google
+#
+# That path is Better Auth's, and it is NOT the legacy
+# /api/account/google/callback this file used to name. The button goes to
+# /api/auth/sign-in/social (app/lib/account.js), Better Auth builds the
+# redirect_uri from baseURL + basePath — PUBLIC_ORIGIN + /api/auth — and
+# Google refuses anything not registered, with:
+#
+#   Error 400: redirect_uri_mismatch
+#
+# The local URI must match PUBLIC_ORIGIN above to the character, PORT
+# INCLUDED: Better Auth sends the origin it is configured with, not the one
+# the browser is on. Serving dev on 8791 with PUBLIC_ORIGIN on 8787 sends
+# Google the 8787 callback and drops the shopper on a dead port.
 #
 # Add BOTH the local and the production URI, or sign-in works in one and
-# fails silently in the other. Leave these blank to run without Google
+# fails in the other. Leave these blank to run without Google
 # sign-in; email and password still work.
 # ---------------------------------------------------------------------------
 GOOGLE_CLIENT_ID=

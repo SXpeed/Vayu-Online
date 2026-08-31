@@ -304,14 +304,33 @@ review is needed).
 Add these **Authorised redirect URIs** — they must match to the character:
 
 ```
-https://<your-worker>.<your-subdomain>.workers.dev/api/account/google/callback
-http://127.0.0.1:8791/api/account/google/callback
+https://vayuindia.com/api/auth/callback/google
+https://<your-worker>.<your-subdomain>.workers.dev/api/auth/callback/google
+http://127.0.0.1:8787/api/auth/callback/google
 ```
 
-The first is printed by `npm run deploy`. Add your custom domain's callback
-too, the day you point one at the Worker — and note the local one must match
-the port you actually browse and the PUBLIC_ORIGIN in `.dev.vars`, since that
-value is what Better Auth checks the callback against.
+That path is Better Auth's own. It is **not** `/api/account/google/callback`,
+which is what this section used to say: that belongs to the older hand-rolled
+flow in `services/auth/google.js`, still routed but not what the "Continue
+with Google" button uses. Registering only the old path is the cause of:
+
+```
+Error 400: redirect_uri_mismatch
+```
+
+Better Auth builds the `redirect_uri` from `baseURL` + `basePath`, which here
+is `PUBLIC_ORIGIN` + `/api/auth`. To read what it actually sends rather than
+guess at it:
+
+```bash
+curl -sD - -o /dev/null "http://127.0.0.1:8787/api/auth/sign-in/social?provider=google&callbackURL=%2F" | grep -i location
+```
+
+The workers.dev host is printed by `npm run deploy`. The local URI must match
+`PUBLIC_ORIGIN` in `.dev.vars` to the character, port included: Better Auth
+sends the origin it is configured with, not the one the browser happens to be
+on, so serving dev on 8791 with `PUBLIC_ORIGIN` on 8787 sends Google the 8787
+callback and drops the shopper on a dead port after they approve.
 
 **2. Give the Worker the credentials.** The id is public, the secret is not:
 
