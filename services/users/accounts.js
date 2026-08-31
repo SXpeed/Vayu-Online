@@ -19,7 +19,7 @@ import { json, ok, badRequest, notFound, unauthorized, methodNotAllowed } from '
 import {
   currentCustomer, customerSession, customerCookie, clearCustomerCookie, createThrottle,
 } from '#services/auth/sessions.js';
-import { googleEnabled, start as googleStart, callback as googleCallback } from '#services/auth/google.js';
+import { googleEnabled } from '#services/auth/better-auth.js';
 import { handleWishlist, mergeGuestWishlist } from './wishlist.js';
 
 const MIN_PASSWORD = 8;
@@ -357,12 +357,6 @@ const OPEN = {
   'GET me': me,
 };
 
-/** Full-page redirects, so these are plain GETs rather than fetch calls. */
-const GOOGLE = {
-  '': googleStart,
-  callback: googleCallback,
-};
-
 const PRIVATE = {
   'PUT profile': updateProfile,
   'POST password': changePassword,
@@ -376,11 +370,6 @@ const PRIVATE = {
 export async function route(ctx, section) {
   const customer = await currentCustomer(ctx.store, ctx.request, ctx.env);
   const full = { ...ctx, customer };
-
-  if (section === 'google' && ctx.method === 'GET') {
-    const step = GOOGLE[ctx.parts[0] || ''];
-    return step ? step(full) : notFound();
-  }
 
   const open = OPEN[`${ctx.method} ${section}`];
   if (open) return open(full);

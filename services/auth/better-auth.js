@@ -38,6 +38,18 @@ import { scryptSync, timingSafeEqual } from 'node:crypto';
 const LEGACY_PREFIX = 'legacy$';
 
 /**
+ * Whether Google sign-in is wired up at all.
+ *
+ * BOTH halves, not just the id: a client id without its secret registers the
+ * provider but cannot complete the token exchange, so the button would render
+ * and every shopper who pressed it would get an error at the last step.
+ *
+ * /api/account/me reports this, so the sign-in screens only offer Google when
+ * pressing it can actually work.
+ */
+export const googleEnabled = (env) => !!(env?.GOOGLE_CLIENT_ID && env?.GOOGLE_CLIENT_SECRET);
+
+/**
  * The old scheme, kept byte-for-byte: scrypt with default parameters and a
  * 64-byte derived key, compared in constant time. Changing any of this
  * invalidates every password that has not been rehashed yet.
@@ -88,7 +100,7 @@ export function getAuth(env) {
             },
         },
 
-        socialProviders: env.GOOGLE_CLIENT_ID
+        socialProviders: googleEnabled(env)
             ? {
                 google: {
                     clientId: env.GOOGLE_CLIENT_ID,
