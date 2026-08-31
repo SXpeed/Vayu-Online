@@ -36,6 +36,28 @@ function ownerClause({ customerId, guestKey }) {
 }
 
 /**
+ * Find a live variant on a product by id or combo key, or null when there
+ * is none (no product, no variant id, or no match). Shared by `hydrate`
+ * and `addLine`, which previously each spelled this lookup out.
+ */
+function findVariant(product, variantId) {
+  if (!product || !variantId) return null;
+  return (product.variants || []).find(v => v.id === variantId || v.combo === variantId) || null;
+}
+
+/**
+ * Is a wishlist line buyable? A deleted product (no live record) is out of
+ * stock; a variant line follows the variant's stock; a plain product is in
+ * stock unless the panel tracks stock and has run it down. Split out of
+ * `hydrate` as plain branches — no nested ternary to read.
+ */
+function resolveStock(product, variant) {
+  if (!product) return false;
+  if (variant) return variant.stock > 0;
+  return product.stock === undefined || product.stock > 0;
+}
+
+/**
  * Hydrate one wishlist row into the shape the storefront card wants. The
  * product is read live so a name/price/image change in the panel is
  * reflected; a deleted product falls back to the snapshot captured at save
@@ -47,21 +69,15 @@ async function hydrate(store, row) {
     product = row.product_id ? await productById(store, row.product_id) : null;
   } catch { /* a deleted product is not a wishlist error */ }
 
-  const variant = row.variant_id && product
-    ? (product.variants || []).find(v => v.id === row.variant_id || v.combo === row.variant_id)
-    : null;
+  const variant = findVariant(product, row.variant_id);
 
   /**
-   * Stock, and the `!product` arm is load-bearing: a deleted product is the
-   * case this whole function is built around — it falls back to the snapshot
-   * saved with the row — and reading .stock off that null is a 500 on every
+   * Stock, with `!product` load-bearing: a deleted product is the case this
+   * whole function is built around — it falls back to the snapshot saved
+   * with the row — and reading .stock off that null is a 500 on every
    * wishlist holding a piece the shop has since removed.
    */
-  const inStock = !product
-    ? false
-    : variant
-      ? variant.stock > 0
-      : product.stock === undefined || product.stock > 0;
+  const inStock = resolveStock(product, variant);
 
   return {
     id: row.id,
@@ -200,22 +216,6 @@ export async function mergeGuestWishlist(store, customerId, guestKey) {
 }
 
 /**
- * The /api/account/wishlist route handler.
- *
- *   GET    /api/account/wishlist          → list for the current owner
- *   POST   /api/account/wishlist          → add { productId, variantId?, note?, guestKey? }
- *   DELETE /api/account/wishlist           → clear all (guest or customer)
- *   DELETE /api/account/wishlist/<id>      → remove one row
- *   POST   /api/account/wishlist/merge     → merge a guest wishlist onto the
- *                                            signed-in account { guestKey }
- *
- * Owner resolution: a signed-in customer owns by customer_id; a guest owns
- * by guestKey (the `vayu_sid` the browser already mints for analytics). A
- * guest POST without a guestKey is rejected — there is no owner to attach
- * the row to. A signed-in shopper's guestKey is ignored, so a row saved
- * pre-login is never orphaned.
- */
-/**
  * Resolve the wishlist owner for a plain (non-merge, non-clear) request.
  * A signed-in customer always wins over a posted guestKey; a guest needs a
  * guestKey to own anything, so without one there is no owner and the caller
@@ -268,9 +268,7 @@ async function addLine(store, owner, body) {
     idx: null,
     name: product.name,
     price: product.price,
-    img: body.variantId
-      ? (product.variants || []).find(v => v.id === body.variantId || v.combo === body.variantId)?.image || product.img
-      : product.img,
+    img: findVariant(product, body.variantId)?.image || product.img,
   };
   const count = await addWishlist(store, owner, line);
   return json(201, { ok: true, count, wishlist: await listWishlist(store, owner) });
