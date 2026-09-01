@@ -841,3 +841,35 @@ select.status-select { padding: 5px 8px; border-radius: 7px; border: 1px solid v
 .top-user-text {
     text-align: right;
 }
+
+/* ---------- payment provider state ----------
+   Reads as a status rather than a field, because it is not editable here:
+   the credentials are Workers secrets and the panel is only reporting
+   whether they are set. */
+.pay-state {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 10px 12px;
+    border-radius: 2px;
+    background: var(--line, #F4F1EA);
+    font-size: 13px;
+    color: var(--body, #4E4A43);
+}
+
+.pay-state b {
+    color: var(--muted, #8A8681);
+}
+
+.pay-state.is-live {
+    background: #EEF6EE;
+}
+
+.pay-state.is-live b {
+    color: #1E6B1E;
+}
+
+.pay-state code {
+    font-size: 12px;
+}

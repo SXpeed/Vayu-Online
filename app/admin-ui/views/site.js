@@ -911,9 +911,18 @@ function storeCard(s) {
                 <div class="field full"><label>Provider</label><select id="s-pay">
                     <option value="cod" ${s.payment.provider !== 'razorpay' ? 'selected' : ''}>Record orders only (pay on delivery / offline)</option>
                     <option value="razorpay" ${s.payment.provider === 'razorpay' ? 'selected' : ''}>Razorpay (online payment)</option></select></div>
-                <div class="field"><label>Razorpay Key ID</label><input id="s-rzp-id" value="${esc(s.payment.razorpayKeyId)}" placeholder="rzp_live_…"></div>
-                <div class="field"><label>Razorpay Key Secret</label><input id="s-rzp-secret" type="password" value="${esc(s.payment.razorpayKeySecret)}"></div>
-                <div class="field full"><div class="help">Razorpay only takes effect when both keys are filled in — until then checkout records the order for offline payment.</div></div>
+                <div class="field full">
+                    <label>Razorpay account</label>
+                    ${s.payment.razorpayConfigured
+                        ? `<div class="pay-state is-live"><b>Live</b>
+                             <span>Connected as <code>${esc(s.payment.razorpayKeyId)}</code></span></div>`
+                        : `<div class="pay-state"><b>Not connected</b>
+                             <span>Checkout records orders for offline payment until the keys are set.</span></div>`}
+                    <div class="help">The key and secret are Workers secrets, not settings — they are
+                        never stored in the database and never sent to this page. To change them:
+                        <code>npx wrangler secret put RAZORPAY_KEY_ID</code> and
+                        <code>npx wrangler secret put RAZORPAY_KEY_SECRET</code>, then redeploy.</div>
+                </div>
             </div>
             <div class="modal-actions"><button class="btn primary" id="s-save">Save settings</button></div>
         </div>`;
@@ -1009,11 +1018,9 @@ export async function renderSettings() {
             storePhone: $('#s-phone').value,
             storeAddress: $('#s-addr').value,
             zones,
-            payment: {
-                provider: $('#s-pay').value,
-                razorpayKeyId: $('#s-rzp-id').value.trim(),
-                razorpayKeySecret: $('#s-rzp-secret').value.trim(),
-            },
+            // Provider only. The keys are not on this form and the server
+            // would drop them anyway.
+            payment: { provider: $('#s-pay').value },
         }), 'Settings saved'));
 
         $('#bk-now').addEventListener('click', async () => {

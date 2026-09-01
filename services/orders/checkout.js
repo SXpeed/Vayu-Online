@@ -22,7 +22,7 @@ import { productById, productByCatIdx, totalStock } from '#services/products/cat
 import { currentCustomer } from '#services/auth/sessions.js';
 import { checkoutDetails, loadAddresses, rememberAddress, CHECKOUT_FIELDS } from '#services/users/accounts.js';
 import {
-  putPending, takePending, createOrder, verifyPayment, isRazorpayEnabled,
+  putPending, takePending, createOrder, verifyPayment, isRazorpayEnabled, keyIdFor,
 } from '#services/payments/razorpay.js';
 
 /* ---------- coupons ---------- */
@@ -396,7 +396,10 @@ export async function checkout({ store, request, body, env }) {
     await putPending(store, rz.id, prep);
     return json(200, {
       payment: 'razorpay',
-      keyId: payment.razorpayKeyId,
+      // From the Workers secret, not the settings row. This was the last
+      // read of payment.razorpayKeyId, and it is what would have handed the
+      // browser an empty key the moment those columns were cleared.
+      keyId: keyIdFor(env),
       rzpOrderId: rz.id,
       amount: prep.total * 100,
       name: prep.settings.storeName,

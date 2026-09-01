@@ -118,7 +118,11 @@ export class Store {
       shippingFlat: SHIPPING_DEFAULTS.flat,
       lowStockThreshold: 5,
       zones: [],
-      payment: { provider: 'cod', razorpayKeyId: '', razorpayKeySecret: '' },
+      // Provider only. The Razorpay key and secret are Workers secrets
+      // (RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET) and are deliberately absent
+      // from this shape — leaving the fields here would keep suggesting the
+      // database is somewhere credentials may be put.
+      payment: { provider: 'cod' },
       storeAddress: '',
       storeEmail: '',
       storePhone: '',

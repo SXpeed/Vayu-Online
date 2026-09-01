@@ -228,9 +228,28 @@ function sanitizeContact(body) {
 
 const money = (v, fallback) => Math.max(0, Number(v ?? fallback) || 0);
 
-export async function settings({ store, method, admin, body }) {
+export async function settings({ store, env, method, admin, body }) {
   const s = await store.settings();
-  if (method === 'GET') return json(200, { settings: s });
+
+  /**
+   * What the panel is allowed to see about payment.
+   *
+   * The keys are never returned. They used to be — the GET sent
+   * razorpayKeySecret to the browser so the form could show it — which meant
+   * a live payment secret travelled to every admin's machine on every visit
+   * to Settings. What the panel actually needs is one boolean: is Razorpay
+   * usable or not.
+   */
+  const view = (row) => ({
+    ...row,
+    payment: {
+      provider: row.payment?.provider === 'razorpay' ? 'razorpay' : 'cod',
+      razorpayConfigured: !!(env?.RAZORPAY_KEY_ID && env?.RAZORPAY_KEY_SECRET),
+      razorpayKeyId: env?.RAZORPAY_KEY_ID || '',
+    },
+  });
+
+  if (method === 'GET') return json(200, { settings: view(s) });
   if (method !== 'PUT') return methodNotAllowed();
 
   const next = {
@@ -257,10 +276,12 @@ export async function settings({ store, method, admin, body }) {
   }
 
   if (body.payment) {
+    // Provider only. The keys are Workers secrets and are deliberately not
+    // writable from here: anything this handler persists lands in a D1 row
+    // that backups copy and the panel can read back, which is exactly the
+    // property a payment secret must not have.
     next.payment = {
       provider: body.payment.provider === 'razorpay' ? 'razorpay' : 'cod',
-      razorpayKeyId: String(body.payment.razorpayKeyId ?? s.payment.razorpayKeyId ?? ''),
-      razorpayKeySecret: String(body.payment.razorpayKeySecret ?? s.payment.razorpayKeySecret ?? ''),
     };
   }
 
@@ -269,7 +290,7 @@ export async function settings({ store, method, admin, body }) {
   await Promise.all(Object.entries(next).map(([k, v]) => store.putConfig('settings', k, v)));
   await store.logActivity(admin.name, 'settings.update', 'Updated store settings');
 
-  return json(200, { settings: await store.settings() });
+  return json(200, { settings: view(await store.settings()) });
 }
 
 /* ================= team ================= */

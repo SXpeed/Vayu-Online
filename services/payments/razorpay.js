@@ -6,16 +6,19 @@
  * `createOrder` and `verifySignature` from here; the secret never leaves
  * this service and is never returned in any API response.
  *
- * Where the secret lives:
- *   - Production: a Workers secret named RAZORPAY_KEY_SECRET on the API app.
- *   - Legacy: the `settings.payment.razorpayKeySecret` DB row (kept for
- *     backward compat during the refactor; `secretFor()` prefers the env
- *     secret and falls back to the settings row so existing deployments
- *     keep working until the secret is moved).
+ * Where the credentials live: Workers secrets, RAZORPAY_KEY_ID and
+ * RAZORPAY_KEY_SECRET. Nowhere else.
  *
- * The key id is not secret, so checkout still reads `razorpayKeyId` from the
- * settings row to render the checkout button — but it never needs the
- * secret, because verification happens here.
+ * They used to be readable from `settings.payment` as well, written there by
+ * the admin panel. That put a live payment secret in a D1 row in plaintext,
+ * where a database dump, a backup file or anyone who could reach the panel
+ * could read it — and the panel returned it to the browser to populate its
+ * own form. The fallback is gone and the columns are cleared; a secret that
+ * cannot be read out of the application is one fewer copy to leak.
+ *
+ * The key id is not itself secret — it is handed to the browser to open the
+ * checkout — but it lives beside the secret so there is one place to set
+ * Razorpay up and one place to look when it is not working.
  */
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
@@ -32,18 +35,22 @@ const RECEIPT_MAX = 40;
  * Resolve the key secret to use. The env secret wins; the settings row is
  * the fallback. Returns '' when neither is set (test/dev without Razorpay).
  */
-function secretFor(env, settings) {
-  if (env?.RAZORPAY_KEY_SECRET) return env.RAZORPAY_KEY_SECRET;
-  return settings?.payment?.razorpayKeySecret || '';
+function secretFor(env) {
+  return env?.RAZORPAY_KEY_SECRET || '';
 }
 
-/** The key id, preferring the env var over the settings row. */
-function keyIdFor(env, settings) {
-  return env?.RAZORPAY_KEY_ID || settings?.payment?.razorpayKeyId || '';
+/**
+ * The key id. Exported because checkout hands it to the browser to open
+ * Razorpay's dialog, and used to read it straight off the settings row —
+ * which is the last thing that would have broken when those columns were
+ * cleared.
+ */
+export function keyIdFor(env) {
+  return env?.RAZORPAY_KEY_ID || '';
 }
 
 /** Whether Razorpay is configured at all. */
-export const enabled = (env, settings) => !!(keyIdFor(env, settings) && secretFor(env, settings));
+export const enabled = (env, settings) => !!(keyIdFor(env) && secretFor(env));
 
 /**
  * Whether an ONLINE payment should be attempted for this shop.
@@ -70,7 +77,7 @@ export const isRazorpayEnabled = (env, settings) =>
  * service boundary.
  */
 export function verifyPayment(env, settings, { orderId, paymentId, signature }) {
-  return verifySignature(secretFor(env, settings), orderId, paymentId, signature);
+  return verifySignature(secretFor(env), orderId, paymentId, signature);
 }
 
 /* ---------- orders awaiting confirmation ---------- */
@@ -132,8 +139,8 @@ export async function takePending(store, rzpOrderId) {
  * so confirm() can verify the signature against it.
  */
 export async function createOrder(env, settings, { amount, currency = 'INR', receipt, notes }) {
-  const keyId = keyIdFor(env, settings);
-  const secret = secretFor(env, settings);
+  const keyId = keyIdFor(env);
+  const secret = secretFor(env);
   if (!keyId || !secret) return { error: 'Razorpay is not configured' };
 
   const body = {
@@ -235,8 +242,8 @@ export async function webhook({ env, request, store }) {
  * Only the payments service ever makes this call.
  */
 export async function refund(env, settings, { paymentId, amountPaise, notes }) {
-  const keyId = keyIdFor(env, settings);
-  const keySecret = secretFor(env, settings);
+  const keyId = keyIdFor(env);
+  const keySecret = secretFor(env);
   if (!keyId || !keySecret) throw new Error('Razorpay not configured');
 
   const res = await fetch(`${API_BASE}/payments/${paymentId}/refund`, {
@@ -262,8 +269,8 @@ export async function refund(env, settings, { paymentId, amountPaise, notes }) {
  * Used by the admin orders view to show the payment state alongside the order.
  */
 export async function paymentStatus(env, settings, paymentId) {
-  const keyId = keyIdFor(env, settings);
-  const keySecret = secretFor(env, settings);
+  const keyId = keyIdFor(env);
+  const keySecret = secretFor(env);
   if (!keyId || !keySecret || !paymentId) return null;
 
   const res = await fetch(`${API_BASE}/payments/${paymentId}`, {

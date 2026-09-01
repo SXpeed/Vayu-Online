@@ -365,10 +365,11 @@ export const teamMember = z.object({
 }).passthrough();
 
 export const settings = z.object({
+    // Provider only, and no passthrough on this object: the Razorpay key
+    // and secret are Workers secrets now, and a key posted here is dropped
+    // before the handler sees it rather than being quietly written to D1.
     payment: z.object({
         provider: z.enum(['cod', 'razorpay']).optional(),
-        razorpayKeyId: text(120).optional(),
-        razorpayKeySecret: text(200).optional(),
     }).partial().optional(),
     shipping: z.object({
         flatRate: z.number().min(0).max(1_000_000).optional(),
