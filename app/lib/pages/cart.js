@@ -167,12 +167,6 @@ function renderCart() {
                 updateCartQty(cat, idx, item.qty - 1, variant);
                 qtyVal.textContent = item.qty - 1;
                 renderCart();
-
-// Paint immediately with the shipped defaults, then correct the shipping
-// line once /api/nav answers with what the shop actually charges. Without
-// this the page would keep the fallback for the life of the visit: the cart
-// is not in CATALOGUE_ROUTES, so nothing else on it re-renders.
-hydrateNav().then(renderCart).catch(() => { /* the fallback already showed */ });
             }
         });
 
@@ -225,6 +219,12 @@ const cartItemsPayload = () => getCart().map(i => ({
 }));
 
 renderCart();
+
+// Paint immediately with the shipped defaults, then correct the shipping
+// line once /api/nav answers with what the shop actually charges. Without
+// this the page would keep the fallback for the life of the visit: the cart
+// is not in CATALOGUE_ROUTES, so nothing else on it re-renders.
+hydrateNav().then(renderCart).catch(() => { /* the fallback already showed */ });
 
 // Listen for cart changes from other tabs
 window.addEventListener('vayu:cart-changed', renderCart);
