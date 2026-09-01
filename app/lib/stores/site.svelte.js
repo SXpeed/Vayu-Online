@@ -177,6 +177,10 @@ function applySnapshot(keys) {
         site.allProducts = flatten(snap.products);
         used = true;
     }
+    if (keys.includes('shipping') && snap.shipping && !navDone && !catalogueDone) {
+        site.shipping = snap.shipping;
+        used = true;
+    }
     return used;
 }
 
@@ -187,14 +191,14 @@ let catalogueDone = null;
 export function hydrateNav() {
     // Before the fetch, not after it: the point is to be on screen while
     // the request is still in the air.
-    applySnapshot(['categories', 'content']);
+    applySnapshot(['categories', 'content', 'shipping']);
     navDone ??= getJson('/api/nav').then(raw => {
         const data = raw && parseOrNull(navResponse, raw, '/api/nav');
         if (!data?.categories) return false;
         site.categories = data.categories;
         site.content = data.content ?? null;
         site.shipping = data.shipping ?? site.shipping;
-        writeSnapshot({ categories: data.categories, content: data.content ?? null });
+        writeSnapshot({ categories: data.categories, content: data.content ?? null, shipping: data.shipping ?? undefined });
         return true;
     });
     return navDone;
@@ -202,7 +206,7 @@ export function hydrateNav() {
 
 /** The full catalogue. Only pages that render products await this. */
 export function hydrateCatalogue() {
-    applySnapshot(['products', 'categories', 'content']);
+    applySnapshot(['products', 'categories', 'content', 'shipping']);
     catalogueDone ??= getJson('/api/catalogue').then(async raw => {
         const data = raw && parseOrNull(catalogueResponse, raw, '/api/catalogue');
         if (!data?.products) {
@@ -221,6 +225,7 @@ export function hydrateCatalogue() {
             products: data.products,
             categories: data.categories ?? undefined,
             content: data.content ?? undefined,
+            shipping: data.shipping ?? undefined,
         });
         return true;
     });
