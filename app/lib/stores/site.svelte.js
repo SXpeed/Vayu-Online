@@ -84,7 +84,8 @@ function apiFailed(url, reason) {
         'Products shown may be stale and checkout will not work.',
     );
     if (typeof window !== 'undefined') {
-        (window.__vayuApiFailures ??= []).push({ url, reason, at: Date.now() });
+        window.__vayuApiFailures ??= [];
+        window.__vayuApiFailures.push({ url, reason, at: Date.now() });
     }
     return null;
 }
@@ -210,7 +211,7 @@ function applySnapshot(keys) {
     let used = false;
     for (const key of keys) {
         const field = SNAPSHOT_FIELDS[key];
-        if (!field || !field.stored(snap) || !field.pending()) continue;
+        if (!field?.stored(snap) || !field.pending()) continue;
         field.restore(snap);
         used = true;
     }
