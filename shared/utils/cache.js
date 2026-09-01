@@ -20,16 +20,37 @@ export const CACHEABLE = new Set(['/api/catalogue', '/api/nav']);
 /**
  * The policy, applied here rather than trusted from the handler.
  *
- * `s-maxage` is what the edge honours, `max-age` the visitor's own browser,
- * and an admin write purges both entries immediately (see purgeCatalogueCache
- * below) so the stale window is a safety net rather than the mechanism.
+ * THE EDGE CACHES; THE BROWSER DOES NOT. That asymmetry is the whole point,
+ * and the previous policy — `max-age=60, stale-while-revalidate=86400` — got
+ * it wrong in a way that took a day to wash out.
+ *
+ * purgeCatalogueCache() below clears this colo's entry when an admin writes,
+ * and the comment here used to claim it purged "both". It cannot. A purge
+ * reaches Cloudflare; it has no way to reach a copy already sitting in
+ * somebody's browser. So every directive aimed at the browser is a promise
+ * that the shop's own data may be wrong for that long — and
+ * stale-while-revalidate has no shared-cache-only spelling, so that 86400
+ * applied to browsers as much as to the edge. A visitor could be shown a
+ * day-old shipping rate, and be shown it INSTANTLY, because SWR serves the
+ * stale body first and revalidates afterwards. That is exactly how a cart
+ * came to quote ₹150 when the shop had set ₹1.
+ *
+ *   max-age=0, must-revalidate   the browser may keep a copy but must ask
+ *                                before using it. The ask is answered by the
+ *                                colo, not by D1.
+ *   s-maxage=1800                the edge still serves it for half an hour
+ *                                without waking the Worker, which is where
+ *                                the saving actually came from.
+ *   no stale-while-revalidate    deliberately. There is no way to grant it
+ *                                to the edge alone, and granting it to
+ *                                browsers is the bug above.
  *
  * It is stamped on the way out because the header set by the route handler
  * does not survive the trip through SvelteKit's response pipeline — the
  * catalogue was going out as `no-store` and every visitor was reaching D1.
  * Setting it next to the code that depends on it means the two cannot drift.
  */
-export const CACHE_POLICY = 'public, max-age=60, s-maxage=1800, stale-while-revalidate=86400';
+export const CACHE_POLICY = 'public, max-age=0, must-revalidate, s-maxage=1800';
 
 /**
  * Look for a stored copy.

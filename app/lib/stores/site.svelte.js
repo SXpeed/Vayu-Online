@@ -58,7 +58,18 @@ export const site = $state({
  */
 const getJson = async (url) => {
     try {
-        const res = await fetch(url);
+        // 'no-cache' means "revalidate before using what you have", not "do
+        // not cache" — the copy is kept and a conditional request confirms
+        // it, so this costs a round trip to the nearest colo and not a read
+        // of D1.
+        //
+        // Needed as well as the response policy, not instead of it. Changing
+        // CACHE_POLICY only governs responses issued from now on; a browser
+        // already holding an entry from the old policy will go on serving it
+        // under that entry's stale-while-revalidate window — up to a day —
+        // and no deploy can reach in and drop it. Asking on our side is what
+        // rescues visitors who are already in that state.
+        const res = await fetch(url, { cache: 'no-cache' });
         if (!res.ok) return apiFailed(url, `HTTP ${res.status}`);
         return await res.json();
     } catch (err) {
