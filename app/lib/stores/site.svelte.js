@@ -151,41 +151,71 @@ function writeSnapshot(patch) {
     } catch { /* private window, quota, disabled storage — all fine */ }
 }
 
+let navDone = null;
+let catalogueDone = null;
+
 /**
- * Paint the stored answer, if there is one.
+ * What may be restored from the snapshot, and on what terms.
  *
- * Only fills what has not already arrived: a hydrator that has already set
- * the real thing must not be walked back over by yesterday's copy.
+ * A table rather than a branch per field: each entry answers the same three
+ * questions — is it in the stored copy, has the live answer already landed,
+ * and what does restoring it set. shipping was added by copying a
+ * neighbouring branch and adjusting its guards by hand, which is the step
+ * this removes; a new field is now a row rather than a fourth `if` to get
+ * right from scratch.
+ *
+ * `stored` differs per field because "absent" does. `content: null` is a
+ * real answer meaning the shop has saved none, so it tests for undefined;
+ * the rest are objects that are either there or not.
+ *
+ * `pending` tests the hydrators rather than the values: one that has already
+ * set the real thing must not be walked back over by yesterday's copy.
+ * products also weighs site.allProducts, because the static fallback counts
+ * as having arrived.
+ */
+const SNAPSHOT_FIELDS = {
+    categories: {
+        stored: (snap) => !!snap.categories,
+        pending: () => !navDone,
+        restore: (snap) => { site.categories = snap.categories; },
+    },
+    content: {
+        stored: (snap) => snap.content !== undefined,
+        pending: () => !navDone && !catalogueDone,
+        restore: (snap) => { site.content = snap.content; },
+    },
+    products: {
+        stored: (snap) => !!snap.products,
+        pending: () => !catalogueDone && !site.allProducts.length,
+        restore: (snap) => {
+            site.products = snap.products;
+            site.allProducts = flatten(snap.products);
+        },
+    },
+    shipping: {
+        stored: (snap) => !!snap.shipping,
+        pending: () => !navDone && !catalogueDone,
+        restore: (snap) => { site.shipping = snap.shipping; },
+    },
+};
+
+/**
+ * Paint the stored answers for `keys`, where there are any.
+ *
+ * Returns whether anything was restored — the caller uses that to know it
+ * had something on screen before the network answered.
  */
 function applySnapshot(keys) {
     const snap = readSnapshot();
     let used = false;
-    if (keys.includes('categories') && snap.categories && !navDone) {
-        site.categories = snap.categories;
-        used = true;
-    }
-    // Both guards test the hydrators rather than the values: `content: null`
-    // is a real answer meaning "the shop has saved none", and a snapshot
-    // that could not tell that apart from "not fetched yet" would put
-    // yesterday's copy back over it.
-    if (keys.includes('content') && snap.content !== undefined && !navDone && !catalogueDone) {
-        site.content = snap.content;
-        used = true;
-    }
-    if (keys.includes('products') && snap.products && !catalogueDone && !site.allProducts.length) {
-        site.products = snap.products;
-        site.allProducts = flatten(snap.products);
-        used = true;
-    }
-    if (keys.includes('shipping') && snap.shipping && !navDone && !catalogueDone) {
-        site.shipping = snap.shipping;
+    for (const key of keys) {
+        const field = SNAPSHOT_FIELDS[key];
+        if (!field || !field.stored(snap) || !field.pending()) continue;
+        field.restore(snap);
         used = true;
     }
     return used;
 }
-
-let navDone = null;
-let catalogueDone = null;
 
 /** Categories + editable copy. Small; every page can afford it after paint. */
 export function hydrateNav() {
