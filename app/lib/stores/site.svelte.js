@@ -31,6 +31,12 @@ export const site = $state({
     artists: null,
     /** Shipping & Returns profiles; a product points at one by id. */
     shippingPresets: [],
+    /**
+     * What shipping costs, as the shop has it. Null until /api/catalogue
+     * answers; the cart falls back to SHIPPING_DEFAULTS meanwhile, which are
+     * the same numbers the server falls back to.
+     */
+    shipping: null,
 });
 
 /**
@@ -176,6 +182,7 @@ export function hydrateNav() {
         if (!data?.categories) return false;
         site.categories = data.categories;
         site.content = data.content ?? null;
+        site.shipping = data.shipping ?? site.shipping;
         writeSnapshot({ categories: data.categories, content: data.content ?? null });
         return true;
     });
@@ -198,6 +205,7 @@ export function hydrateCatalogue() {
         if (data.categories) site.categories = data.categories;
         site.content = data.content ?? site.content;
         site.shippingPresets = data.shippingPresets ?? [];
+        site.shipping = data.shipping ?? site.shipping;
         writeSnapshot({
             products: data.products,
             categories: data.categories ?? undefined,

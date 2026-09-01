@@ -29,6 +29,23 @@ export const OAUTH_STATE_COOKIE = 'vayu_oauth_state';
 export const ADMIN_TTL_MS = 1000 * 60 * 60 * 24 * 7;       // 7 days
 export const CUSTOMER_TTL_MS = 1000 * 60 * 60 * 24 * 30;   // 30 days
 
+/* ---------- shipping ---------- */
+
+/**
+ * What shipping costs before the shop has said otherwise.
+ *
+ * These are the fallbacks store.settings() fills a missing settings row
+ * with, and they are ALSO what the cart shows until /api/catalogue answers.
+ * Both sides read them from here because they were previously written out
+ * twice — 5000 and 150 in store.settings(), and the same two numbers typed
+ * into pages/cart.js — which is why editing them in the admin panel changed
+ * what a customer was charged without changing what the cart page told them.
+ */
+export const SHIPPING_DEFAULTS = {
+    freeAbove: 5000,
+    flat: 150,
+};
+
 /* ---------- order + product statuses ---------- */
 
 export const ORDER_STATUSES = ['new', 'processing', 'shipped', 'delivered', 'cancelled'];

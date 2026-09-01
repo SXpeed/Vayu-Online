@@ -42,14 +42,23 @@ const CATALOGUE_CACHE = 'public, max-age=60, s-maxage=1800, stale-while-revalida
  * menu.
  */
 export async function nav({ store }) {
-  const [categories, content] = await Promise.all([
+  const [categories, content, settings] = await Promise.all([
     loadCategories(store),
     store.config('content'),
+    store.settings(),
   ]);
 
   return json(200, {
     categories: toLegacyTaxonomy(categories),
     content,
+    // Here as well as on /api/catalogue, because the cart is the page that
+    // needs it and the cart does not fetch the catalogue: it is not in
+    // CATALOGUE_ROUTES (app/routes/+layout.svelte), so it gets /api/nav and
+    // nothing else. Two numbers on a response every page already makes.
+    shipping: {
+      freeAbove: settings.freeShippingAbove,
+      flat: settings.shippingFlat,
+    },
   }, { 'Cache-Control': CATALOGUE_CACHE });
 }
 
@@ -57,11 +66,12 @@ export async function nav({ store }) {
 export async function catalogue({ store }) {
   await sweepScheduled(store);
 
-  const [products, categories, content, shippingPresets] = await Promise.all([
+  const [products, categories, content, shippingPresets, settings] = await Promise.all([
     loadProducts(store),
     loadCategories(store),
     store.config('content'),
     loadShippingPresets(store),
+    store.settings(),
   ]);
 
   return json(200, {
@@ -73,6 +83,20 @@ export async function catalogue({ store }) {
     // text would repeat the same four sentences once per product per
     // category it appears in.
     shippingPresets,
+    // Just the two numbers the cart needs to show a total, picked out by
+    // hand rather than spread from `settings`: that object also carries
+    // storeEmail, storePhone and payment.razorpayKeySecret, and this
+    // response is public and edge-cached.
+    //
+    // `zones` is deliberately not here. A zone rate is chosen by PIN code
+    // and the cart has no PIN field, so the cart can only ever show the flat
+    // case; checkout.js resolves the real rate server-side once an address
+    // exists. Sending zones would let the cart imply a precision it does
+    // not have.
+    shipping: {
+      freeAbove: settings.freeShippingAbove,
+      flat: settings.shippingFlat,
+    },
   }, { 'Cache-Control': CATALOGUE_CACHE });
 }
 

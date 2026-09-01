@@ -73,6 +73,10 @@ const pressItem = z.looseObject({
 export const navResponse = z.looseObject({
     categories: z.record(z.string(), category),
     content: content.nullish(),
+    shipping: z.looseObject({
+        freeAbove: z.number(),
+        flat: z.number(),
+    }).nullish(),
 });
 
 /** A saved Shipping & Returns profile, shared across products. */
@@ -87,6 +91,13 @@ export const catalogueResponse = z.looseObject({
     categories: z.record(z.string(), category),
     content: content.nullish(),
     shippingPresets: z.array(shippingPreset).nullish(),
+    // The shop's own shipping rule, so the cart stops quoting a hardcoded
+    // one. Nullish: an older cached response predates this field, and the
+    // cart falls back rather than showing NaN.
+    shipping: z.looseObject({
+        freeAbove: z.number(),
+        flat: z.number(),
+    }).nullish(),
 });
 
 /**

@@ -13,6 +13,28 @@ import { openCheckout } from '../checkout.js';
 // live here listed five categories, so an Accents or Souvenir line
 // in the cart showed its raw slug
 import { categoryTitle } from '../taxonomy.js';
+import { site, hydrateNav } from '#lib/stores/site.svelte.js';
+import { SHIPPING_DEFAULTS } from '#shared/constants/index.js';
+
+/**
+ * The shop's shipping rule, or the shipped defaults until it arrives.
+ *
+ * Read at render time rather than captured once: /api/catalogue answers
+ * after the first paint, and renderCart() runs again when it does.
+ *
+ * This used to be `(subtotal - discount) >= 5000 ? 0 : 150` written into the
+ * total. Those two numbers happened to equal the defaults in
+ * store.settings(), so the page looked right — right up until the shop
+ * changed either of them in the panel, at which point the cart quoted the
+ * old figure and checkout charged the new one, because checkout has always
+ * computed this from the settings row (shippingFor in
+ * services/orders/checkout.js). The customer was told one price and billed
+ * another.
+ */
+const shippingRule = () => ({
+    freeAbove: Number(site.shipping?.freeAbove ?? SHIPPING_DEFAULTS.freeAbove),
+    flat: Number(site.shipping?.flat ?? SHIPPING_DEFAULTS.flat),
+});
 
 const cartContent = document.getElementById('cartContent');
 const cartItemCount = document.getElementById('cartItemCount');
@@ -51,7 +73,11 @@ function renderCart() {
         subtotal += parsePrice(item.price) * (item.qty || 1);
     });
     const discount = coupon ? Math.min(coupon.discount, subtotal) : 0;
-    const shipping = (subtotal - discount) >= 5000 ? 0 : 150;
+    const rule = shippingRule();
+    // Charged on what is actually paid, so a coupon that takes the order
+    // under the threshold reinstates the fee — the same order of operations
+    // the server uses.
+    const shipping = (subtotal - discount) >= rule.freeAbove ? 0 : rule.flat;
     const total = subtotal - discount + shipping;
 
     let itemsHtml = '';
@@ -120,7 +146,7 @@ function renderCart() {
                         <polyline points="12 5 19 12 12 19"></polyline>
                     </svg>
                 </button>
-                <p class="cart-summary-note">Free shipping above ₹ 5,000 · 7-day returns</p>
+                <p class="cart-summary-note">Free shipping above ₹ ${rule.freeAbove.toLocaleString('en-IN')} · 7-day returns</p>
                 <a href="/pages/collection.html" class="cart-continue">Continue Shopping</a>
             </aside>
         </div>`;
@@ -141,6 +167,12 @@ function renderCart() {
                 updateCartQty(cat, idx, item.qty - 1, variant);
                 qtyVal.textContent = item.qty - 1;
                 renderCart();
+
+// Paint immediately with the shipped defaults, then correct the shipping
+// line once /api/nav answers with what the shop actually charges. Without
+// this the page would keep the fallback for the life of the visit: the cart
+// is not in CATALOGUE_ROUTES, so nothing else on it re-renders.
+hydrateNav().then(renderCart).catch(() => { /* the fallback already showed */ });
             }
         });
 

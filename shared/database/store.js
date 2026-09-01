@@ -17,6 +17,7 @@
  */
 
 import { scryptSync, randomBytes, timingSafeEqual } from 'node:crypto';
+import { SHIPPING_DEFAULTS } from '#shared/constants/index.js';
 
 /* ---------- per-request handle ---------- */
 
@@ -113,8 +114,8 @@ export class Store {
     return {
       storeName: 'Vayu',
       currency: 'INR',
-      freeShippingAbove: 5000,
-      shippingFlat: 150,
+      freeShippingAbove: SHIPPING_DEFAULTS.freeAbove,
+      shippingFlat: SHIPPING_DEFAULTS.flat,
       lowStockThreshold: 5,
       zones: [],
       payment: { provider: 'cod', razorpayKeyId: '', razorpayKeySecret: '' },
