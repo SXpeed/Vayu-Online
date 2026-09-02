@@ -231,16 +231,21 @@
   --page-max: 100%;
   /* Proportional rather than fixed, so the framing holds its share of the
      screen at every resolution instead of shrinking away on wide displays.
-     5% a side leaves the content 90% of the viewport: ~1728px at 1920. */
-  --page-pad: 5%;
+     7% a side leaves the content 86% of the viewport: ~1651px at 1920,
+     ~1238px at 1440. Widened from 5% to bring the product page’s two
+     columns closer together — the gutter is the only horizontal space on
+     any page, so narrowing the column is how they are pulled in. */
+  --page-pad: 7%;
   /* The same gutter, re-expressed for an element INSIDE the padded column.
      A percentage margin on a child resolves against the CHILD's containing
-     block — the content box, which is 90% of the page — while --page-pad
-     resolved against the full page width. So `margin-left: -5%` on a child
-     undershoots by a tenth and leaves a visible sliver. One gutter is
-     5/90 = 1/18 of the child's own width, which is what this is.
-     Derived from --page-pad: if that 5% ever changes, change this too. */
-  --page-pad-breakout: calc(100% / 18);
+     block — the content box, which is 86% of the page — while --page-pad
+     resolved against the full page width. So `margin-left: -7%` on a child
+     buys only 6.02% of the page against the 7% it has to cover, falling a
+     seventh of a gutter short and leaving a visible sliver. One gutter is
+     7/86 of the child's own width, which is what this is.
+     Derived from --page-pad: if that 7% ever changes, change this too —
+     the ratio is pad/(100 - 2*pad), not a constant. */
+  --page-pad-breakout: calc(100% * 7 / 86);
 
   /* Measured header height, republished by script.js. The fallback is the
      real desktop bar height (64px = 48px logo line box + 2x8px .nav

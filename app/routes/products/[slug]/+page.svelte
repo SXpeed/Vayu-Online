@@ -462,7 +462,7 @@
        Wider than that, the info column is pinned to its measure and the
        photograph takes the rest — see the min-width rule below. */
     grid-template-columns: 1fr 1fr;
-    gap: 64px;
+    gap: 60px;
     margin: 8px 0 60px;
     align-items: start;
   }
@@ -515,6 +515,40 @@
     height: 100%;
     object-fit: cover;
     display: block;
+  }
+
+  /* Above 1024px the photograph is shown WHOLE, whatever shape it is.
+
+     `cover` above fills the 1/1 box by cropping. That is invisible on a
+     square original and quietly takes the top and bottom off a landscape
+     one; the shop cannot always reshoot, so the box gives rather than the
+     picture. `contain` fits the long edge and centres what is left.
+
+     This has to sit AFTER the rule it overrides, not in the media block
+     further up that caps .pd-gallery. Both selectors are `.pd-main img`,
+     a media query adds no specificity, and the tie is broken on source
+     order — written above, `contain` loses to `cover` and the picture is
+     still cropped. It was, until this was measured in the browser.
+
+     The box keeps `aspect-ratio: 1 / 1` rather than collapsing onto the
+     image. The square is what holds the column height still, so the info
+     panel offset lands in the same place on every product and nothing
+     reflows as the image decodes.
+
+     The letterboxing costs nothing to look at: .pd-main is #fff and so is
+     body, so the reserved space is the same white as the page and the
+     photograph reads as floating in the column rather than as a picture
+     with bars. If either background stops being #fff the bands become
+     visible, and the two have to be decided together.
+
+     Desktop only, as asked — below 1024px the square crop still applies.
+     The thumbnails keep `cover` on purpose: they are 64px navigation
+     chips, and fitting a landscape frame inside one leaves a stripe too
+     small to read. */
+  @media (min-width: 1024px) {
+    .pd-main img {
+      object-fit: contain;
+    }
   }
 
   .pd-thumbs {
