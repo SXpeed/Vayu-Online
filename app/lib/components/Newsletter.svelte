@@ -87,11 +87,15 @@
   input {
     flex: 1;
     max-width: 280px;
-    padding: 12px 14px;
+    /* 16px because Safari on iOS zooms a focused field under it and
+       does not zoom back; the height comes off the leading and padding
+       instead, so the box is shorter than the 47px it was. */
+    padding: 8px 12px;
     border: 1px solid #c9c0ae !important;
     border-radius: 2px;
     font: inherit;
-    font-size: 13px;
+    font-size: 16px;
+    line-height: 1.35;
     color: #141210;
     background: #fff;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
