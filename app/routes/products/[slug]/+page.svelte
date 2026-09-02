@@ -456,6 +456,37 @@
 </main>
 
 <style>
+  /* The row is two fixed things and a gap, and the PAGE GUTTER takes up
+     whatever is left over.
+
+     It used to be the other way round: the gallery column was `1fr`, so it
+     swallowed all the slack and the photograph — capped — sat stranded at
+     its left. The distance between photograph and panel therefore grew
+     with the window: a measured 60px at 1440px, 406px at 1900px and 974px
+     at 2560px. The gap declaration was never what moved; the column was.
+
+     Now the two columns are sized quantities and the leftover goes to the
+     gutter instead, so the space between photograph and panel is the 60px
+     gap at every width, and what changes with the window is the margin at
+     the sides. --page-pad is overridden here rather than on :root so this
+     is the product page’s business alone, and because the breadcrumb and
+     the related row live in the same .wrap, they narrow with the
+     photograph and stay aligned to it.
+
+     The 7% floor is the global --page-pad from styles.css. It is written
+     out because a custom property cannot refer to the value it is
+     replacing; if that token changes, change this with it. */
+  @media (min-width: 1024px) {
+    .product-page {
+      --pd-photo: calc(100vh - var(--hdr-h, 64px) - 72px);
+      --pd-panel: clamp(440px, 40vw, 500px);
+      --page-pad: max(
+        7%,
+        calc((100% - (var(--pd-photo) + 60px + var(--pd-panel))) / 2)
+      );
+    }
+  }
+
   .pd {
     display: grid;
     /* Even halves below 1024px, where each column lands near 460px anyway.
@@ -472,22 +503,35 @@
     top: calc(var(--hdr-h, 58px) + 16px);
   }
 
-  /* The photograph is capped rather than left to fill its column.
-     .pd-main is a 1/1 box, so the column's width IS the image's height: at
-     1440px the gallery half came to ~680px and the picture was a 680px
-     square, tall enough that the name and the price beside it sat alone
-     against a long edge. Capping the width shortens the image in both
-     directions at once, and the width the cap gives up falls between the
-     two columns — which is the separation this pairs with the wider gap to
-     get. Only above 1024px: below it the column is already narrower than
-     this and the cap would do nothing. */
+  /* How big the photograph is allowed to get.
+
+     It used to be a flat `max-width: 728px`. The trouble with a fixed cap
+     is that the gallery column is `1fr` — it takes everything the panel
+     and the gutter leave — so past about 1500px the picture stopped
+     growing while its column kept going, and it sat stranded at the left
+     of a column far wider than itself. Measured: 346px of dead space at
+     1900px and 914px at 2560px, sitting between the photograph and the
+     panel. The declared 60px gap was correct and invisible underneath it;
+     what read as "a huge gap" was the cap.
+
+     So the picture takes its column now, bounded by the height it may
+     occupy rather than by a magic width. .pd-main is a 1/1 box, so a cap
+     on width IS a cap on height — this is a height budget wearing a
+     width’s clothes, which is why it is expressed against 100vh.
+
+     The budget is the viewport less the header and a margin, which leaves
+     the photograph stopping a little short of the panel’s last row rather
+     than running past it. `min()` with 100% keeps the column the hard
+     limit: on a 1440px screen the column is 678px, narrower than the
+     budget, and nothing about this changes what was there before.
+
+     Tied to the viewport rather than to the panel’s measured height
+     because the gallery is `position: sticky` — it is the viewport this
+     column has to live inside, and a photograph taller than the window
+     cannot stick to anything useful. */
   @media (min-width: 1024px) {
     .pd-gallery {
-      /* 728 = 560 + 30%. The cap only binds from about 1400px up; below
-         that the row is too narrow to reach it and the photograph simply
-         takes what the row has, which is still more than it had before —
-         see the info column below, which is what freed the width. */
-      max-width: 728px;
+      max-width: min(100%, var(--pd-photo));
     }
   }
 
@@ -992,7 +1036,7 @@
 
          The lower bound and the 40vw track are unchanged, so nothing moves
          on the narrow end where the panel already needs every pixel. */
-      grid-template-columns: minmax(0, 1fr) clamp(440px, 40vw, 500px);
+      grid-template-columns: minmax(0, 1fr) var(--pd-panel);
     }
   }
 
