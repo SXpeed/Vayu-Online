@@ -18,6 +18,7 @@ import * as admin from './admin.js';
 const EXACT = {
     'POST /api/newsletter': pub.newsletter,
     'POST /api/notify-me': pub.notifyMe,
+    'POST /api/inquiry': pub.inquiry,
     'POST /api/track': pub.track,
     'POST /api/coupon/validate': pub.couponValidate,
     'POST /api/checkout': pub.checkout,
@@ -72,6 +73,7 @@ const SECTION = {
     'POST /api/admin/team': admin.teamMember,
     'PUT /api/admin/team': admin.teamMember,
     'PUT /api/admin/orders': admin.orderUpdate,
+    'PUT /api/admin/inquiries': admin.inquiryUpdate,
     'PUT /api/admin/settings': admin.settings,
     'POST /api/admin/settings': admin.settings,
 };

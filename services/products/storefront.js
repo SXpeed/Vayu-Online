@@ -12,7 +12,7 @@
 
 import { json, ok, badRequest, notFound, parseCookies } from '#shared/utils/http.js';
 import { now, today } from '#shared/database/store.js';
-import { currentCustomer, CUSTOMER_COOKIE } from '#services/auth/sessions.js';
+import { currentCustomer, CUSTOMER_COOKIE, createThrottle } from '#services/auth/sessions.js';
 import {
   loadProducts, loadCategories, toLegacyCatalogue, toLegacyTaxonomy,
   productById, productByCatIdx, sweepScheduled, loadShippingPresets,
@@ -517,5 +517,110 @@ export async function newsletter({ store, body }) {
     `INSERT INTO subscribers (email, t, source) VALUES (?, ?, 'footer') ON CONFLICT (email) DO NOTHING`,
     email, now(),
   );
+  return ok();
+}
+
+/* ---------- price-on-inquiry enquiries ---------- */
+
+/**
+ * Per-isolate, and therefore not a hard cap — the same caveat the sign-in
+ * throttle carries. It is not trying to stop a determined flood (the WAF
+ * rate-limit rule at the zone is what does that); it is stopping a stuck
+ * submit button, a double tap and a bored visitor from filling the panel
+ * with the same enquiry forty times over.
+ */
+const inquiryThrottle = createThrottle({ windowMs: 15 * 60 * 1000, maxFailures: 6 });
+
+/**
+ * Trim, cap, and drop the control characters a pasted signature carries.
+ *
+ * `multiline` is what separates the message from every other field. \n and
+ * \r are control characters, so stripping the class wholesale flattens a
+ * message written in paragraphs into one run-on line — and the message is
+ * the field most likely to have been written in paragraphs. Line endings
+ * are normalised to \n there rather than kept, so a Windows browser and a
+ * phone store the same text; three or more blank lines collapse to two, so
+ * a pasted signature cannot push the reply out of the panel's view.
+ */
+const cleanField = (v, max, { multiline = false } = {}) => {
+  const stripped = multiline
+    ? String(v ?? '')
+      .replaceAll(/\r\n?/g, '\n')
+      .replaceAll(/[^\S\n]*\n/g, '\n')
+      .replaceAll(/\n{3,}/g, '\n\n')
+      // A callback rather than the `v` flag's set difference: this has to
+      // run in workerd as well as in Node, and a replacement function is
+      // the form that has always been available in both.
+      .replaceAll(/\p{Cc}/gu, (c) => (c === '\n' ? c : ' '))
+    : String(v ?? '').replaceAll(/\p{Cc}/gu, ' ');
+  return stripped.trim().slice(0, max);
+};
+
+/**
+ * "Ask about this piece" — the form that stands where Add to Cart stands on
+ * a product sold at a price on request.
+ *
+ * Either an email or a phone number will do, and that is deliberate rather
+ * than lax: a good part of this shop's enquiries come from people who will
+ * give a number and never an address, and demanding both is how a lead is
+ * lost at the last field. The pair is what the panel replies on, so at
+ * least one of them has to be there.
+ *
+ * The product is recorded by id AND by name. The id is the live link the
+ * panel follows; the name is a snapshot, so an enquiry still says what it
+ * was about after the piece is renamed or deleted (see migration 0023).
+ */
+export async function inquiry({ store, body, request }) {
+  if (inquiryThrottle.blocked(request)) {
+    return json(429, {
+      error: `Too many enquiries just now. Try again in ${inquiryThrottle.retryAfterMinutes} minutes.`,
+    });
+  }
+
+  const product = await productById(store, String(body.productId || ''));
+  if (!product) return notFound('Product not found');
+  // Draft and archived pieces are not on the storefront at all, so an
+  // enquiry about one did not come from a page anybody was shown.
+  if (product.status !== 'active') return badRequest('That piece is not available');
+
+  const name = cleanField(body.name, 120);
+  const email = cleanField(body.email, 254).toLowerCase();
+  const phone = cleanField(body.phone, 32);
+  const message = cleanField(body.message, 2000, { multiline: true });
+  const variant = cleanField(body.variant, 200);
+
+  if (!name) return badRequest('Please tell us your name');
+  if (!email && !phone) return badRequest('Leave an email or a phone number so we can reply');
+  if (email && !EMAIL_RE.test(email)) return badRequest('Invalid email');
+
+  const id = await store.nextId('inq');
+  await store.run(
+    `INSERT INTO product_inquiries
+       (id, product_id, product_name, variant, name, email, phone, message, status, t)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'new', ?)`,
+    id, product.id, product.name, variant, name, email, phone, message, now(),
+  );
+  inquiryThrottle.noteFailure(request);
+
+  // The shop hears about it the way it hears about everything else: a row in
+  // the Outbox, drafted and ready to send. storeEmail is the only address
+  // this reaches — the enquirer is not emailed, because there is nothing to
+  // tell them yet beyond what the form already said on screen.
+  const settings = await store.settings();
+  await store.queueEmail(
+    settings.storeEmail,
+    `Vayu — enquiry about ${product.name}`,
+    [
+      `${name} asked about "${product.name}"${variant ? ` (${variant})` : ''}.`,
+      '',
+      email ? `Email: ${email}` : null,
+      phone ? `Phone: ${phone}` : null,
+      message ? `\n${message}` : null,
+      '',
+      'Reply from the Enquiries screen in the admin panel.',
+    ].filter(v => v !== null).join('\n'),
+    'inquiry',
+  );
+
   return ok();
 }

@@ -517,7 +517,7 @@ const EXPORTS = {
     return [
       [
         'id', 'name', 'slug', 'status', 'price', 'compareAt', 'sku',
-        'stock', 'sellableStock', 'isNew', 'categories', 'tags',
+        'stock', 'sellableStock', 'isNew', 'inquiryOnly', 'categories', 'tags',
         'description', 'care', 'dimensions', 'materials', 'shippingPreset',
         'img', 'gallery', 'options', 'variants',
         'metaTitle', 'metaDescription',
@@ -528,7 +528,7 @@ const EXPORTS = {
         // Both: `stock` is the column the product carries, `sellableStock`
         // is what the shop will actually sell — they differ for anything
         // with variants, and only the second one is the truth.
-        p.stock, totalStock(p), encodeBool(p.isNew),
+        p.stock, totalStock(p), encodeBool(p.isNew), encodeBool(p.inquiryOnly),
         encodeCategories(p.categories),
         encodeList(p.tags),
         p.description, p.care,
@@ -591,7 +591,7 @@ const BACKUP_TABLES = [
   // list is a table the download cannot restore, and nothing says so at the
   // time: the backup succeeds and is simply short. product_options and
   // product_option_values are still missing for that reason.
-  'press', 'artists', 'product_specs', 'shipping_presets',
+  'press', 'artists', 'product_specs', 'shipping_presets', 'product_inquiries',
   'activity', 'analytics_days', 'analytics_paths', 'analytics_products',
   'analytics_visitors', 'analytics_recent',
 ];

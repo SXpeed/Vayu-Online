@@ -89,6 +89,15 @@ async function resolveLine(store, it) {
   if (!product || product.status !== 'active') {
     return { error: `Item no longer available: ${it.name || '?'}` };
   }
+  // A piece sold at a price on request has no price to be sold at. The
+  // storefront gives it no Add to Cart button and no cart line, so one can
+  // only arrive here from a tab left open across the change, or from a
+  // hand-built request — and either way the `price` column is a guide
+  // figure the shop never quoted to anybody.
+  if (product.inquiryOnly) {
+    return { error: `"${product.name}" is sold on request — please use the enquiry form on its page` };
+  }
+
   const qty = Math.max(1, Number(it.qty) || 1);
 
   let price = product.price;

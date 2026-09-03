@@ -9,6 +9,7 @@
  *   lib/media.js     image optimisation and upload, file pickers
  *   lib/charts.js    inline-SVG bar/line charts and ranked bars
  *   views/catalog.js   products, categories, press, events
+ *   views/inquiries.js price-on-request enquiries
  *   views/sales.js     orders, customers, coupons
  *   views/insights.js  dashboard, analytics, activity, inventory, outbox
  *   views/site.js      content, curated spaces, team, settings
@@ -18,6 +19,7 @@ import { $, viewEl, esc } from './lib/dom.js';
 import { api, state, loadCategories } from './lib/api.js';
 import { renderProducts, renderCategories, renderPress, renderEvents } from './views/catalog.js';
 import { renderArtists } from './views/artists.js';
+import { renderInquiries } from './views/inquiries.js';
 import { renderOrders, renderCustomers, renderCoupons } from './views/sales.js';
 import { renderDashboard, renderAnalytics, renderActivity, renderInventory, renderOutbox } from './views/insights.js';
 import { renderContent, renderCuratedSpaces, renderTeam, renderSettings } from './views/site.js';
@@ -30,6 +32,7 @@ const VIEWS = {
     categories: { title: 'Categories', render: renderCategories },
     coupons: { title: 'Coupons', render: renderCoupons },
     orders: { title: 'Orders', render: renderOrders },
+    inquiries: { title: 'Enquiries', render: renderInquiries },
     customers: { title: 'Customers', render: renderCustomers },
     inventory: { title: 'Inventory', render: renderInventory },
     events: { title: 'What’s On', render: renderEvents },

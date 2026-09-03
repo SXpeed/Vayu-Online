@@ -34,7 +34,20 @@
     image: p.gallery.map(g => new URL(g, seo.origin).href),
     sku: p.sku || undefined,
     brand: { '@type': 'Brand', name: 'Vayu' },
-    offers: {
+    // A piece sold on request carries NO Offer.
+    //
+    // An Offer is a statement that this thing may be bought at this price,
+    // and there is no price here to state. The tempting alternatives are
+    // both worse: publishing the shop's internal guide figure quotes a
+    // number nobody agreed to, and an Offer with the price omitted is an
+    // invalid Offer that Google reports as an error against the whole page.
+    //
+    // The cost is that this product is not eligible for the price-bearing
+    // rich result, which is correct — it has no price to show. The Product
+    // markup itself (name, image, description, brand, sku) stays, so the
+    // piece is still understood, still indexed and still eligible for
+    // everything that does not depend on an offer.
+    offers: p.inquiryOnly ? undefined : {
       '@type': 'Offer',
       url: seo.canonical,
       priceCurrency: commerce.currency,
@@ -138,11 +151,22 @@
     options.length ? (variant?.stock ?? 0) > 0 : p.inStock,
   );
 
-  /** The variant's own price when it overrides, else the product's. */
+  /**
+   * The variant's own price when it overrides, else the product's.
+   *
+   * inquiryOnly wins over both. A piece can be sold on request AND still
+   * have colours and sizes to choose between — a commission in three
+   * finishes — and its variant rows keep whatever prices were typed against
+   * them. Without this guard, picking a size would replace "Price on
+   * request" with a number, which is the one thing this product must never
+   * print.
+   */
   const shownPrice = $derived(
-    variant && variant.price != null
-      ? '₹ ' + Number(variant.price).toLocaleString('en-IN')
-      : p.priceLabel,
+    p.inquiryOnly
+      ? p.priceLabel
+      : (variant && variant.price != null
+        ? '₹ ' + Number(variant.price).toLocaleString('en-IN')
+        : p.priceLabel),
   );
 
   const reachable = (option) => availableValues(p, option, chosen);
@@ -216,6 +240,80 @@
     showToast?.(p.name + ' added to cart');
   }
 
+  /* ---------- enquiry (pieces sold at a price on request) ---------- */
+
+  let asking = $state(false);
+  let sending = $state(false);
+  let enqNote = $state('');
+  let enqError = $state(false);
+  let enq = $state({ name: '', email: '', phone: '', message: '' });
+
+  /**
+   * What the shopper had chosen, in words.
+   *
+   * The combo key ("Colour=Natural|Size=L") is an internal address and is
+   * no use to whoever reads the enquiry, so the chosen values are sent as
+   * the variant's own label where there is one and as the picks themselves
+   * where there is not. An enquiry that does not say which finish was being
+   * looked at is an enquiry that has to be answered with a question.
+   */
+  const enqVariant = () => variant?.label
+    || options.map(o => chosen[o.name]).filter(Boolean).join(' / ');
+
+  async function sendEnquiry(event) {
+    event.preventDefault();
+    if (sending) return;
+
+    // Checked here as well as on the server, because the server's refusal
+    // costs a round trip and arrives as a sentence about a field the
+    // shopper can no longer see on a phone.
+    if (!enq.name.trim()) {
+      enqError = true;
+      enqNote = 'Please tell us your name.';
+      return;
+    }
+    if (!enq.email.trim() && !enq.phone.trim()) {
+      enqError = true;
+      enqNote = 'Leave an email or a phone number so we can reply.';
+      return;
+    }
+
+    sending = true;
+    enqError = false;
+    enqNote = '';
+    try {
+      const res = await fetch('/api/inquiry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId: p.id,
+          name: enq.name.trim(),
+          email: enq.email.trim(),
+          phone: enq.phone.trim(),
+          message: enq.message.trim(),
+          variant: enqVariant(),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        // The form is replaced by its own confirmation rather than cleared
+        // and left open: an empty form after a send reads as a send that
+        // did not happen, which is how the same enquiry arrives three times.
+        asking = false;
+        enq = { name: '', email: '', phone: '', message: '' };
+        showToast?.('Thank you — we will be in touch shortly.');
+      } else {
+        enqError = true;
+        enqNote = data.error || 'Could not send that just now.';
+      }
+    } catch {
+      enqError = true;
+      enqNote = 'Could not send that just now.';
+    } finally {
+      sending = false;
+    }
+  }
+
   onMount(() => {});
 </script>
 
@@ -230,8 +328,13 @@
   <meta property="og:description" content={seo.description} />
   <meta property="og:url" content={seo.canonical} />
   {#if seo.image}<meta property="og:image" content={seo.image} />{/if}
-  <meta property="product:price:amount" content={String(p.price)} />
-  <meta property="product:price:currency" content="INR" />
+  <!-- No price tags on a piece sold on request. An og:price of "null" or of
+       the shop's internal guide figure is worse than none: it is what a
+       link preview prints, and it would be quoting a number nobody set. -->
+  {#if !p.inquiryOnly}
+    <meta property="product:price:amount" content={String(p.price)} />
+    <meta property="product:price:currency" content="INR" />
+  {/if}
   <meta property="product:availability" content={p.inStock ? 'in stock' : 'out of stock'} />
 
   <meta name="twitter:card" content="summary_large_image" />
@@ -323,10 +426,75 @@
 
       {#if options.length && !resolved}
         <p class="pd-stock">Choose {options.filter(o => !chosen[o.name]).map(o => o.name).join(' and ')}</p>
-      {:else if !canBuy}
+      {:else if !canBuy && !p.inquiryOnly}
+        <!-- Not on a piece sold on request. There is nothing to be out of:
+             it is made or sourced when it is asked for, and "Out of stock"
+             beside an enquiry form reads as "do not bother asking". -->
         <p class="pd-stock is-out">Out of stock</p>
       {/if}
 
+      {#if p.inquiryOnly}
+        <!-- The enquiry, in place of the cart.
+             Closed by default and opened by a button rather than printed
+             open: the panel's job at rest is still to show the piece, and a
+             four-field form under the title turns the page into a form with
+             a photograph attached. -->
+        <div class="pd-actions">
+          <button class="pd-add" onclick={() => (asking = !asking)} aria-expanded={asking} aria-controls="pd-enquiry">
+            {asking ? 'Close' : 'Enquire about this piece'}
+          </button>
+        </div>
+
+        {#if asking}
+          <form id="pd-enquiry" class="pd-enq" onsubmit={sendEnquiry} novalidate>
+            <p class="pd-enq-lede">
+              Tell us how to reach you and we will come back with a price and
+              what is possible.
+            </p>
+            <label class="pd-enq-field">
+              <span>Your name</span>
+              <input bind:value={enq.name} name="name" autocomplete="name" required />
+            </label>
+            <div class="pd-enq-pair">
+              <label class="pd-enq-field">
+                <span>Email</span>
+                <input bind:value={enq.email} name="email" type="email" autocomplete="email" />
+              </label>
+              <label class="pd-enq-field">
+                <span>Phone</span>
+                <input bind:value={enq.phone} name="phone" type="tel" autocomplete="tel" />
+              </label>
+            </div>
+            <!-- Said once, plainly, rather than marking both fields optional
+                 and letting the shopper discover the rule by being refused. -->
+            <p class="pd-enq-hint">Either one is enough — whichever you would rather we used.</p>
+            <label class="pd-enq-field">
+              <span>Anything we should know</span>
+              <textarea bind:value={enq.message} name="message" rows="3"
+                placeholder="Sizes, finishes, when you need it…"></textarea>
+            </label>
+            <p class="pd-enq-note" class:is-err={enqError} aria-live="polite">{enqNote}</p>
+            <button class="pd-add" type="submit" disabled={sending}>
+              {sending ? 'Sending…' : 'Send enquiry'}
+            </button>
+          </form>
+        {/if}
+
+        <div class="pd-secondary">
+          <button
+            class="pd-wish"
+            class:is-wished={wished}
+            onclick={wish}
+            aria-pressed={wished}
+            aria-label={wished ? 'Remove from wishlist' : 'Add to wishlist'}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+            <span>{wished ? 'Saved' : 'Wishlist'}</span>
+          </button>
+        </div>
+      {:else}
       <div class="pd-actions">
         <div class="pd-qty">
           <button onclick={() => (qty = Math.max(1, qty - 1))} aria-label="Decrease quantity">−</button>
@@ -350,6 +518,7 @@
           <span>{wished ? 'Saved' : 'Wishlist'}</span>
         </button>
       </div>
+      {/if}
 
       {#if p.tags?.length}
         <!-- Below the accordions, not beside the title: these are how a piece
@@ -850,6 +1019,114 @@
 
   .pd-add:hover:not(:disabled) {
     background: var(--accent);
+  }
+
+  /* ---- the enquiry form, in place of the cart ----
+     Set on the page's own paper rather than in a bordered card: this is
+     the buy box of a price-on-request piece, not an aside, and a box drawn
+     around it would read as a separate thing bolted onto the panel.
+
+     Note the !important on the field borders. Section 15 of styles.css
+     forces `border-color: transparent !important` on *, *::before and
+     *::after, so any 1px border declared here resolves to invisible and
+     the form renders as unmarked white space — the same fault the checkout
+     fields had. A class selector out-specifies *, so these win rather than
+     merely tie. */
+  .pd-enq {
+    display: grid;
+    gap: 10px;
+    margin: 0 0 18px;
+    padding: 16px 16px 18px;
+    background: #FAF8F5;
+    border-radius: 2px;
+  }
+
+  .pd-enq-lede {
+    margin: 0;
+    font-family: 'Jost', sans-serif;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--body);
+  }
+
+  .pd-enq-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .pd-enq-field {
+    display: grid;
+    gap: 4px;
+  }
+
+  .pd-enq-field span {
+    font-family: 'Jost', sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--body);
+  }
+
+  .pd-enq-field input,
+  .pd-enq-field textarea {
+    padding: 9px 11px;
+    border: 1px solid #D8D1C2 !important;
+    border-radius: 2px;
+    background: #fff;
+    font: inherit;
+    /* 16px, not 14: Safari on iOS zooms the page when a focused field is
+       smaller than that, and does not zoom back out on blur — the shopper
+       is left scrolled sideways, mid-form. The same reason the checkout
+       fields carry it. */
+    font-size: 16px;
+    line-height: 1.35;
+    color: var(--ink);
+  }
+
+  .pd-enq-field textarea {
+    resize: vertical;
+    min-height: 68px;
+  }
+
+  .pd-enq-field input:focus,
+  .pd-enq-field textarea:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+    border-color: var(--accent) !important;
+  }
+
+  .pd-enq-hint {
+    margin: -4px 0 0;
+    font-family: 'Jost', sans-serif;
+    font-size: 11.5px;
+    color: #8D887E;
+  }
+
+  /* Holds its line whether or not there is a message, so submitting does
+     not shunt the button down the page under the thumb about to press it. */
+  .pd-enq-note {
+    margin: 0;
+    min-height: 15px;
+    font-family: 'Jost', sans-serif;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--body);
+  }
+
+  .pd-enq-note.is-err {
+    color: #B03030;
+  }
+
+  .pd-enq .pd-add {
+    height: 40px;
+    justify-self: stretch;
+  }
+
+  @media (max-width: 520px) {
+    .pd-enq-pair {
+      grid-template-columns: 1fr;
+    }
   }
 
   /* Buy Now and Wishlist share a row rather than each taking a full-width

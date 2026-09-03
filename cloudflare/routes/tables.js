@@ -25,6 +25,7 @@ export const PUBLIC_ROUTES = {
   'GET /api/artists': storefront.artists,
   'POST /api/track': storefront.track,
   'POST /api/notify-me': storefront.notifyMe,
+  'POST /api/inquiry': storefront.inquiry,
   'POST /api/newsletter': storefront.newsletter,
   'POST /api/checkout': checkoutRoutes.checkout,
   'POST /api/checkout/confirm': checkoutRoutes.confirm,
@@ -49,6 +50,9 @@ export const ADMIN_ROUTES = {
   customers: { handler: sales.customers },
 
   products: { handler: catalog.products, role: 'manager' },
+  // Staff can read and answer enquiries — they are correspondence, not
+  // catalogue edits, and the person on the phone is rarely the manager.
+  inquiries: { handler: catalog.inquiries },
   categories: { handler: catalog.categories, role: 'manager' },
   press: { handler: catalog.press, role: 'manager' },
   events: { handler: catalog.events, role: 'manager' },

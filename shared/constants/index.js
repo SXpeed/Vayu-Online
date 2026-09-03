@@ -52,6 +52,21 @@ export const ORDER_STATUSES = ['new', 'processing', 'shipped', 'delivered', 'can
 
 export const PRODUCT_STATUSES = ['active', 'draft', 'archived'];
 
+/* ---------- price on inquiry ---------- */
+
+/**
+ * What stands where the price would be on a piece sold on request.
+ *
+ * Written once because it is rendered in six places — the tiles, the search
+ * panel, both product pages, the cart's refusal and the admin listing — and
+ * a shop that says "Price on request" in one and "POA" in another reads as
+ * two different shops.
+ */
+export const PRICE_ON_REQUEST = 'Price on request';
+
+/** How an enquiry moves through the panel. `new` is what the badge counts. */
+export const INQUIRY_STATUSES = ['new', 'contacted', 'closed'];
+
 /** Statuses that warrant a customer email when an order transitions to them. */
 export const EMAIL_ORDER_STATUSES = ['processing', 'shipped', 'delivered', 'cancelled'];
 

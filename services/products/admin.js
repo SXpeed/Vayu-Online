@@ -23,6 +23,7 @@ import {
 } from './catalogue.js';
 import { pressRow, eventRow, artistRow } from './storefront.js';
 import { slugFor } from '#shared/utils/slug.js';
+import { INQUIRY_STATUSES } from '#shared/constants/index.js';
 
 const PRODUCT_STATUSES = ['active', 'draft', 'archived'];
 const PLACEHOLDER_IMG = '/assets/images/cat_objects.png';
@@ -60,6 +61,11 @@ function sanitizeProduct(body, existing, knownCategories) {
     stock: Math.max(0, Math.round(Number(body.stock ?? p.stock) || 0)),
     status: PRODUCT_STATUSES.includes(body.status) ? body.status : (p.status || 'draft'),
     isNew: body.isNew != null ? !!body.isNew : !!p.isNew,
+    // Sold on request rather than at a printed number. `price` is left
+    // exactly as it is — the shop keeps a guide figure to read in the panel
+    // — because this flag is what decides whether anything shows or sells
+    // against it. See migration 0023.
+    inquiryOnly: body.inquiryOnly != null ? !!body.inquiryOnly : !!p.inquiryOnly,
     img: String(body.img ?? p.img ?? ''),
     gallery: Array.isArray(body.gallery) && body.gallery.length
       ? body.gallery.map(String) : (p.gallery || []),
@@ -208,24 +214,25 @@ async function writeProduct(store, id, data, { created = false } = {}) {
         `INSERT INTO products
           (id, name, description, price, compare_at, sku, stock, status, is_new, img,
            publish_at, care, shipping_preset, slug, meta_title, meta_description,
-           views, sold, sort_order, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0,
+           inquiry_only, views, sold, sort_order, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0,
                  (SELECT COALESCE(MIN(sort_order), 0) - 1 FROM products), ?, ?)`,
         id, data.name, data.description, data.price, data.compareAt, data.sku,
         data.stock, data.status, data.isNew ? 1 : 0, data.img, data.publishAt,
         data.care, data.shippingPreset || null, slug, metaTitle, metaDescription,
+        data.inquiryOnly ? 1 : 0,
         stamp, stamp,
       )
       : store.stmt(
         `UPDATE products SET name = ?, description = ?, price = ?, compare_at = ?, sku = ?,
                 stock = ?, status = ?, is_new = ?, img = ?, publish_at = ?,
                 care = ?, shipping_preset = ?, slug = ?, meta_title = ?,
-                meta_description = ?, updated_at = ?
+                meta_description = ?, inquiry_only = ?, updated_at = ?
           WHERE id = ?`,
         data.name, data.description, data.price, data.compareAt, data.sku,
         data.stock, data.status, data.isNew ? 1 : 0, data.img, data.publishAt,
         data.care, data.shippingPreset || null, slug, metaTitle,
-        metaDescription, stamp, id,
+        metaDescription, data.inquiryOnly ? 1 : 0, stamp, id,
       ),
     store.stmt('DELETE FROM product_categories WHERE product_id = ?', id),
     store.stmt('DELETE FROM product_specs WHERE product_id = ?', id),
@@ -473,6 +480,8 @@ async function importProducts({ store, method, admin, body }) {
         ? get('status')
         : (current.status ?? 'draft'),
       isNew: has('isnew') ? decodeBool(get('isnew')) : !!current.isNew,
+      inquiryOnly: has('inquiryonly')
+        ? decodeBool(get('inquiryonly')) : !!current.inquiryOnly,
       img: firstImage || current.img || PLACEHOLDER_IMG,
       gallery: gallery && gallery.length
         ? gallery
@@ -1040,6 +1049,98 @@ export function artists(ctx) {
     async remove({ admin }, artist) {
       await store.remove('artists', 'id', artist.id);
       await store.logActivity(admin.name, 'artist.delete', `Removed "${artist.name}"`);
+      return ok();
+    },
+  });
+}
+
+/* ================= price-on-inquiry enquiries ================= */
+
+/**
+ * The enquiries left on pieces sold at a price on request.
+ *
+ * A left join, not a lookup per row: the product is what gives the panel a
+ * thumbnail and a link to open, but an enquiry outlives the piece it was
+ * about (ON DELETE SET NULL, migration 0023) — so `product_name` is the
+ * snapshot that keeps the row readable when the join finds nothing.
+ *
+ * Only the newest 500. This is a working queue, not an archive; the CSV
+ * export is where a shop that wants the lot goes.
+ */
+const INQUIRY_SELECT = `
+  SELECT i.*, p.img AS product_img, p.slug AS product_slug, p.status AS product_status
+    FROM product_inquiries i
+    LEFT JOIN products p ON p.id = i.product_id
+   ORDER BY i.t DESC
+   LIMIT 500`;
+
+const inquiryRow = (r) => ({
+  id: r.id,
+  productId: r.product_id || '',
+  productName: r.product_name || '',
+  productImg: r.product_img || '',
+  productSlug: r.product_slug || '',
+  productStatus: r.product_status || '',
+  variant: r.variant || '',
+  name: r.name || '',
+  email: r.email || '',
+  phone: r.phone || '',
+  message: r.message || '',
+  status: r.status || 'new',
+  notes: r.notes || '',
+  t: r.t,
+  handledAt: r.handled_at || null,
+});
+
+export function inquiries(ctx) {
+  const { store } = ctx;
+
+  return resource(ctx, {
+    notFound: 'Enquiry not found',
+    find: (id) => store.row('product_inquiries', 'id', id),
+
+    async list() {
+      const rows = await store.all(INQUIRY_SELECT);
+      return json(200, {
+        inquiries: rows.map(inquiryRow),
+        // The sidebar badge. Counted over the whole table rather than over
+        // the 500 rows above, or a shop that let them pile up would see the
+        // number stop climbing at some arbitrary point.
+        newCount: await store.value(
+          `SELECT COUNT(*) FROM product_inquiries WHERE status = 'new'`),
+      });
+    },
+
+    /**
+     * Move an enquiry along, and keep whatever was learned on the phone.
+     *
+     * `handled_at` is stamped the first time it leaves 'new' and then left
+     * alone: it answers "how long did this sit before anyone replied", which
+     * a later edit to the notes must not quietly reset.
+     */
+    async update({ admin, body }, row) {
+      const status = INQUIRY_STATUSES.includes(body.status) ? body.status : row.status;
+      const notes = body.notes === undefined
+        ? row.notes : String(body.notes ?? '').trim().slice(0, 2000);
+
+      await store.update('product_inquiries', 'id', row.id, {
+        status,
+        notes,
+        handled_at: row.handled_at || (status === 'new' ? null : now()),
+      });
+      await store.logActivity(
+        admin.name, 'inquiry.update',
+        `Enquiry from ${row.name} about "${row.product_name}" → ${status}`,
+      );
+      return json(200, { inquiry: inquiryRow(await store.row('product_inquiries', 'id', row.id)) });
+    },
+
+    async remove({ admin }, row) {
+      await store.remove('product_inquiries', 'id', row.id);
+      await store.logActivity(
+        admin.name, 'inquiry.delete',
+        `Deleted enquiry from ${row.name} about "${row.product_name}"`,
+      );
       return ok();
     },
   });

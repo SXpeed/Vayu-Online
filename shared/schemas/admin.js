@@ -40,6 +40,9 @@ export const product = z.object({
     img: text(400).optional(),
     sub: text(64).optional(),
     isNew: z.boolean().optional(),
+    // "Price on request". `price` stays required beside it — the shop keeps
+    // a guide figure on the row whether or not the storefront shows one.
+    inquiryOnly: z.boolean().optional(),
     status: z.enum(['active', 'draft', 'archived']).optional(),
     stock: z.number().int().min(0).max(1_000_000).optional(),
     publishAt: text(40).nullable().optional(),
@@ -352,6 +355,19 @@ export const orderUpdate = z.object({
     city: text(120).optional(),
     pin: text(20).optional(),
     note: text(300).optional(),
+});
+
+/**
+ * Answering an enquiry left on a price-on-request piece.
+ *
+ * Only the two fields the panel owns. Everything else on the row — who
+ * asked, what they asked about, their email and phone, when it arrived —
+ * was written by the visitor and is evidence: the panel reads it and never
+ * edits it, so there is nothing here to send it back with.
+ */
+export const inquiryUpdate = z.object({
+    status: z.enum(['new', 'contacted', 'closed']).optional(),
+    notes: text(2000).optional(),
 });
 
 export const teamMember = z.object({

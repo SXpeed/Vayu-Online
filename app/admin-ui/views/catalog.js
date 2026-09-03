@@ -29,6 +29,24 @@ function optionSummary(p) {
     return p.variants?.length ? `${p.variants.length} option(s)` : '';
 }
 
+/**
+ * The price column.
+ *
+ * A piece sold on request leads with the words the shopper sees, and shows
+ * the stored number underneath as a guide — greyed and labelled, because it
+ * is the shop's own working figure and is never quoted anywhere. Dropping
+ * it entirely would be worse: the number is still what a bulk price
+ * adjustment moves, and a column that showed nothing would hide that.
+ */
+function priceCell(p) {
+    if (p.inquiryOnly) {
+        return `<span>On request</span>
+            <div class="meta" title="Not shown on the storefront">guide ${money(p.price)}</div>`;
+    }
+    return money(p.price) + (p.compareAt
+        ? `<div class="meta" style="text-decoration:line-through">${money(p.compareAt)}</div>` : '');
+}
+
 function productRow(p, lowStockAt, selected) {
     const stock = stockOf(p);
     const scheduled = p.publishAt && p.status === 'draft'
@@ -45,7 +63,7 @@ function productRow(p, lowStockAt, selected) {
             <td><div class="prod-cell"><img class="thumb" src="${esc(p.img)}" alt="">
                 <div><div class="nm">${esc(p.name)}</div><div class="meta">${meta}</div></div></div></td>
             <td>${p.categories.map(c => `<span class="chip">${esc(catTitle(c.cat))}${c.sub ? ' / ' + esc(slugToLabel(c.sub)) : ''}</span>`).join('')}</td>
-            <td class="num">${money(p.price)}${p.compareAt ? `<div class="meta" style="text-decoration:line-through">${money(p.compareAt)}</div>` : ''}</td>
+            <td class="num">${priceCell(p)}</td>
             <td class="num ${stock <= lowStockAt ? 'stock-low' : ''}">${stock}</td>
             <td class="num">${p.views || 0}</td>
             <td class="num">${p.sold || 0}</td>
@@ -222,7 +240,7 @@ export async function renderProducts() {
 
 const BLANK_PRODUCT = {
     name: '', description: '', price: '', compareAt: '', sku: '', stock: 10,
-    status: 'active', isNew: true, img: '', gallery: [], categories: [],
+    status: 'active', isNew: true, inquiryOnly: false, img: '', gallery: [], categories: [],
     tags: [], variants: [], options: [], publishAt: null,
     care: '', dimensions: [], materials: [], shippingPreset: '',
     slug: '', metaTitle: '', metaDescription: '',
@@ -256,6 +274,11 @@ export function productEditor(prod, shippingPresets = []) {
                 <div class="help">The first section of the product page's accordion. Empty hides it.</div></div>
             <div class="field"><label>Price (₹)</label><input id="p-price" type="number" min="0" value="${p.price}"></div>
             <div class="field"><label>Compare-at price (₹)</label><input id="p-compare" type="number" min="0" value="${p.compareAt ?? ''}" placeholder="optional"></div>
+            <div class="field full"><label>Selling</label>
+                <label style="text-transform:none;letter-spacing:0;font-size:14px;display:flex;gap:8px;align-items:center;margin-top:8px">
+                    <input type="checkbox" id="p-inquiry" ${p.inquiryOnly ? 'checked' : ''} style="width:auto">
+                    Price on request &mdash; for pieces quoted rather than listed</label>
+                <div class="help" id="p-inquiry-note"></div></div>
             <div class="field"><label>SKU</label><input id="p-sku" value="${esc(p.sku)}"></div>
             <div class="field"><label>Stock</label><input id="p-stock" type="number" min="0" value="${p.stock}">
                 <div class="help" id="p-stock-note"></div></div>
@@ -332,6 +355,29 @@ export function productEditor(prod, shippingPresets = []) {
         onChange: syncStockField,
     });
 
+    /* ---- price on request ---- */
+    /**
+     * Say what the two price fields still mean once this is ticked.
+     *
+     * They are NOT disabled, unlike Stock above, and the difference is the
+     * point: stock stops being read when options exist, whereas the price
+     * here goes on being stored, exported and moved by a bulk adjustment —
+     * it simply stops being shown or sold against. Greying it out would
+     * claim it had been switched off, which is a harder thing to un-learn
+     * than a sentence explaining what happens.
+     */
+    const syncInquiryNote = () => {
+        const on = $('#p-inquiry', modal).checked;
+        $('#p-inquiry-note', modal).innerHTML = on
+            ? 'The product page shows <b>Price on request</b> instead of the price, '
+              + 'and an enquiry form in place of Add to Cart and Buy Now. Replies land '
+              + 'under Enquiries. The price above is kept as your own guide figure and '
+              + 'is never shown to a shopper &mdash; a compare-at price is ignored entirely.'
+            : '';
+    };
+    $('#p-inquiry', modal).addEventListener('change', syncInquiryNote);
+    syncInquiryNote();
+
     /* ---- dimensions, materials, care, shipping ---- */
     const detailsEditor = mountDetailsEditor($('#p-details', modal), p, shippingPresets);
 
@@ -396,6 +442,7 @@ export function productEditor(prod, shippingPresets = []) {
             stock: Number($('#p-stock', modal).value),
             status: $('#p-status', modal).value,
             isNew: $('#p-new', modal).checked,
+            inquiryOnly: $('#p-inquiry', modal).checked,
             img: gallery[0] || '',
             gallery,
             categories: cats,

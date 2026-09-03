@@ -106,15 +106,49 @@ export default async function initCollectionDetail() {
             }).join('');
         }
 
-        // Extract numeric price from formatted string (e.g. "₹ 3,200" → 3200)
-        const parsePrice = (str) => Number(str.replace(/[^\d]/g, '')) || 0;
+        /**
+         * The number a piece sorts and filters on, or null when it has none.
+         *
+         * `priceValue` rather than parsing the label: /api/catalogue sends
+         * both, and a piece sold at a price on request carries the words
+         * "Price on request" in `price` and null in `priceValue`. Stripping
+         * the non-digits out of those words yields 0 — which sorted every
+         * commission to the top of Price: low to high and filed it under
+         * "Under ₹5,000", the two places it least belongs.
+         *
+         * The fallback keeps the static catalogue working: its products
+         * predate priceValue and carry only the formatted string.
+         */
+        const priceOf = (p) => {
+            if (p.inquiryOnly) return null;
+            if (typeof p.priceValue === 'number') return p.priceValue;
+            const n = Number(String(p.price).replace(/[^\d]/g, ''));
+            return Number.isFinite(n) && n > 0 ? n : null;
+        };
 
-        // Sort comparators keyed by the data-sort attribute
+        /**
+         * Sort comparators keyed by the data-sort attribute.
+         *
+         * A piece with no price goes to the end of BOTH price sorts rather
+         * than to opposite ends of each — it is not the cheapest thing in
+         * the collection and it is not the dearest, it is simply not in the
+         * ordering, and the shopper who asked to see prices low to high
+         * should reach the priced pieces first either way.
+         */
+        const byPrice = (a, b, dir) => {
+            const x = priceOf(a);
+            const y = priceOf(b);
+            if (x === null && y === null) return 0;
+            if (x === null) return 1;
+            if (y === null) return -1;
+            return dir * (x - y);
+        };
+
         const sortComparators = {
             'featured': () => 0,
             'new-arrivals': (a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0),
-            'price-asc': (a, b) => parsePrice(a.price) - parsePrice(b.price),
-            'price-desc': (a, b) => parsePrice(b.price) - parsePrice(a.price)
+            'price-asc': (a, b) => byPrice(a, b, 1),
+            'price-desc': (a, b) => byPrice(a, b, -1)
         };
 
         const emptyStateHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 80px 16px; color: var(--body); font-family: 'Jost', sans-serif; font-size: 14px; letter-spacing: 0.04em;">No pieces listed yet in this collection.<br>New arrivals coming soon.</div>`;
@@ -126,12 +160,15 @@ export default async function initCollectionDetail() {
         const filterPredicates = {
             'all': () => true,
             'new': (p) => Boolean(p.isNew),
-            'under-5000': (p) => parsePrice(p.price) < 5000,
+            // A price band is a question about a number, so a piece with no
+            // number is not in any of them. Excluded rather than swept into
+            // the lowest band, which is where a 0 put every commission.
+            'under-5000': (p) => priceOf(p) !== null && priceOf(p) < 5000,
             '5000-15000': (p) => {
-                const v = parsePrice(p.price);
-                return v >= 5000 && v <= 15000;
+                const v = priceOf(p);
+                return v !== null && v >= 5000 && v <= 15000;
             },
-            'above-15000': (p) => parsePrice(p.price) > 15000
+            'above-15000': (p) => priceOf(p) !== null && priceOf(p) > 15000
         };
 
         const subGrid = document.getElementById('subGrid');

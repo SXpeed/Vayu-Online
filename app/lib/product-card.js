@@ -154,9 +154,16 @@ export function bindProductTiles(root, onToast) {
             // base rate against stock nobody tracks. So the button opens the
             // product instead, which is where the choice lives. The card is
             // itself the link to that page, so its own href is the target.
-            if (hasOptions(p)) {
+            // A piece sold on request goes the same way, for the same
+            // reason one step further along: it has no price, so there is
+            // no line to add. The enquiry form is on its page, so that is
+            // where the button sends them rather than refusing in a toast
+            // and leaving them where they were.
+            if (hasOptions(p) || p.inquiryOnly) {
                 const href = card.getAttribute('href');
-                onToast?.(`Choose an option for ${p.name}`);
+                onToast?.(p.inquiryOnly
+                    ? `${p.name} is priced on request`
+                    : `Choose an option for ${p.name}`);
                 if (href) globalThis.location.assign(href);
                 return;
             }

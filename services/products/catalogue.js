@@ -10,6 +10,7 @@
  */
 
 import { formatPrice } from '#shared/database/store.js';
+import { PRICE_ON_REQUEST } from '#shared/constants/index.js';
 
 /* ---------- loading ---------- */
 
@@ -127,6 +128,10 @@ function hydrate(p, children) {
     description: p.description || '',
     price: p.price,
     compareAt: p.compare_at ?? null,
+    // "Price on request". The number above is kept — it is a guide figure
+    // the shop reads in the panel — but nothing shows it and nothing sells
+    // against it while this is set. See migration 0023.
+    inquiryOnly: !!p.inquiry_only,
     sku: p.sku || '',
     stock: p.stock,
     status: p.status,
@@ -215,9 +220,19 @@ export function toLegacyCatalogue(products, categories) {
       out[c.cat].push({
         id: p.id,
         name: p.name,
-        price: formatPrice(p.price),
-        priceValue: p.price,
-        compareAt: p.compareAt ? formatPrice(p.compareAt) : null,
+        // A piece sold on request carries the words where every other piece
+        // carries the number, and no numeric price at all. Doing it here
+        // rather than at each call site is what makes the tiles, the search
+        // panel, the wishlist and the legacy product page agree without any
+        // of them knowing this rule exists — they all render `price`.
+        //
+        // priceValue is null rather than 0 for the same reason: 0 is a real
+        // amount, and anything sorting or banding on it would file a
+        // ₹2,00,000 commission under "Under ₹5,000".
+        price: p.inquiryOnly ? PRICE_ON_REQUEST : formatPrice(p.price),
+        priceValue: p.inquiryOnly ? null : p.price,
+        inquiryOnly: !!p.inquiryOnly,
+        compareAt: (p.compareAt && !p.inquiryOnly) ? formatPrice(p.compareAt) : null,
         img: p.img,
         sub: c.sub || '',
         isNew: !!p.isNew,

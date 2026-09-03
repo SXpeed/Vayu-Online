@@ -39,6 +39,27 @@ export const notifyMe = z.object({
     email,
 });
 
+/**
+ * An enquiry about a piece sold at a price on request.
+ *
+ * `email` is optional HERE and the pair is required in the handler, not in
+ * this schema — "one of these two" is a rule about the body as a whole, and
+ * stating it as a per-field requirement would reject the phone-only
+ * enquiries that are most of them. The gate's job is shape and size; the
+ * handler says which combinations mean something.
+ */
+export const inquiry = z.object({
+    productId: id,
+    name: shortText(120),
+    email: email.optional().or(z.literal('')),
+    phone: shortText(32).optional(),
+    message: shortText(2000).optional(),
+    // The combination the shopper had chosen on the page, already made
+    // human ("Natural / Large"), so the panel can read it without knowing
+    // how a combo key is built.
+    variant: shortText(200).optional(),
+});
+
 export const couponValidate = z.object({
     code: shortText(40).min(1),
     items: z.array(cartLine).max(100).default([]),

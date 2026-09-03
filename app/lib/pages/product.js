@@ -148,7 +148,12 @@ if (product) {
     } else if (variants.length) {
         chosenVariant = variants.find(v => v.stock > 0) || variants[0];
     }
-    if (chosenVariant) renderPrice(chosenVariant.price || product.price, product.compareAt);
+    // inquiryOnly wins over the variant's own price. A commission can still
+    // be offered in three finishes, and its variant rows keep whatever
+    // prices were typed against them — but this page must never print one.
+    if (chosenVariant && !product.inquiryOnly) {
+        renderPrice(chosenVariant.price || product.price, product.compareAt);
+    }
 
     // ---- Stock: sold-out state + back-in-stock alert ----
     //
@@ -163,6 +168,10 @@ if (product) {
     };
     let notifyBox = null;
     function syncStockUI() {
+        // A piece sold on request has no buy buttons left to enable and
+        // nothing to be back in stock of — it is made or sourced when it is
+        // asked for. mountEnquiry() below has already taken the row away.
+        if (product.inquiryOnly) return;
         const ok = inStock();
         for (const btnId of ['prodCartBtn', 'prodBuyBtn']) {
             const b = document.getElementById(btnId);
@@ -352,7 +361,9 @@ if (product) {
 
             chosen[btn.dataset.option] = btn.dataset.value;
             chosenVariant = findVariant(product, chosen);
-            renderPrice(chosenVariant?.price || product.price, product.compareAt);
+            if (!product.inquiryOnly) {
+                renderPrice(chosenVariant?.price || product.price, product.compareAt);
+            }
             paint();
             syncStockUI();
             syncGallery();
@@ -476,6 +487,117 @@ if (product) {
             if (!inStock()) return;
             addToCart(cartPayload());
             window.location.href = '/pages/cart.html';
+        });
+    }
+
+    // ---- Price on request: the enquiry, in place of the cart ----
+    //
+    // This page is the older of the two product pages and is still what
+    // /pages/product.html?cat=&idx= serves, so it needs the same treatment
+    // as /products/<slug> rather than being left with an Add to Cart button
+    // for a piece that has no price to add.
+    //
+    // The buy row is REMOVED, not disabled. A greyed-out Add to Cart says
+    // "not right now"; this piece is not going to become buyable that way,
+    // and the thing to do instead has to be the thing on screen.
+    if (product.inquiryOnly) {
+        document.querySelector('.prod-action-row')?.remove();
+        document.getElementById('prodBuyBtn')?.remove();
+
+        const box = document.createElement('div');
+        box.className = 'prod-enq';
+        box.style.cssText = 'margin:0 0 16px;padding:16px;background:#faf8f5;border-radius:2px;'
+            + 'font-family:Jost,sans-serif;display:grid;gap:10px;';
+        // 16px on the inputs is not a taste decision: Safari on iOS zooms
+        // the page when a focused field is smaller than that and does not
+        // zoom back out, leaving the shopper scrolled sideways mid-form.
+        const field = 'padding:9px 11px;border:1px solid #d8d1c2 !important;border-radius:2px;'
+            + 'background:#fff;font:inherit;font-size:16px;line-height:1.35;width:100%;';
+        const label = 'font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#4e4a43;'
+            + 'display:grid;gap:4px;';
+
+        box.innerHTML = `
+            <p style="margin:0;font-size:12.5px;line-height:1.6;color:#4e4a43;">
+                Tell us how to reach you and we will come back with a price and what is possible.</p>
+            <label style="${label}"><span>Your name</span>
+                <input data-f="name" autocomplete="name" style="${field}"></label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <label style="${label}"><span>Email</span>
+                    <input data-f="email" type="email" autocomplete="email" style="${field}"></label>
+                <label style="${label}"><span>Phone</span>
+                    <input data-f="phone" type="tel" autocomplete="tel" style="${field}"></label>
+            </div>
+            <p style="margin:-4px 0 0;font-size:11.5px;color:#8d887e;">
+                Either one is enough &mdash; whichever you would rather we used.</p>
+            <label style="${label}"><span>Anything we should know</span>
+                <textarea data-f="message" rows="3" placeholder="Sizes, finishes, when you need it…"
+                    style="${field}resize:vertical;min-height:68px;"></textarea></label>
+            <p data-note style="margin:0;min-height:15px;font-size:12px;line-height:1.4;color:#4e4a43;"></p>
+            <button data-send style="height:40px;padding:0 14px;border:0;border-radius:2px;background:#141210;
+                color:#fff;font:inherit;font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;
+                font-weight:500;cursor:pointer;">Send enquiry</button>`;
+
+        // Before the wishlist button, so the order of decisions reads the
+        // same as on the priced pages: the main action, then saving it.
+        (document.getElementById('prodWishBtn') || priceEl).before(box);
+
+        const val = (f) => box.querySelector(`[data-f="${f}"]`).value.trim();
+        const note = box.querySelector('[data-note]');
+        const send = box.querySelector('[data-send]');
+        const say = (msg, isErr) => {
+            note.textContent = msg;
+            note.style.color = isErr ? '#b03030' : '#4e4a43';
+        };
+
+        send.addEventListener('click', async () => {
+            if (send.disabled) return;
+            // Checked here as well as on the server: the server's refusal
+            // costs a round trip and arrives as a sentence about a field
+            // that has already scrolled off a phone.
+            if (!val('name')) return say('Please tell us your name.', true);
+            if (!val('email') && !val('phone')) {
+                return say('Leave an email or a phone number so we can reply.', true);
+            }
+
+            send.disabled = true;
+            send.textContent = 'Sending…';
+            say('', false);
+            try {
+                const res = await fetch('/api/inquiry', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        productId: product.id,
+                        name: val('name'),
+                        email: val('email'),
+                        phone: val('phone'),
+                        message: val('message'),
+                        // The chosen combination in words. The combo key is
+                        // an internal address and is no use to whoever
+                        // reads this at the other end.
+                        variant: chosenVariant?.label
+                            || options.map(o => chosen[o.name]).filter(Boolean).join(' / '),
+                    }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok) {
+                    // Replaced by its confirmation rather than cleared and
+                    // left standing: an empty form after a send reads as a
+                    // send that did not happen, which is how the same
+                    // enquiry arrives three times.
+                    box.innerHTML = `<p style="margin:0;font-size:13px;line-height:1.7;color:#4e4a43;">
+                        Thank you — your enquiry is with us.<br>We will be in touch shortly.</p>`;
+                    showToast('Enquiry sent');
+                } else {
+                    say(data.error || 'Could not send that just now.', true);
+                    send.disabled = false;
+                    send.textContent = 'Send enquiry';
+                }
+            } catch {
+                say('Could not send that just now.', true);
+                send.disabled = false;
+                send.textContent = 'Send enquiry';
+            }
         });
     }
 

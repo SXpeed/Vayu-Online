@@ -27,6 +27,7 @@ import {
     productBySlug, loadProducts, loadCategories, loadShippingPresets, shippingTextFor, totalStock,
 } from '#lib/server/catalogue.js';
 import { formatPrice } from '#lib/server/db.js';
+import { PRICE_ON_REQUEST } from '#shared/constants/index.js';
 
 export const prerender = false;
 
@@ -97,8 +98,8 @@ export async function load({ params, platform, url }) {
         .map(({ p }) => ({
             slug: p.slug,
             name: p.name,
-            priceLabel: formatPrice(p.price),
-            compareAtLabel: p.compareAt ? formatPrice(p.compareAt) : null,
+            priceLabel: p.inquiryOnly ? PRICE_ON_REQUEST : formatPrice(p.price),
+            compareAtLabel: (p.compareAt && !p.inquiryOnly) ? formatPrice(p.compareAt) : null,
             img: p.img || (p.gallery || [])[0] || '',
             isNew: !!p.isNew,
         }));
@@ -119,9 +120,15 @@ export async function load({ params, platform, url }) {
             slug: product.slug,
             name: product.name,
             description: product.description || '',
-            price: product.price,
-            priceLabel: formatPrice(product.price),
-            compareAt: product.compareAt,
+            // A piece sold on request sends NO price at all — not the guide
+            // figure the shop keeps on the row. Anything returned here is
+            // readable in the page source, and a number sitting in the HTML
+            // of a page that says "Price on request" is a number somebody
+            // will eventually quote back at the shop.
+            price: product.inquiryOnly ? null : product.price,
+            priceLabel: product.inquiryOnly ? PRICE_ON_REQUEST : formatPrice(product.price),
+            compareAt: product.inquiryOnly ? null : product.compareAt,
+            inquiryOnly: !!product.inquiryOnly,
             sku: product.sku || '',
             // `stock` itself is deliberately not returned. The page shows
             // availability, not a count, and anything serialised here is
